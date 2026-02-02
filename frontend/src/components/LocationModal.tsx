@@ -6,7 +6,7 @@ interface LocationModalProps {
   onDeny: () => void;
   isLocating: boolean;
   error?: string | null;
-  t: any;
+  t: (path: string) => any;
 }
 
 export default function LocationModal({ isOpen, onAllow, onDeny, isLocating, error, t }: LocationModalProps) {
@@ -24,10 +24,10 @@ export default function LocationModal({ isOpen, onAllow, onDeny, isLocating, err
         </div>
         
         <h2 className="text-2xl font-bold text-cyan-50 mb-3 relative z-10 tracking-wide drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]">
-           {error ? (t.locationPrompt?.failed || 'Location failed') : (isLocating ? (t.locationPrompt?.locating || 'Locating...') : (t.locationPrompt?.title || 'Use your location'))}
+           {error ? t('locationPrompt.failed') : (isLocating ? t('locationPrompt.locating') : t('locationPrompt.title'))}
         </h2>
         <p className="text-cyan-200/70 mb-8 text-sm leading-relaxed relative z-10">
-          {error ? (t.locationPrompt?.failedMessage || 'Please check your browser permissions and try again.') : (t.locationPrompt?.message || 'Allow TravelMap to access your current location for better service?')}
+          {error ? t('locationPrompt.failedMessage') : t('locationPrompt.message')}
         </p>
         
         <div className="flex flex-col gap-4 relative z-10">
@@ -38,13 +38,13 @@ export default function LocationModal({ isOpen, onAllow, onDeny, isLocating, err
                 className="w-full cyber-button flex items-center justify-center gap-2 group"
                >
                 <Navigation size={18} className="group-hover:animate-bounce" />
-                {t.locationPrompt?.allow || 'Allow'}
+                {t('locationPrompt.allow')}
                </button>
                <button 
                 onClick={onDeny}
                 className="w-full bg-transparent text-slate-400 py-3 rounded-xl font-medium hover:text-cyan-400 transition-all hover:bg-slate-800/50 border border-transparent hover:border-slate-700"
                >
-                {t.locationPrompt?.deny || 'Not Now'}
+                {t('locationPrompt.deny')}
                </button>
              </>
           )}
@@ -54,7 +54,7 @@ export default function LocationModal({ isOpen, onAllow, onDeny, isLocating, err
                onClick={onDeny} // Close on error
                className="w-full bg-slate-800 text-slate-300 py-3 rounded-xl font-medium hover:bg-slate-700 transition-all border border-slate-600 hover:border-slate-500"
              >
-               {t.common?.close || 'Close'}
+               {t('common.close')}
              </button>
           )}
         </div>

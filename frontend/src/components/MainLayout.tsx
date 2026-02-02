@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import MapContainer from './MapContainer';
 import LoginModal from './LoginModal';
 import LocationModal from './LocationModal';
-import { getTranslation } from '../utils/translations';
+import { useLanguage } from '../contexts/LanguageContext';
 import BottomTabBar from './mobile/BottomTabBar';
 import CityDrawer from './mobile/CityDrawer';
+import UserDrawer from './mobile/UserDrawer';
 import FloatingSearchBar from './mobile/FloatingSearchBar';
 import PoiDetailBottomSheet from './mobile/PoiDetailBottomSheet';
 
@@ -26,7 +27,7 @@ export default function MainLayout() {
     }
   }, [activeTab]);
 
-  const [currentLang, setCurrentLang] = useState(localStorage.getItem('travelmap_lang') || 'zh-CN');
+  const { t } = useLanguage();
   
   // Modals
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -37,8 +38,6 @@ export default function MainLayout() {
 
   // Refs
   const routePluginRef = useRef<any>(null);
-
-  const t = getTranslation(currentLang);
 
   const handleMapReady = (map: any, AMap: any) => {
     setMapInstance(map);
@@ -154,6 +153,14 @@ export default function MainLayout() {
     }
   };
 
+  const handleTabChange = (tabId: string) => {
+    if (activeTab === tabId) {
+        setActiveTab('');
+    } else {
+        setActiveTab(tabId);
+    }
+  };
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-white">
       {/* Full Screen Map */}
@@ -179,12 +186,20 @@ export default function MainLayout() {
         onSelectCity={handleCitySelect}
         searchResults={searchResults}
         onPoiClick={handleMarkerClick}
+        onClose={() => setActiveTab('')}
+      />
+
+      {/* User Drawer */}
+      <UserDrawer 
+        isVisible={activeTab === 'me' && !isBottomSheetOpen}
+        onClose={() => setActiveTab('')}
+        onPoiClick={handleMarkerClick}
       />
 
       {/* Bottom Tab Bar */}
       <BottomTabBar 
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
       />
 
       {/* POI Detail Bottom Sheet */}

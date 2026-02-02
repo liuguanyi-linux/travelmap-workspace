@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion, PanInfo, useAnimation, useDragControls } from 'framer-motion';
 import { X, Navigation, Star, Share2, Phone, Clock, MapPin, Heart } from 'lucide-react';
+import { useFavorites } from '../../hooks/useFavorites';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface PoiDetailBottomSheetProps {
   poi: any;
@@ -12,6 +14,10 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
   const controls = useAnimation();
   const dragControls = useDragControls();
   const [viewState, setViewState] = useState<'hidden' | 'peek' | 'full'>('hidden');
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { t } = useLanguage();
+  
+  const isFav = poi ? isFavorite(poi.id) : false;
 
   useEffect(() => {
     if (isOpen) {
@@ -109,13 +115,13 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                             </div>
                             <span>4.2</span>
                             <span className="text-gray-300">|</span>
-                            <span>{poi.type?.split(';')[0] || '地点'}</span>
+                            <span>{poi.type?.split(';')[0] || t('common.unknownPlace')}</span>
                             <span className="text-gray-300">|</span>
                             <span>1.2km</span>
                         </div>
                         <div className="flex items-center text-gray-500 text-sm">
                             <MapPin size={14} className="mr-1 shrink-0" />
-                            <span className="truncate">{poi.address || '暂无详细地址'}</span>
+                            <span className="truncate">{poi.address || t('detail.noContact')}</span>
                         </div>
                     </div>
                     {/* Close Button for Peek Mode */}
@@ -155,42 +161,41 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                           <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                               <div className="flex items-center gap-2 mb-2 text-gray-400">
                                   <Clock size={16} />
-                                  <span className="text-xs font-medium">营业时间</span>
+                                  <span className="text-xs font-medium">{t('detail.openTime')}</span>
                               </div>
                               <div className="font-semibold text-gray-900">09:00 - 22:00</div>
-                              <div className="text-xs text-green-600 mt-1">营业中</div>
+                              <div className="text-xs text-green-600 mt-1">{t('detail.operating')}</div>
                           </div>
                           <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                               <div className="flex items-center gap-2 mb-2 text-gray-400">
                                   <Phone size={16} />
-                                  <span className="text-xs font-medium">电话</span>
+                                  <span className="text-xs font-medium">{t('detail.phone')}</span>
                               </div>
                               <div className="font-semibold text-gray-900 truncate">021-12345678</div>
-                              <div className="text-xs text-blue-600 mt-1">点击拨打</div>
+                              <div className="text-xs text-blue-600 mt-1">{t('detail.clickToCall')}</div>
                           </div>
                       </div>
 
                       {/* Introduction */}
                       <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                          <h3 className="font-bold text-gray-900 mb-3 text-lg">简介</h3>
+                          <h3 className="font-bold text-gray-900 mb-3 text-lg">{t('detail.intro')}</h3>
                           <p className="text-sm text-gray-600 leading-relaxed text-justify">
-                              {poi.name}是当地非常受欢迎的{poi.type?.split(';')[0]}。这里不仅环境优美，设施齐全，更能让您体验到最地道的本地风情。无论是独自游玩还是结伴而行，这里都是您的不二之选。
+                              {t('detail.introDesc', { name: poi.name }).replace('{name}', poi.name)}
                               <br/><br/>
-                              游客评价普遍较高，特别是服务态度和环境卫生方面表现出色。建议提前规划行程，避开高峰时段。
                           </p>
                       </div>
                       
                       {/* Reviews Preview */}
                       <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
                           <div className="flex justify-between items-center mb-4">
-                              <h3 className="font-bold text-gray-900 text-lg">游客评价</h3>
-                              <span className="text-sm text-blue-600">查看全部 &gt;</span>
+                              <h3 className="font-bold text-gray-900 text-lg">{t('detail.visitorReviews')}</h3>
+                              <span className="text-sm text-blue-600">{t('detail.viewAll')} &gt;</span>
                           </div>
                           <div className="space-y-4">
                               {[1, 2].map(i => (
                                   <div key={i} className="border-b border-gray-50 last:border-0 pb-3 last:pb-0">
                                       <div className="flex justify-between items-center mb-1">
-                                          <span className="font-medium text-gray-800 text-sm">游客{8866 + i}</span>
+                                          <span className="font-medium text-gray-800 text-sm">{t('detail.visitor')}{8866 + i}</span>
                                           <div className="flex text-yellow-400 scale-75 origin-right">
                                               <Star size={14} fill="currentColor" />
                                               <Star size={14} fill="currentColor" />
@@ -212,11 +217,21 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
 
           {/* Fixed Bottom Buttons */}
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex gap-3 z-30 pb-8">
-              <button className="flex flex-col items-center justify-center w-16 gap-1 text-gray-500 active:scale-95 transition-transform">
-                  <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
-                    <Heart size={20} />
+              <button 
+                onClick={() => toggleFavorite({
+                    id: poi.id,
+                    name: poi.name,
+                    type: poi.type,
+                    address: poi.address,
+                    location: poi.location,
+                    imageUrl: `https://picsum.photos/seed/${poi.id || 'poi'}/300/200`
+                })}
+                className="flex flex-col items-center justify-center w-16 gap-1 text-gray-500 active:scale-95 transition-transform"
+              >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isFav ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-500'}`}>
+                    <Heart size={20} fill={isFav ? "currentColor" : "none"} />
                   </div>
-                  <span className="text-xs">收藏</span>
+                  <span className={`text-xs ${isFav ? 'text-red-500' : ''}`}>{isFav ? '已收藏' : '收藏'}</span>
               </button>
               <button className="flex-1 bg-blue-600 text-white rounded-full font-bold text-lg shadow-lg shadow-blue-200 active:scale-95 transition-transform flex items-center justify-center gap-2">
                   <Navigation size={20} fill="currentColor" />

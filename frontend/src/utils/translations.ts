@@ -10,15 +10,38 @@ export const TRANSLATIONS: any = {
       unknownPlace: '未知地点',
       noSaved: '暂无保存的地点',
       savedPlaces: '已保存的地点', book: '预订', navigate: '导航',
-      download: '下载应用'
+      download: '下载应用',
+      back: '返回',
+      close: '关闭'
     },
     categories: {
-      food: '美食', hotel: '酒店', attraction: '景点', shopping: '购物',
-      pharmacy: '药店', atm: 'ATM', museum: '博物馆', transport: '交通',
+      attraction: '景点', hotel: '酒店', food: '美食', atm: 'ATM',
+      shopping: '购物', pharmacy: '药店', museum: '博物馆', transport: '交通',
       ticket: '票务', guide: '导游', more: '更多'
+    },
+    tabs: {
+      city: '城市', strategy: '攻略', guide: '导游', me: '我的'
+    },
+    user: {
+      name: '用户8866',
+      slogan: '开启你的探索之旅',
+      favorites: '我的收藏',
+      wallet: '我的钱包',
+      notifications: '消息通知',
+      settings: '设置',
+      language: '语言设置',
+      noFavorites: '暂无收藏内容',
+      exploreTip: '去探索并收藏你喜欢的地点吧',
+      saved: '已收藏'
+    },
+    settings: {
+      title: '设置',
+      language: '多语言',
+      currentLang: '简体中文'
     },
     login: {
       title: '登录',
+      subtitle: '登录以访问您收藏的地点',
       email: '电子邮箱',
       code: '验证码',
       sendCode: '发送验证码',
@@ -41,14 +64,18 @@ export const TRANSLATIONS: any = {
     },
     detail: {
       overview: '概览', reviews: '评价', photos: '照片',
-      save: '保存', saved: '已保存', share: '分享', sendToPhone: '发送到手机',
+      save: '收藏', saved: '已收藏', share: '分享', sendToPhone: '发送到手机',
       bookNow: '立即预订', route: '路线', openTime: '营业时间',
       contact: '联系方式', ticketBooking: '门票预订',
       yourRating: '您的评分', shareExperience: '分享您的体验...',
       publishReview: '发布评价', noReviews: '暂无评价，快来抢沙发吧！',
       morePhotosComing: '更多照片功能即将上线',
       pricePerPerson: '人', moderatePrice: '价格适中',
-      bookable: '可预订', noContact: '暂无联系方式'
+      bookable: '可预订', noContact: '暂无联系方式',
+      intro: '简介', visitorReviews: '游客评价', viewAll: '查看全部',
+      operating: '营业中', phone: '电话', clickToCall: '点击拨打',
+      introDesc: '{name}是当地非常受欢迎的地点。这里不仅环境优美，设施齐全，更能让您体验到最地道的本地风情。',
+      visitor: '游客'
     },
     home: {
       explore: '探索世界',
@@ -72,7 +99,8 @@ export const TRANSLATIONS: any = {
       deny: '暂不',
       locating: '正在定位...',
       success: '已定位到当前位置',
-      failed: '定位失败，请检查权限'
+      failed: '定位失败',
+      failedMessage: '请检查您的浏览器权限并重试。'
     },
     toast: {
       saved: '已保存地点', removed: '已从保存列表中移除',
@@ -93,15 +121,38 @@ export const TRANSLATIONS: any = {
       unknownPlace: 'Unknown Place',
       noSaved: 'No saved places',
       savedPlaces: 'Saved Places', book: 'Book', navigate: 'Navigate',
-      download: 'Download App'
+      download: 'Download App',
+      back: 'Back',
+      close: 'Close'
     },
     categories: {
       food: 'Food', hotel: 'Hotels', attraction: 'Attractions', shopping: 'Shopping',
       pharmacy: 'Pharmacy', atm: 'ATM', museum: 'Museum', transport: 'Transit',
       ticket: 'Tickets', guide: 'Guides', more: 'More'
     },
+    tabs: {
+      city: 'City', strategy: 'Trips', guide: 'Guide', me: 'Me'
+    },
+    user: {
+      name: 'User 8866',
+      slogan: 'Start your journey',
+      favorites: 'Favorites',
+      wallet: 'Wallet',
+      notifications: 'Notifications',
+      settings: 'Settings',
+      language: 'Language',
+      noFavorites: 'No favorites yet',
+      exploreTip: 'Go explore and save places you like',
+      saved: 'Saved'
+    },
+    settings: {
+      title: 'Settings',
+      language: 'Language',
+      currentLang: 'English'
+    },
     login: {
       title: 'Sign In',
+      subtitle: 'Sign in to access your saved places',
       email: 'Email Address',
       code: 'Verification Code',
       sendCode: 'Send Code',
@@ -131,7 +182,11 @@ export const TRANSLATIONS: any = {
       publishReview: 'Post Review', noReviews: 'No reviews yet. Be the first!',
       morePhotosComing: 'More photos coming soon',
       pricePerPerson: 'pp', moderatePrice: 'Moderate',
-      bookable: 'Bookable', noContact: 'No contact info'
+      bookable: 'Bookable', noContact: 'No contact info',
+      intro: 'Introduction', visitorReviews: 'Reviews', viewAll: 'View All',
+      operating: 'Open', phone: 'Phone', clickToCall: 'Call',
+      introDesc: '{name} is a very popular place locally. It offers great environment and facilities.',
+      visitor: 'Visitor'
     },
     home: {
       explore: 'Explore the World',
@@ -155,7 +210,8 @@ export const TRANSLATIONS: any = {
       deny: 'Not Now',
       locating: 'Locating...',
       success: 'Location found',
-      failed: 'Location failed'
+      failed: 'Location failed',
+      failedMessage: 'Please check your browser permissions and try again.'
     },
     toast: {
       saved: 'Place saved', removed: 'Removed from saved list',
@@ -163,89 +219,6 @@ export const TRANSLATIONS: any = {
       reviewFailed: 'Failed to post review', sentToPhone: 'Sent to your phone',
       linkCopied: 'Link copied to clipboard', routeDev: 'Directions feature under development',
       ticketDev: 'Ticketing system coming soon', langSwitched: 'Language switched'
-    }
-  },
-  'ja-JP': {
-    searchPlaceholder: 'TravelMapを検索...',
-    common: {
-      searching: '検索中...',
-      loading: '読み込み中...',
-      foundResults: '{count} 件の結果が見つかりました',
-      noResults: '結果が見つかりません',
-      collapse: 'サイドバーを折りたたむ',
-      unknownPlace: '不明な場所',
-      noSaved: '保存された場所はありません',
-      savedPlaces: '保存された場所', book: '予約', navigate: 'ナビ',
-      download: 'アプリをダウンロード'
-    },
-    categories: {
-      food: '食事', hotel: 'ホテル', attraction: '観光スポット', shopping: '買い物',
-      pharmacy: '薬局', atm: 'ATM', museum: '博物館', transport: '交通機関',
-      ticket: 'チケット', guide: 'ガイド', more: 'その他'
-    },
-    login: {
-      title: 'Sign In',
-      email: 'Email Address',
-      code: 'Verification Code',
-      sendCode: 'Send Code',
-      verify: 'Verify & Sign In',
-      placeholderEmail: 'Enter your email',
-      placeholderCode: 'Enter 6-digit code',
-      sent: 'Code sent to your email',
-      success: 'Successfully logged in',
-      logout: 'Sign Out'
-    },
-    menu: {
-      saved: '保存済み', recent: '最近', download: 'アプリをダウンロード',
-      contributions: '投稿', locationSharing: '現在地の共有', timeline: 'タイムライン',
-      yourData: 'TravelMapのデータ', share: '地図を共有または埋め込む', print: '印刷',
-      addBusiness: 'ビジネス情報を追加', editMap: '地図を編集', tips: 'ヒントとコツ',
-      help: 'ヘルプ', consumerInfo: '消費者情報', language: '言語',
-      searchSettings: '検索設定', mapHistory: '地図の履歴',
-      privacy: 'プライバシー', terms: '規約', footer: '2026 TravelMap Corporation',
-      footprint: 'あなたの足跡'
-    },
-    detail: {
-      overview: '概要', reviews: 'クチコミ', photos: '写真',
-      save: '保存', saved: '保存済み', share: '共有', sendToPhone: 'スマホに送信',
-      bookNow: '今すぐ予約', route: 'ルート', openTime: '営業時間',
-      contact: '連絡先', ticketBooking: 'チケット予約',
-      yourRating: 'あなたの評価', shareExperience: '体験を共有...',
-      publishReview: '投稿する', noReviews: 'クチコミはまだありません。',
-      morePhotosComing: '写真は近日公開予定',
-      pricePerPerson: '人', moderatePrice: 'お手頃',
-      bookable: '予約可能', noContact: '連絡先なし'
-    },
-    home: {
-      explore: '世界を探索',
-      subtitle: 'ホテル、レストラン、観光スポットなどを検索。20以上の言語に対応。'
-    },
-    modal: {
-      recentSearch: '最近の検索', noHistory: '検索履歴はありません', clear: '履歴を消去',
-      yourContributions: 'あなたの投稿', noContributions: 'まだクチコミを投稿していません',
-      moreCategories: 'その他のカテゴリ', demo: '機能デモ',
-      demoText: 'この機能は開発中です。お楽しみに！'
-    },
-    booking: {
-      title: 'ホテルを予約', checkIn: 'チェックイン日', guests: '人数',
-      confirm: '予約を確定', submitting: '送信中...',
-      note: '事前決済は不要です。現地でお支払いください。'
-    },
-    locationPrompt: {
-      title: '現在地を使用',
-      message: 'TravelMapが現在地にアクセスすることを許可しますか？',
-      allow: '許可',
-      deny: '今はしない',
-      locating: '測位中...',
-      success: '現在地を取得しました',
-      failed: '測位に失敗しました'
-    },
-    toast: {
-      saved: '場所を保存しました', removed: '保存済みリストから削除しました',
-      failed: '操作に失敗しました。再試行してください', reviewPublished: 'クチコミを投稿しました',
-      reviewFailed: '投稿に失敗しました', sentToPhone: 'スマートフォンに送信しました',
-      linkCopied: 'リンクをクリップボードにコピーしました', routeDev: 'ルート機能は開発中です',
-      ticketDev: 'チケットシステムは近日公開予定', langSwitched: '言語を切り替えました'
     }
   },
   'ko-KR': {
@@ -259,24 +232,47 @@ export const TRANSLATIONS: any = {
       unknownPlace: '알 수 없는 장소',
       noSaved: '저장된 장소 없음',
       savedPlaces: '저장된 장소', book: '예약', navigate: '길찾기',
-      download: '앱 다운로드'
+      download: '앱 다운로드',
+      back: '뒤로',
+      close: '닫기'
     },
     categories: {
-      food: '음식', hotel: '호텔', attraction: '명소', shopping: '쇼핑',
+      food: '맛집', hotel: '호텔', attraction: '명소', shopping: '쇼핑',
       pharmacy: '약국', atm: 'ATM', museum: '박물관', transport: '교통',
       ticket: '티켓', guide: '가이드', more: '더보기'
     },
+    tabs: {
+      city: '도시', strategy: '공략', guide: '가이드', me: '내 정보'
+    },
+    user: {
+      name: '사용자 8866',
+      slogan: '탐험을 시작하세요',
+      favorites: '내 즐겨찾기',
+      wallet: '내 지갑',
+      notifications: '알림',
+      settings: '설정',
+      language: '언어 설정',
+      noFavorites: '즐겨찾기 없음',
+      exploreTip: '좋아하는 장소를 찾아 저장해보세요',
+      saved: '저장됨'
+    },
+    settings: {
+      title: '설정',
+      language: '언어',
+      currentLang: '한국어'
+    },
     login: {
-      title: 'Sign In',
-      email: 'Email Address',
-      code: 'Verification Code',
-      sendCode: 'Send Code',
-      verify: 'Verify & Sign In',
-      placeholderEmail: 'Enter your email',
-      placeholderCode: 'Enter 6-digit code',
-      sent: 'Code sent to your email',
-      success: 'Successfully logged in',
-      logout: 'Sign Out'
+      title: '로그인',
+      subtitle: '저장된 장소에 액세스하려면 로그인하세요',
+      email: '이메일 주소',
+      code: '인증 코드',
+      sendCode: '코드 전송',
+      verify: '확인 및 로그인',
+      placeholderEmail: '이메일 입력',
+      placeholderCode: '6자리 코드 입력',
+      sent: '이메일로 코드가 전송되었습니다',
+      success: '로그인 성공',
+      logout: '로그아웃'
     },
     menu: {
       saved: '저장됨', recent: '최근', download: '앱 다운로드',
@@ -290,14 +286,18 @@ export const TRANSLATIONS: any = {
     },
     detail: {
       overview: '개요', reviews: '리뷰', photos: '사진',
-      save: '저장', saved: '저장됨', share: '공유', sendToPhone: '휴대전화로 전송',
+      save: '저장', saved: '저장됨', share: '공유', sendToPhone: '폰으로 전송',
       bookNow: '지금 예약', route: '경로', openTime: '영업 시간',
       contact: '연락처', ticketBooking: '티켓 예약',
       yourRating: '내 평점', shareExperience: '경험 공유...',
       publishReview: '리뷰 게시', noReviews: '아직 리뷰가 없습니다.',
       morePhotosComing: '더 많은 사진이 곧 제공됩니다',
       pricePerPerson: '인당', moderatePrice: '보통 가격',
-      bookable: '예약 가능', noContact: '연락처 없음'
+      bookable: '예약 가능', noContact: '연락처 없음',
+      intro: '소개', visitorReviews: '방문자 리뷰', viewAll: '모두 보기',
+      operating: '영업 중', phone: '전화', clickToCall: '통화하기',
+      introDesc: '{name}은(는) 현지에서 매우 인기 있는 장소입니다. 훌륭한 환경과 시설을 제공합니다.',
+      visitor: '방문자'
     },
     home: {
       explore: '세계 탐험',
@@ -321,7 +321,8 @@ export const TRANSLATIONS: any = {
       deny: '나중에',
       locating: '위치 확인 중...',
       success: '현재 위치를 찾았습니다',
-      failed: '위치 확인 실패'
+      failed: '위치 확인 실패',
+      failedMessage: '브라우저 권한을 확인하고 다시 시도하세요.'
     },
     toast: {
       saved: '장소가 저장되었습니다', removed: '저장 목록에서 제거되었습니다',
@@ -332,17 +333,6 @@ export const TRANSLATIONS: any = {
     }
   }
 };
-
-const SUPPORTED_LANGS = [
-  'zh-CN', 'en-US', 'ja-JP', 'ko-KR', 'fr-FR', 'de-DE', 'es-ES', 'pt-BR', 'ru-RU', 'it-IT',
-  'ar-SA', 'hi-IN', 'th-TH', 'vi-VN', 'id-ID', 'ms-MY', 'tr-TR', 'nl-NL', 'pl-PL', 'sv-SE'
-];
-
-SUPPORTED_LANGS.forEach(lang => {
-  if (!TRANSLATIONS[lang]) {
-    TRANSLATIONS[lang] = TRANSLATIONS['en-US']; 
-  }
-});
 
 export const getTranslation = (lang: string) => {
   return TRANSLATIONS[lang] || TRANSLATIONS['zh-CN'];

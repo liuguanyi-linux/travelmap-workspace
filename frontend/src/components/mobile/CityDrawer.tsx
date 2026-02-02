@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Hotel, Utensils, ChevronLeft, Building2 } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CityDrawerProps {
   isVisible: boolean;
@@ -8,6 +9,7 @@ interface CityDrawerProps {
   onSelectCity: (city: { name: string, center: [number, number], zoom: number }) => void;
   searchResults: any[]; // Pass search results to display in list
   onPoiClick: (poi: any) => void;
+  onClose?: () => void;
 }
 
 // Level 1: Cities
@@ -20,10 +22,11 @@ const CITIES = [
   { name: '青岛', center: [120.38264, 36.067442] as [number, number], zoom: 13 },
 ];
 
-export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, searchResults, onPoiClick }: CityDrawerProps) {
+export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, searchResults, onPoiClick, onClose }: CityDrawerProps) {
   const [level, setLevel] = useState<ViewLevel>('cities');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const { t } = useLanguage();
   
   const controls = useAnimation();
   const dragControls = useDragControls();
@@ -31,7 +34,9 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
   // Reset view and position when drawer closes/opens
   useEffect(() => {
     if (isVisible) {
-      if (level === 'cities') {
+      if (level === 'list') {
+          controls.start({ y: 0 });
+      } else {
           controls.start({ y: '55%' }); 
       }
     } else {
@@ -45,9 +50,9 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
   }, [isVisible, controls, level]);
 
   const categories = [
-    { id: 'attraction', label: '景点', icon: MapPin, color: 'text-green-600 bg-green-50' },
-    { id: 'hotel', label: '酒店', icon: Hotel, color: 'text-blue-600 bg-blue-50' },
-    { id: 'food', label: '美食', icon: Utensils, color: 'text-orange-600 bg-orange-50' },
+    { id: 'attraction', label: t('categories.attraction'), icon: MapPin, color: 'text-green-600 bg-green-50' },
+    { id: 'hotel', label: t('categories.hotel'), icon: Hotel, color: 'text-blue-600 bg-blue-50' },
+    { id: 'food', label: t('categories.food'), icon: Utensils, color: 'text-orange-600 bg-orange-50' },
   ];
 
   const handleCityClick = (city: typeof CITIES[0]) => {
@@ -107,13 +112,12 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
       } else {
          // In cities or categories view (medium height)
          if (offset.y > 100 || isFast) {
-            // Close drawer (handled by parent visibility usually, but here we just animate down)
-            // Ideally parent should know to set isVisible false, but for now we just slide down
-            // We can't update parent state from here easily without a prop, 
-            // assuming parent handles close on click outside or we add an onClose prop.
-            // For now, just snap back to peek or let it slide down (but isVisible is true)
-            // Let's snap back to 55% for now to avoid inconsistent state
-             controls.start({ y: '55%' });
+            // Close drawer if onClose provided
+            if (onClose) {
+                onClose();
+            } else {
+                controls.start({ y: '55%' });
+            }
          } else {
              controls.start({ y: '55%' });
          }

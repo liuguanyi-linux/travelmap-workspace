@@ -1,5 +1,6 @@
 import React from 'react';
 import { Map, BookOpen, UserCircle, User } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface BottomTabBarProps {
   activeTab: string;
@@ -7,11 +8,13 @@ interface BottomTabBarProps {
 }
 
 export default function BottomTabBar({ activeTab, onTabChange }: BottomTabBarProps) {
+  const { t } = useLanguage();
+
   const tabs = [
-    { id: 'city', label: '城市', icon: Map },
-    { id: 'strategy', label: '攻略', icon: BookOpen },
-    { id: 'guide', label: '导游', icon: UserCircle },
-    { id: 'me', label: '我的', icon: User },
+    { id: 'city', label: t('tabs.city'), icon: Map },
+    { id: 'strategy', label: t('tabs.strategy'), icon: BookOpen },
+    { id: 'guide', label: t('tabs.guide'), icon: UserCircle },
+    { id: 'me', label: t('tabs.me'), icon: User },
   ];
 
   return (

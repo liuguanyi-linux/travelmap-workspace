@@ -1,11 +1,11 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { X, Mail, Key, ArrowRight, Check, Loader2 } from 'lucide-react';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLogin: (email: string) => void;
-  t: any;
+  t: (path: string) => any;
 }
 
 export default function LoginModal({ isOpen, onClose, onLogin, t }: LoginModalProps) {
@@ -65,23 +65,23 @@ export default function LoginModal({ isOpen, onClose, onLogin, t }: LoginModalPr
             <div className="inline-block p-3 rounded-full bg-cyan-900/20 mb-4 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
                <Mail className="w-8 h-8 text-cyan-400" />
             </div>
-            <h2 className="text-2xl font-bold text-cyan-50 mb-2 tracking-wide drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]">{t.login?.title || 'Sign In'}</h2>
+            <h2 className="text-2xl font-bold text-cyan-50 mb-2 tracking-wide drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]">{t('login.title')}</h2>
             <p className="text-cyan-200/60 text-sm">
-              {step === 'email' ? (t.login?.subtitle || 'Sign in to access your saved places') : (t.login?.sent || 'Enter the code sent to ')}
+              {step === 'email' ? t('login.subtitle') : (t('login.sent') + ' ')}
             </p>
           </div>
 
           {step === 'email' ? (
             <form onSubmit={handleSendCode} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-cyan-300 uppercase tracking-wider block">{t.login?.email || 'Email'}</label>
+                <label className="text-xs font-bold text-cyan-300 uppercase tracking-wider block">{t('login.email')}</label>
                 <div className="relative group">
                   <Mail className="absolute left-3 top-3 text-cyan-600 group-focus-within:text-cyan-400 transition-colors" size={20} />
                   <input 
                     type="email" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t.login?.placeholderEmail || 'Enter your email'}
+                    placeholder={t('login.placeholderEmail')}
                     className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-cyan-500/30 rounded-xl focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(6,182,212,0.2)] outline-none text-cyan-100 placeholder-cyan-800 transition-all"
                     required
                   />
@@ -92,13 +92,13 @@ export default function LoginModal({ isOpen, onClose, onLogin, t }: LoginModalPr
                 disabled={isLoading}
                 className="w-full cyber-button flex items-center justify-center gap-2 group py-3 rounded-xl"
               >
-                {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>{t.login?.sendCode || 'Send Code'} <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" /></>}
+                {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>{t('login.sendCode')} <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" /></>}
               </button>
             </form>
           ) : (
             <form onSubmit={handleVerify} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-cyan-300 uppercase tracking-wider block">{t.login?.code || 'Verification Code'}</label>
+                <label className="text-xs font-bold text-cyan-300 uppercase tracking-wider block">{t('login.code')}</label>
                 <div className="relative group">
                   <Key className="absolute left-3 top-3 text-cyan-600 group-focus-within:text-cyan-400 transition-colors" size={20} />
                   <input 
@@ -118,14 +118,14 @@ export default function LoginModal({ isOpen, onClose, onLogin, t }: LoginModalPr
                 disabled={isLoading}
                 className="w-full cyber-button flex items-center justify-center gap-2 group py-3 rounded-xl"
               >
-                {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>{t.login?.verify || 'Verify'} <Check size={18} /></>}
+                {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>{t('login.verify')} <Check size={18} /></>}
               </button>
               <button 
                 type="button"
                 onClick={() => setStep('email')}
                 className="w-full text-cyan-600 hover:text-cyan-400 text-sm transition-colors hover:underline"
               >
-                {t.login?.back || 'Back to Email'}
+                {t('common.back')}
               </button>
             </form>
           )}
