@@ -1,0 +1,278 @@
+import React, { useState, useEffect } from 'react';
+import { MapPin, Hotel, Utensils, ChevronLeft, Building2 } from 'lucide-react';
+import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
+
+interface CityDrawerProps {
+  isVisible: boolean;
+  onSelectCategory: (category: string) => void;
+  onSelectCity: (city: { name: string, center: [number, number], zoom: number }) => void;
+  searchResults: any[]; // Pass search results to display in list
+  onPoiClick: (poi: any) => void;
+}
+
+// Level 1: Cities
+// Level 2: Categories (Attractions, Hotels, Food) for selected city
+// Level 3: POI List for selected category
+type ViewLevel = 'cities' | 'categories' | 'list';
+
+const CITIES = [
+  { name: '上海', center: [121.473701, 31.230416] as [number, number], zoom: 12 },
+  { name: '青岛', center: [120.38264, 36.067442] as [number, number], zoom: 13 },
+];
+
+export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, searchResults, onPoiClick }: CityDrawerProps) {
+  const [level, setLevel] = useState<ViewLevel>('cities');
+  const [selectedCity, setSelectedCity] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  
+  const controls = useAnimation();
+  const dragControls = useDragControls();
+
+  // Reset view and position when drawer closes/opens
+  useEffect(() => {
+    if (isVisible) {
+      if (level === 'cities') {
+          controls.start({ y: '55%' }); 
+      }
+    } else {
+      controls.start({ y: '100%' });
+      // Optionally reset state on close, but keeping state might be better UX?
+      // For now, let's reset to initial state if it was fully closed
+      if (!isVisible) {
+          // delayed reset or just keep it? Let's keep it for now unless user explicitly closed it
+      }
+    }
+  }, [isVisible, controls, level]);
+
+  const categories = [
+    { id: 'attraction', label: '景点', icon: MapPin, color: 'text-green-600 bg-green-50' },
+    { id: 'hotel', label: '酒店', icon: Hotel, color: 'text-blue-600 bg-blue-50' },
+    { id: 'food', label: '美食', icon: Utensils, color: 'text-orange-600 bg-orange-50' },
+  ];
+
+  const handleCityClick = (city: typeof CITIES[0]) => {
+      setSelectedCity(city.name);
+      
+      // 1. First set state to show category view
+      setLevel('categories');
+      
+      // 2. Animate map smoothly (non-blocking)
+      requestAnimationFrame(() => {
+          onSelectCity(city);
+      });
+      
+      // 3. Keep drawer at medium height
+      controls.start({ y: '55%' });
+  };
+
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(category);
+    // Trigger search asynchronously to avoid blocking UI animation
+    setTimeout(() => {
+        onSelectCategory(category);
+    }, 50);
+    
+    setLevel('list');
+    controls.start({ y: 0 }); // Auto-expand to full height for list
+  };
+
+  const handleBack = () => {
+    if (level === 'list') {
+        setLevel('categories');
+        setSelectedCategory('');
+        onSelectCategory(''); // Clear filter
+        controls.start({ y: '55%' }); // Return to medium height
+    } else if (level === 'categories') {
+        setLevel('cities');
+        setSelectedCity('');
+        // Maybe zoom out map? Or keep it? Keeping is fine.
+        controls.start({ y: '55%' });
+    }
+  };
+  
+  const handleDragEnd = (event: any, info: PanInfo) => {
+    const { offset, velocity } = info;
+    const isDraggingDown = offset.y > 0;
+    const isFast = Math.abs(velocity.y) > 500;
+
+    if (isDraggingDown) {
+      // Dragging down
+      if (level === 'list') {
+         if (offset.y > 100 || isFast) {
+             // If in list view, dragging down goes back to categories (medium height)
+             handleBack();
+         } else {
+             controls.start({ y: 0 }); // Revert to full
+         }
+      } else {
+         // In cities or categories view (medium height)
+         if (offset.y > 100 || isFast) {
+            // Close drawer (handled by parent visibility usually, but here we just animate down)
+            // Ideally parent should know to set isVisible false, but for now we just slide down
+            // We can't update parent state from here easily without a prop, 
+            // assuming parent handles close on click outside or we add an onClose prop.
+            // For now, just snap back to peek or let it slide down (but isVisible is true)
+            // Let's snap back to 55% for now to avoid inconsistent state
+             controls.start({ y: '55%' });
+         } else {
+             controls.start({ y: '55%' });
+         }
+      }
+    } else {
+      // Dragging up
+      if (offset.y < -50 || isFast) {
+        controls.start({ y: 0 }); // Expand to full
+      } else {
+        // Revert
+        controls.start({ y: level === 'list' ? 0 : '55%' });
+      }
+    }
+  };
+
+  return (
+    <AnimatePresence mode="wait">
+      {isVisible && (
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={controls}
+          exit={{ y: '100%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          drag="y"
+          dragControls={dragControls}
+          dragListener={false}
+          dragConstraints={{ top: 0 }}
+          dragElastic={0.2}
+          onDragEnd={handleDragEnd}
+          className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col"
+          style={{ height: '85vh' }}
+        >
+          {/* Drag Handle */}
+          <div 
+            className="w-full flex justify-center pt-3 pb-3 cursor-pointer z-10 touch-none shrink-0" 
+            onPointerDown={(e) => dragControls.start(e)}
+          >
+            <div className="w-12 h-1.5 bg-gray-200/80 rounded-full" />
+          </div>
+
+          {/* Header with Back Button */}
+          {level !== 'cities' && (
+              <div className="px-6 pb-2 flex items-center gap-2 shrink-0">
+                  <button 
+                    onClick={handleBack}
+                    className="p-1.5 -ml-2 rounded-full hover:bg-black/5 active:bg-black/10 transition-colors"
+                  >
+                      <ChevronLeft size={24} className="text-gray-600" />
+                  </button>
+                  <span className="text-lg font-bold text-gray-800">
+                      {level === 'categories' ? selectedCity : selectedCategory === 'attraction' ? '景点' : selectedCategory === 'hotel' ? '酒店' : '美食'}
+                  </span>
+              </div>
+          )}
+          
+          {/* Content Area */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 pb-20">
+            
+            {/* Level 1: City List */}
+            {level === 'cities' && (
+                <div className="space-y-4 pt-2">
+                    <h2 className="text-xl font-bold text-gray-800 mb-4">选择城市</h2>
+                    <div className="grid grid-cols-2 gap-4">
+                        {CITIES.map(city => (
+                            <button
+                                key={city.name}
+                                onClick={() => handleCityClick(city)}
+                                className="flex flex-col items-center justify-center p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-gray-100 hover:bg-white/80 active:scale-95 transition-all shadow-sm"
+                            >
+                                <Building2 size={32} className="text-gray-400 mb-2" />
+                                <span className="text-lg font-bold text-gray-800">{city.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Level 2: Categories */}
+            {level === 'categories' && (
+                <div className="space-y-6 pt-4">
+                    <div className="grid grid-cols-3 gap-4">
+                        {categories.map((cat) => (
+                        <button
+                            key={cat.id}
+                            onClick={() => handleCategoryClick(cat.id)}
+                            className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-gray-100 shadow-sm active:scale-95 transition-transform"
+                        >
+                            <div className={`p-4 rounded-2xl ${cat.color} mb-1`}>
+                                <cat.icon size={28} />
+                            </div>
+                            <span className="font-medium text-gray-700 text-sm z-10">{cat.label}</span>
+                        </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Level 3: List */}
+            {level === 'list' && (
+                <div className="space-y-4 pt-2">
+                    {searchResults && searchResults.length > 0 ? (
+                        searchResults.map((item, index) => (
+                            <div 
+                                key={index} 
+                                onClick={() => onPoiClick(item)}
+                                className="flex gap-4 p-4 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-transform cursor-pointer"
+                            >
+                                <div className="w-24 h-24 bg-gray-100 rounded-xl shrink-0 overflow-hidden">
+                                    {item.photos && item.photos[0] ? (
+                                        <img src={item.photos[0].url} alt={item.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                            <MapPin size={24} />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1 flex flex-col justify-between py-1">
+                                    <div>
+                                        <h3 className="font-bold text-gray-800 line-clamp-1">{item.name}</h3>
+                                        <p className="text-sm text-gray-500 line-clamp-2 mt-1">{item.address || '暂无地址信息'}</p>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-xs text-orange-500 font-medium">
+                                        <span>★ {item.biz_ext?.rating || '4.5'}</span>
+                                        <span className="text-gray-300">|</span>
+                                        <span className="text-gray-400">{item.type || '地点'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                            <SearchIcon />
+                            <p className="mt-2 text-sm">暂无相关地点</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function SearchIcon() {
+    return (
+        <svg
+            className="w-12 h-12 text-gray-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+        </svg>
+    );
+}

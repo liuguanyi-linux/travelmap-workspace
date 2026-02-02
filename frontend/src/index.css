@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-gray-900 font-sans overflow-hidden;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Minimalist Scrollbar (if visible) */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+/* Map Marker Labels */
+.poi-marker-label {
+  @apply bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] text-xs font-semibold text-gray-800 whitespace-nowrap border border-white/50;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateX(-10px);
+  pointer-events: none; /* Let clicks pass through to map/marker */
+}
+
+.show-labels .poi-marker-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Override AMap default label styles */
+.amap-marker-label {
+  border: none !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}

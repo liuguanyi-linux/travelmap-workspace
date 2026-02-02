@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  nickname  String?
+  reviews   Review[]
+  favorites Favorite[]
+  bookings  Booking[]
+  createdAt DateTime   @default(now())
+}
+
+model Poi {
+  id          Int        @id @default(autoincrement())
+  amapId      String     @unique
+  name        String
+  type        String
+  address     String?
+  tel         String?
+  rating      Float      @default(0)
+  cost        Float?
+  openTime    String?
+  description String?
+  photos      String?
+  reviews     Review[]
+  favorites   Favorite[]
+  bookings    Booking[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  content   String?
+  images    String?
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  poiId     Int
+  poi       Poi      @relation(fields: [poiId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  poiId     Int
+  poi       Poi      @relation(fields: [poiId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, poiId])
+}
+
+model Booking {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  poiId     Int
+  poi       Poi      @relation(fields: [poiId], references: [id])
+  date      DateTime
+  guests    Int      @default(1)
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+}
