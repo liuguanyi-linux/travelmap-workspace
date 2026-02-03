@@ -6,6 +6,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import BottomTabBar from './mobile/BottomTabBar';
 import CityDrawer from './mobile/CityDrawer';
 import UserDrawer from './mobile/UserDrawer';
+import StrategyView from './mobile/StrategyView';
+import GuideView from './mobile/GuideView';
 import FloatingSearchBar from './mobile/FloatingSearchBar';
 import PoiDetailBottomSheet from './mobile/PoiDetailBottomSheet';
 
@@ -19,6 +21,7 @@ export default function MainLayout() {
   // UI State
   const [activeTab, setActiveTab] = useState('city');
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const [activeCity, setActiveCity] = useState('上海'); // Default active city for custom POIs
   
   // Close bottom sheet when tab changes to avoid conflicts
   useEffect(() => {
@@ -69,6 +72,12 @@ export default function MainLayout() {
         setIsLocating(false);
         setIsLocationPromptOpen(false);
         mapInstance.setZoomAndCenter(15, result.position);
+        
+        // Try to get city name from addressComponent if available
+        if (result.addressComponent && result.addressComponent.city) {
+             const cityName = result.addressComponent.city.replace('市', '');
+             setActiveCity(cityName);
+        }
       } else {
         console.warn('High accuracy location failed, trying CitySearch fallback...', result);
         const citySearch = new aMap.CitySearch();
@@ -76,6 +85,12 @@ export default function MainLayout() {
             setIsLocating(false);
             if (status === 'complete' && result.info === 'OK') {
                 setIsLocationPromptOpen(false);
+                
+                // Update active city
+                if (result.city) {
+                    setActiveCity(result.city.replace('市', ''));
+                }
+
                 if (result.bounds) {
                     mapInstance.setBounds(result.bounds);
                 } else {
@@ -148,6 +163,7 @@ export default function MainLayout() {
   };
 
   const handleCitySelect = (city: { name: string, center: [number, number], zoom: number }) => {
+    setActiveCity(city.name); // Update active city context
     if (mapInstance) {
         mapInstance.setZoomAndCenter(city.zoom, city.center);
     }
@@ -162,7 +178,7 @@ export default function MainLayout() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-white">
+    <div className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Full Screen Map */}
       <div className="absolute inset-0 z-0">
         <MapContainer 
@@ -186,6 +202,18 @@ export default function MainLayout() {
         onSelectCity={handleCitySelect}
         searchResults={searchResults}
         onPoiClick={handleMarkerClick}
+        onClose={() => setActiveTab('')}
+      />
+
+      {/* Strategy View */}
+      <StrategyView 
+        isVisible={activeTab === 'strategy' && !isBottomSheetOpen}
+        onClose={() => setActiveTab('')}
+      />
+
+      {/* Guide View */}
+      <GuideView 
+        isVisible={activeTab === 'guide' && !isBottomSheetOpen}
         onClose={() => setActiveTab('')}
       />
 

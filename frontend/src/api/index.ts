@@ -200,6 +200,14 @@ export const createReview = async (userId: number, poiId: number | string, ratin
   return newReview;
 };
 
+export const deleteReview = async (reviewId: number | string) => {
+  await delay(300);
+  const reviews = getDb(DB_KEYS.REVIEWS);
+  const newReviews = reviews.filter((r: any) => String(r.id) !== String(reviewId));
+  setDb(DB_KEYS.REVIEWS, newReviews);
+  return { success: true };
+};
+
 // Keep the default export for compatibility, though we aren't using axios instance anymore
 const api = axios.create({ baseURL: 'http://mock-api' });
 export default api;

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe, Delete } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { Prisma } from '@prisma/client';
 
@@ -9,6 +9,29 @@ export class ReviewsController {
   @Post()
   async create(@Body() data: Prisma.ReviewUncheckedCreateInput) {
     return this.reviewsService.create(data);
+  }
+
+  @Post('amap')
+  async createForAmap(@Body() data: { 
+    userId: number, 
+    amapId: string, 
+    poiName: string, 
+    poiType: string, 
+    poiAddress?: string,
+    rating: number, 
+    content: string 
+  }) {
+    return this.reviewsService.createForAmap(data);
+  }
+
+  @Delete(':id')
+  async delete(@Param('id', ParseIntPipe) id: number) {
+    return this.reviewsService.delete(id);
+  }
+
+  @Get('amap/:amapId')
+  async findAllByAmapId(@Param('amapId') amapId: string) {
+    return this.reviewsService.findAllByAmapId(amapId);
   }
 
   @Get('user/:userId')

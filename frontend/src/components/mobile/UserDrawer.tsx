@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { motion, useAnimation, useDragControls, PanInfo } from 'framer-motion';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { Heart, MapPin, X, ChevronRight, User, Settings, CreditCard, Bell, Globe, Check } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Heart, MapPin, X, ChevronRight, User, Settings, CreditCard, Bell, Globe, Check, Phone, LogOut, Mail, Loader2, Moon, Sun } from 'lucide-react';
 
 interface UserDrawerProps {
   isVisible: boolean;
@@ -10,14 +12,17 @@ interface UserDrawerProps {
   onPoiClick?: (poi: any) => void;
 }
 
-type ViewState = 'menu' | 'favorites' | 'settings';
+type ViewState = 'menu' | 'favorites' | 'settings' | 'contact' | 'login' | 'notifications';
 
 export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawerProps) {
   const controls = useAnimation();
   const dragControls = useDragControls();
   const { favorites, removeFavorite } = useFavorites();
   const { t, language, setLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
+  const { user, login, logout, isLoading } = useAuth();
   const [viewState, setViewState] = useState<ViewState>('menu');
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
     if (isVisible) {
@@ -51,6 +56,37 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
       controls.start({ y: 0 }); // Expand to full
   };
 
+  const handleContactClick = () => {
+      setViewState('contact');
+      controls.start({ y: 0 }); // Expand to full
+  };
+
+  const handleNotificationsClick = () => {
+      setViewState('notifications');
+      controls.start({ y: 0 }); // Expand to full
+  };
+
+  const handleLoginClick = () => {
+      setViewState('login');
+      controls.start({ y: 0 });
+  };
+
+  const handleLogoutClick = () => {
+      logout();
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!email) return;
+      try {
+          await login(email);
+          setViewState('menu');
+          controls.start({ y: '40%' });
+      } catch (error) {
+          alert('Login failed. Please try again.');
+      }
+  };
+
   const handleBack = () => {
       setViewState('menu');
       controls.start({ y: '40%' });
@@ -74,14 +110,14 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
         style={{ zIndex: 9999 }}
-        className="fixed bottom-0 left-0 right-0 h-[85vh] bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] flex flex-col pointer-events-auto touch-manipulation"
+        className="fixed bottom-0 left-0 right-0 h-[85vh] bg-white dark:bg-gray-900 rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300"
     >
       {/* Handle */}
       <div 
-        className="w-full flex justify-center pt-4 pb-2 cursor-grab active:cursor-grabbing shrink-0"
+        className="w-full flex justify-center pt-5 pb-3 cursor-grab active:cursor-grabbing shrink-0"
         onPointerDown={(e) => dragControls.start(e)}
       >
-        <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full" />
       </div>
 
       {/* Content */}
@@ -90,21 +126,40 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
          {viewState === 'menu' && (
              // Menu View
              <div className="space-y-6">
-                 <div className="flex items-center gap-4 py-4">
-                     <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                         <User size={32} />
+                 {user ? (
+                     <div className="flex items-center gap-4 py-4">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                            <User size={32} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">{user.nickname || user.email.split('@')[0]}</h2>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                        </div>
                      </div>
-                     <div>
-                         <h2 className="text-xl font-bold text-gray-900">{t('user.name')}</h2>
-                         <p className="text-sm text-gray-500">{t('user.slogan')}</p>
-                     </div>
-                 </div>
+                 ) : (
+                    <div 
+                        className="flex items-center gap-4 py-4 cursor-pointer hover:bg-gray-50 rounded-xl transition-colors"
+                        onClick={handleLoginClick}
+                    >
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
+                            <User size={32} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">{t('user.loginRegister')}</h2>
+                            <p className="text-sm text-gray-500">{t('user.loginDesc')}</p>
+                        </div>
+                        <ChevronRight size={20} className="ml-auto text-gray-300" />
+                    </div>
+                 )}
 
                  <div className="space-y-2">
                      <MenuItem icon={Heart} label={t('user.favorites')} onClick={handleFavoritesClick} color="text-red-500 bg-red-50" />
-                     <MenuItem icon={CreditCard} label={t('user.wallet')} color="text-orange-500 bg-orange-50" />
-                     <MenuItem icon={Bell} label={t('user.notifications')} color="text-purple-500 bg-purple-50" />
+                     <MenuItem icon={Phone} label={t('user.contact')} onClick={handleContactClick} color="text-orange-500 bg-orange-50" />
+                     <MenuItem icon={Bell} label={t('user.notifications')} onClick={handleNotificationsClick} color="text-purple-500 bg-purple-50" />
                      <MenuItem icon={Settings} label={t('user.settings')} onClick={handleSettingsClick} color="text-gray-500 bg-gray-50" />
+                     {user && (
+                         <MenuItem icon={LogOut} label={t('login.logout')} onClick={handleLogoutClick} color="text-gray-500 bg-gray-50" />
+                     )}
                  </div>
              </div>
          )}
@@ -181,6 +236,37 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
                  
                  <div className="space-y-6">
                      <div>
+                         <h3 className="text-sm font-semibold text-gray-500 mb-3 px-1">{t('settings.appearance')}</h3>
+                         <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl flex relative h-14">
+                             {/* Animated Background */}
+                             <motion.div 
+                                className="absolute top-1 bottom-1 bg-white dark:bg-gray-700 rounded-xl shadow-sm z-0"
+                                initial={false}
+                                animate={{ 
+                                    left: theme === 'dark' ? '50%' : '4px', 
+                                    right: theme === 'dark' ? '4px' : '50%' 
+                                }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                             />
+                             
+                             <button
+                                 onClick={() => theme === 'dark' && toggleTheme()}
+                                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl relative z-10 transition-colors ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-500 dark:text-gray-400'}`}
+                             >
+                                 <Sun size={20} />
+                                 <span className="text-sm">{t('settings.lightMode')}</span>
+                             </button>
+                             <button
+                                 onClick={() => theme === 'light' && toggleTheme()}
+                                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl relative z-10 transition-colors ${theme === 'dark' ? 'text-white font-bold' : 'text-gray-500'}`}
+                             >
+                                 <Moon size={20} />
+                                 <span className="text-sm">{t('settings.darkMode')}</span>
+                             </button>
+                         </div>
+                     </div>
+
+                     <div>
                          <h3 className="text-sm font-semibold text-gray-500 mb-3 px-1">{t('settings.language')}</h3>
                          <div className="space-y-2">
                              {LANGUAGES.map((langItem) => (
@@ -205,6 +291,120 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
                  </div>
              </div>
          )}
+
+         {viewState === 'contact' && (
+             // Contact View
+             <div>
+                 <div className="flex items-center gap-2 mb-6">
+                     <button 
+                        onClick={handleBack}
+                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
+                     >
+                         <ChevronRight size={24} className="rotate-180" />
+                     </button>
+                     <h2 className="text-2xl font-bold">{t('user.contact')}</h2>
+                 </div>
+                 
+                 <div className="bg-orange-50 rounded-2xl p-6 text-center border border-orange-100">
+                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500 shadow-sm">
+                        <Phone size={32} />
+                     </div>
+                     <h3 className="text-lg font-bold text-gray-900 mb-2">{t('contact.title')}</h3>
+                     <p className="text-gray-500 text-sm mb-6">
+                        {t('contact.desc')}
+                     </p>
+                     <div className="space-y-3">
+                        <div className="h-12 bg-white rounded-xl w-full animate-pulse"></div>
+                        <div className="h-12 bg-white rounded-xl w-full animate-pulse"></div>
+                     </div>
+                 </div>
+             </div>
+         )}
+
+         {viewState === 'notifications' && (
+             // Notifications View
+             <div>
+                 <div className="flex items-center gap-2 mb-6">
+                     <button 
+                        onClick={handleBack}
+                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
+                     >
+                         <ChevronRight size={24} className="rotate-180" />
+                     </button>
+                     <h2 className="text-2xl font-bold">{t('notifications.title')}</h2>
+                 </div>
+                 
+                 <div className="bg-purple-50 rounded-2xl p-6 text-center border border-purple-100">
+                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-purple-500 shadow-sm">
+                        <Bell size={32} />
+                     </div>
+                     <h3 className="text-lg font-bold text-gray-900 mb-2">{t('notifications.empty')}</h3>
+                     <p className="text-gray-500 text-sm mb-6">
+                        {t('notifications.desc')}
+                     </p>
+                     <div className="space-y-3">
+                        <div className="h-12 bg-white rounded-xl w-full animate-pulse"></div>
+                        <div className="h-12 bg-white rounded-xl w-full animate-pulse"></div>
+                     </div>
+                 </div>
+             </div>
+         )}
+
+         {viewState === 'login' && (
+             // Login View
+             <div>
+                 <div className="flex items-center gap-2 mb-6">
+                     <button 
+                        onClick={handleBack}
+                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
+                     >
+                         <ChevronRight size={24} className="rotate-180" />
+                     </button>
+                     <h2 className="text-2xl font-bold">{t('login.loginRegisterTitle')}</h2>
+                 </div>
+                 
+                 <div className="bg-white p-4">
+                     <div className="mb-8 text-center">
+                         <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
+                             <Mail size={40} />
+                         </div>
+                         <h3 className="text-xl font-bold text-gray-900">{t('login.quickLogin')}</h3>
+                         <p className="text-gray-500 mt-2">{t('login.quickLoginDesc')}</p>
+                     </div>
+
+                     <form onSubmit={handleLoginSubmit} className="space-y-6">
+                         <div>
+                             <label className="block text-sm font-medium text-gray-700 mb-2">
+                                 {t('login.email')}
+                             </label>
+                             <input
+                                 type="email"
+                                 value={email}
+                                 onChange={(e) => setEmail(e.target.value)}
+                                 placeholder={t('login.placeholderEmail')}
+                                 required
+                                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                             />
+                         </div>
+
+                         <button
+                             type="submit"
+                             disabled={isLoading}
+                             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                         >
+                             {isLoading ? (
+                                 <>
+                                     <Loader2 size={20} className="animate-spin" />
+                                     {t('login.loggingIn')}
+                                 </>
+                             ) : (
+                                 t('login.loginNow')
+                             )}
+                         </button>
+                     </form>
+                 </div>
+             </div>
+         )}
       </div>
     </motion.div>
   );
@@ -220,15 +420,15 @@ function MenuItem({ icon: Icon, label, onClick, color }: any) {
             }}
             onPointerDown={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-full flex items-center justify-between p-4 bg-white border border-gray-50 rounded-2xl active:bg-gray-100 transition-colors cursor-pointer touch-manipulation select-none relative z-50"
+            className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-3xl active:bg-gray-50 dark:active:bg-gray-700 transition-colors cursor-pointer touch-manipulation select-none relative z-50 group"
         >
-            <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${color}`}>
-                    <Icon size={20} />
+            <div className="flex items-center gap-5">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-active:scale-95 ${color} dark:bg-opacity-20`}>
+                    <Icon size={22} strokeWidth={2} />
                 </div>
-                <span className="font-medium text-gray-700">{label}</span>
+                <span className="font-bold text-gray-800 dark:text-gray-100 text-lg">{label}</span>
             </div>
-            <ChevronRight size={20} className="text-gray-300" />
+            <ChevronRight size={20} className="text-gray-300 dark:text-gray-600" />
         </div>
     )
 }

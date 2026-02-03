@@ -1,0 +1,19 @@
+(node:32328) [DEP0184] DeprecationWarning: Instantiating Gzip without the 'new' keyword has been deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+C:\Users\10124\Downloads\travelmap_workspace\frontend\node_modules\surge\lib\middleware\deploy.js:229
+    helpers.log("   Processing Error:".yellow, payload.error.filename).log()
+                                                             ^
+
+TypeError: Cannot read properties of undefined (reading 'filename')
+    at EventEmitter.<anonymous> (C:\Users\10124\Downloads\travelmap_workspace\frontend\node_modules\surge\lib\middleware\deploy.js:229:62)
+    at EventEmitter.emit (node:events:508:28)
+    at Request.<anonymous> (C:\Users\10124\Downloads\travelmap_workspace\frontend\node_modules\surge-stream\lib\stream.js:215:17)
+    at Request.emit (node:events:520:35)
+    at Request.onRequestError (C:\Users\10124\Downloads\travelmap_workspace\frontend\node_modules\request\request.js:877:8)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:107:11)
+    at TLSSocket.socketOnEnd (node:_http_client:598:5)
+    at TLSSocket.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+
+Node.js v24.11.0

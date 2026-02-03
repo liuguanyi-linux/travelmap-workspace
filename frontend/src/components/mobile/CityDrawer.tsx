@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Hotel, Utensils, ChevronLeft, Building2 } from 'lucide-react';
+import { MapPin, Hotel, Utensils, ChevronLeft, Building2, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -53,6 +53,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
     { id: 'attraction', label: t('categories.attraction'), icon: MapPin, color: 'text-green-600 bg-green-50' },
     { id: 'hotel', label: t('categories.hotel'), icon: Hotel, color: 'text-blue-600 bg-blue-50' },
     { id: 'food', label: t('categories.food'), icon: Utensils, color: 'text-orange-600 bg-orange-50' },
+    { id: 'shopping', label: t('categories.shopping'), icon: ShoppingBag, color: 'text-pink-600 bg-pink-50' },
   ];
 
   const handleCityClick = (city: typeof CITIES[0]) => {
@@ -72,10 +73,14 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
-    // Trigger search asynchronously to avoid blocking UI animation
-    setTimeout(() => {
-        onSelectCategory(category);
-    }, 50);
+    
+    // For shopping, we don't need to trigger search, just show the ad view (which is implemented in the list view condition below)
+    if (category !== 'shopping') {
+        // Trigger search asynchronously to avoid blocking UI animation
+        setTimeout(() => {
+            onSelectCategory(category);
+        }, 50);
+    }
     
     setLevel('list');
     controls.start({ y: 0 }); // Auto-expand to full height for list
@@ -147,7 +152,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
           dragConstraints={{ top: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col"
+          className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col transition-colors duration-300"
           style={{ height: '85vh' }}
         >
           {/* Drag Handle */}
@@ -155,7 +160,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
             className="w-full flex justify-center pt-3 pb-3 cursor-pointer z-10 touch-none shrink-0" 
             onPointerDown={(e) => dragControls.start(e)}
           >
-            <div className="w-12 h-1.5 bg-gray-200/80 rounded-full" />
+            <div className="w-12 h-1.5 bg-gray-200/80 dark:bg-gray-700/80 rounded-full" />
           </div>
 
           {/* Header with Back Button */}
@@ -163,12 +168,12 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
               <div className="px-6 pb-2 flex items-center gap-2 shrink-0">
                   <button 
                     onClick={handleBack}
-                    className="p-1.5 -ml-2 rounded-full hover:bg-black/5 active:bg-black/10 transition-colors"
+                    className="p-1.5 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors"
                   >
-                      <ChevronLeft size={24} className="text-gray-600" />
+                      <ChevronLeft size={24} className="text-gray-600 dark:text-gray-300" />
                   </button>
-                  <span className="text-lg font-bold text-gray-800">
-                      {level === 'categories' ? selectedCity : selectedCategory === 'attraction' ? '景点' : selectedCategory === 'hotel' ? '酒店' : '美食'}
+                  <span className="text-lg font-bold text-gray-800 dark:text-white">
+                      {level === 'categories' ? selectedCity : selectedCategory === 'shopping' ? t('cityDrawer.shoppingDeals') : selectedCategory === 'attraction' ? t('categories.attraction') : selectedCategory === 'hotel' ? t('categories.hotel') : t('categories.food')}
                   </span>
               </div>
           )}
@@ -179,16 +184,16 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
             {/* Level 1: City List */}
             {level === 'cities' && (
                 <div className="space-y-4 pt-2">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">选择城市</h2>
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('cityDrawer.selectCity')}</h2>
                     <div className="grid grid-cols-2 gap-4">
                         {CITIES.map(city => (
                             <button
                                 key={city.name}
                                 onClick={() => handleCityClick(city)}
-                                className="flex flex-col items-center justify-center p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-gray-100 hover:bg-white/80 active:scale-95 transition-all shadow-sm"
+                                className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl border border-gray-100 dark:border-gray-700 hover:bg-white/80 dark:hover:bg-gray-800/80 active:scale-95 transition-all shadow-sm"
                             >
-                                <Building2 size={32} className="text-gray-400 mb-2" />
-                                <span className="text-lg font-bold text-gray-800">{city.name}</span>
+                                <Building2 size={32} className="text-gray-400 dark:text-gray-500 mb-2" />
+                                <span className="text-lg font-bold text-gray-800 dark:text-white">{city.name}</span>
                             </button>
                         ))}
                     </div>
@@ -198,17 +203,17 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
             {/* Level 2: Categories */}
             {level === 'categories' && (
                 <div className="space-y-6 pt-4">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                         {categories.map((cat) => (
                         <button
                             key={cat.id}
                             onClick={() => handleCategoryClick(cat.id)}
-                            className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-gray-100 shadow-sm active:scale-95 transition-transform"
+                            className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform"
                         >
-                            <div className={`p-4 rounded-2xl ${cat.color} mb-1`}>
-                                <cat.icon size={28} />
+                            <div className={`p-4 rounded-2xl ${cat.color} dark:bg-opacity-20 mb-1`}>
+                                <cat.icon size={32} />
                             </div>
-                            <span className="font-medium text-gray-700 text-sm z-10">{cat.label}</span>
+                            <span className="font-bold text-gray-800 dark:text-white text-lg z-10">{cat.label}</span>
                         </button>
                         ))}
                     </div>
@@ -218,14 +223,50 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
             {/* Level 3: List */}
             {level === 'list' && (
                 <div className="space-y-4 pt-2">
-                    {searchResults && searchResults.length > 0 ? (
+                    {selectedCategory === 'shopping' ? (
+                        // Shopping Ad View
+                        <div className="space-y-4">
+                            <div className="bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl p-6 text-white shadow-lg shadow-pink-200">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 className="text-2xl font-bold">免税店限时特惠</h3>
+                                        <p className="text-white/80 mt-1">国际大牌 3 折起</p>
+                                    </div>
+                                    <span className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold">广告</span>
+                                </div>
+                                <button className="w-full bg-white text-pink-600 font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-transform">
+                                    立即查看
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-700">
+                                    <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-xl mb-2 relative overflow-hidden">
+                                        <img src="https://picsum.photos/seed/bag/400/400" alt="Bag" className="w-full h-full object-cover" />
+                                        <span className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">-20%</span>
+                                    </div>
+                                    <h4 className="font-bold text-gray-800 dark:text-white text-sm line-clamp-1">时尚购物中心</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">距离 1.2km</p>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-700">
+                                    <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-xl mb-2 relative overflow-hidden">
+                                        <img src="https://picsum.photos/seed/shop/400/400" alt="Shop" className="w-full h-full object-cover" />
+                                    </div>
+                                    <h4 className="font-bold text-gray-800 dark:text-white text-sm line-clamp-1">特产礼品店</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">距离 500m</p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        // Standard Search Results
+                        searchResults && searchResults.length > 0 ? (
                         searchResults.map((item, index) => (
                             <div 
-                                key={index} 
+                                key={item.id || index} 
                                 onClick={() => onPoiClick(item)}
-                                className="flex gap-4 p-4 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-transform cursor-pointer"
+                                className="flex gap-4 p-4 bg-white rounded-[1.5rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] active:scale-95 transition-transform cursor-pointer mb-3"
                             >
-                                <div className="w-24 h-24 bg-gray-100 rounded-xl shrink-0 overflow-hidden">
+                                <div className="w-24 h-24 bg-gray-100 rounded-2xl shrink-0 overflow-hidden shadow-inner">
                                     {item.photos && item.photos[0] ? (
                                         <img src={item.photos[0].url} alt={item.name} className="w-full h-full object-cover" />
                                     ) : (
@@ -250,9 +291,9 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                     ) : (
                         <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                             <SearchIcon />
-                            <p className="mt-2 text-sm">暂无相关地点</p>
+                            <p className="mt-2 text-sm">{t('cityDrawer.noPlaces')}</p>
                         </div>
-                    )}
+                    ))}
                 </div>
             )}
 

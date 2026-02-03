@@ -28,26 +28,25 @@ export default function ActionModal({ isOpen, onClose, action, t }: ActionModalP
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in">
-      <div className="glass-panel rounded-2xl max-w-sm w-full p-6 relative">
-        {/* Decorative corner lines */}
-        <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-cyan-500 rounded-tl-lg"></div>
-        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-cyan-500 rounded-br-lg"></div>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+      <div className="bg-white dark:bg-gray-800 rounded-[2rem] max-w-sm w-full p-8 relative shadow-[0_20px_60px_rgba(0,0,0,0.15)]">
         
-        <button onClick={onClose} className="absolute right-4 top-4 text-cyan-600 hover:text-cyan-300 transition-colors">
+        <button onClick={onClose} className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
           <X size={24} />
         </button>
         
         <div className="flex flex-col items-center text-center mb-6 mt-2">
-          <div className="p-3 bg-slate-800/50 rounded-full border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-            {icon}
+          <div className="p-5 bg-blue-50 dark:bg-gray-700 rounded-[1.5rem] shadow-sm mb-4">
+            {action === 'recent' ? <Terminal className='w-8 h-8 text-blue-600 dark:text-blue-400' /> : 
+             action === 'contributions' ? <AlertTriangle className='w-8 h-8 text-orange-500' /> :
+             <Cpu className='w-8 h-8 text-blue-600 dark:text-blue-400' />}
           </div>
-          <h3 className="text-xl font-bold mt-4 text-cyan-50 tracking-wide drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]">{title}</h3>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h3>
         </div>
         
-        <p className="text-cyan-200/80 mb-8 text-center leading-relaxed border-l-2 border-cyan-500/20 pl-4">{content}</p>
+        <p className="text-gray-500 dark:text-gray-400 mb-8 text-center leading-relaxed px-4">{content}</p>
         
-        <button onClick={onClose} className="w-full cyber-button text-center flex items-center justify-center">
+        <button onClick={onClose} className="w-full bg-black dark:bg-white text-white dark:text-black font-bold py-3.5 rounded-2xl shadow-[0_8px_20px_rgba(0,0,0,0.15)] active:scale-95 transition-all hover:bg-gray-900 dark:hover:bg-gray-100">
           <span className="relative z-10">ACKNOWLEDGE</span>
         </button>
       </div>

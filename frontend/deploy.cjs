@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
-const domain = `tm-mobile-${Date.now()}.surge.sh`;
+const domain = `tm-mobile-2026-v1.surge.sh`;
 const surgeBin = path.join('node_modules', 'surge', 'bin', 'surge');
 const viteBin = path.join('node_modules', 'vite', 'bin', 'vite.js');
 

@@ -32,12 +32,27 @@ export const TRANSLATIONS: any = {
       language: '语言设置',
       noFavorites: '暂无收藏内容',
       exploreTip: '去探索并收藏你喜欢的地点吧',
-      saved: '已收藏'
+      saved: '已收藏',
+      loginRegister: '点击登录 / 注册',
+      loginDesc: '登录后可发表评论和管理个人信息',
+      contact: '联系方式'
+    },
+    notifications: {
+      title: '消息通知',
+      empty: '暂无新消息',
+      desc: '此处将显示来自导游的消息、系统推送和相关优惠信息。'
+    },
+    contact: {
+      title: '联系我们',
+      desc: '此处将展示我们的联系方式、官方网站及客服信息。'
     },
     settings: {
       title: '设置',
       language: '多语言',
-      currentLang: '简体中文'
+      currentLang: '简体中文',
+      appearance: '外观',
+      darkMode: '深色模式',
+      lightMode: '浅色模式'
     },
     login: {
       title: '登录',
@@ -143,7 +158,19 @@ export const TRANSLATIONS: any = {
       language: 'Language',
       noFavorites: 'No favorites yet',
       exploreTip: 'Go explore and save places you like',
-      saved: 'Saved'
+      saved: 'Saved',
+      loginRegister: 'Login / Register',
+      loginDesc: 'Login to post reviews and manage profile',
+      contact: 'Contact Us'
+    },
+    notifications: {
+      title: 'Notifications',
+      empty: 'No new notifications',
+      desc: 'Messages from guides, system updates, and offers will appear here.'
+    },
+    contact: {
+      title: 'Contact Us',
+      desc: 'Our contact info, website and support details will be displayed here.'
     },
     settings: {
       title: 'Settings',
@@ -161,7 +188,12 @@ export const TRANSLATIONS: any = {
       placeholderCode: 'Enter 6-digit code',
       sent: 'Code sent to your email',
       success: 'Successfully logged in',
-      logout: 'Sign Out'
+      logout: 'Sign Out',
+      loginRegisterTitle: 'Login / Register',
+      quickLogin: 'Quick Email Login',
+      quickLoginDesc: 'No password required, auto-register on first login',
+      loggingIn: 'Logging in...',
+      loginNow: 'Login Now'
     },
     menu: {
       saved: 'Saved', recent: 'Recent', download: 'Download App',
@@ -254,12 +286,27 @@ export const TRANSLATIONS: any = {
       language: '언어 설정',
       noFavorites: '즐겨찾기 없음',
       exploreTip: '좋아하는 장소를 찾아 저장해보세요',
-      saved: '저장됨'
+      saved: '저장됨',
+      loginRegister: '로그인 / 회원가입',
+      loginDesc: '로그인하여 리뷰를 작성하고 프로필을 관리하세요',
+      contact: '연락처'
+    },
+    notifications: {
+      title: '알림',
+      empty: '새로운 알림이 없습니다',
+      desc: '가이드 메시지, 시스템 업데이트 및 혜택 정보가 여기에 표시됩니다.'
+    },
+    contact: {
+      title: '문의하기',
+      desc: '연락처 정보, 웹사이트 및 고객 지원 정보가 여기에 표시됩니다.'
     },
     settings: {
       title: '설정',
-      language: '언어',
-      currentLang: '한국어'
+      language: '언어 설정',
+      currentLang: '한국어',
+      appearance: '화면 설정',
+      darkMode: '다크 모드',
+      lightMode: '라이트 모드'
     },
     login: {
       title: '로그인',
@@ -272,7 +319,12 @@ export const TRANSLATIONS: any = {
       placeholderCode: '6자리 코드 입력',
       sent: '이메일로 코드가 전송되었습니다',
       success: '로그인 성공',
-      logout: '로그아웃'
+      logout: '로그아웃',
+      loginRegisterTitle: '로그인 / 회원가입',
+      quickLogin: '이메일 간편 로그인',
+      quickLoginDesc: '비밀번호 필요 없음, 첫 로그인 시 자동 가입',
+      loggingIn: '로그인 중...',
+      loginNow: '지금 로그인'
     },
     menu: {
       saved: '저장됨', recent: '최근', download: '앱 다운로드',
@@ -308,6 +360,15 @@ export const TRANSLATIONS: any = {
       yourContributions: '내 기여', noContributions: '아직 리뷰를 게시하지 않았습니다',
       moreCategories: '더 많은 카테고리', demo: '기능 데모',
       demoText: '이 기능은 개발 중입니다. 기대해 주세요!'
+    },
+    cityDrawer: {
+      selectCity: '도시 선택',
+      shoppingDeals: '쇼핑 혜택',
+      dutyFree: '면세점 한정 특가',
+      discount: '해외 명품 최대 70% 할인',
+      ad: '광고',
+      viewNow: '지금 확인',
+      noPlaces: '관련 장소 없음'
     },
     booking: {
       title: '호텔 예약', checkIn: '체크인 날짜', guests: '인원',

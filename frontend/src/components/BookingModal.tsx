@@ -33,42 +33,39 @@ export default function BookingModal({ isOpen, onClose, poi, poiName, t = { book
   const guestsLabel = isDining ? '用餐人数' : (t?.booking?.guests || 'Guests');
 
   return (
-    <div className='fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in'>
-      <div className='glass-panel rounded-2xl max-w-md w-full p-6 relative overflow-hidden'>
-        {/* Decorative elements */}
-        <div className='absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-bl-full -mr-10 -mt-10'></div>
-        <div className='absolute bottom-0 left-0 w-24 h-24 bg-purple-500/10 rounded-tr-full -ml-10 -mb-10'></div>
-
-        <button onClick={onClose} className='absolute right-4 top-4 text-cyan-600 hover:text-cyan-300 transition-colors z-10'>
-          <X size={20} />
+    <div className='fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in'>
+      <div className='bg-white dark:bg-gray-800 rounded-[2rem] max-w-md w-full p-8 relative overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)]'>
+        
+        <button onClick={onClose} className='absolute right-6 top-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-10 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full'>
+          <X size={24} />
         </button>
         
-        <h3 className='text-xl font-bold mb-1 text-cyan-50 drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]'>{isDining ? '预订座位' : t?.booking?.title || 'Book Now'}</h3>
-        <p className='text-cyan-400 mb-6 font-medium text-sm border-b border-cyan-500/20 pb-2'>{poiName || poi?.name}</p>
+        <h3 className='text-3xl font-bold mb-2 text-gray-900 dark:text-white'>{isDining ? '预订座位' : t?.booking?.title || 'Book Now'}</h3>
+        <p className='text-blue-600 dark:text-blue-400 mb-8 font-bold text-base'>{poiName || poi?.name}</p>
 
         {success ? (
-          <div className='text-center py-8 text-cyan-400'>
-            <div className='w-20 h-20 bg-cyan-900/30 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_20px_rgba(6,182,212,0.4)] border border-cyan-500/50'>
-                <Check size={40} className='text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]' />
+          <div className='text-center py-8'>
+            <div className='w-24 h-24 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm'>
+                <Check size={48} className='text-green-500' />
             </div>
-            <p className='text-lg font-bold tracking-wide text-cyan-50'>{t?.booking?.confirm || 'Confirm'} Success!</p>
-            <p className='text-sm text-cyan-500/80 mt-2'>System has processed your request.</p>
+            <p className='text-2xl font-bold text-gray-900 dark:text-white mb-2'>{t?.booking?.confirm || 'Confirm'} Success!</p>
+            <p className='text-gray-500 dark:text-gray-400'>System has processed your request.</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className='space-y-5 relative z-10'>
+          <form onSubmit={handleSubmit} className='space-y-6 relative z-10'>
             <div>
-              <label className='block text-xs font-bold text-cyan-300 uppercase tracking-wider mb-2'>{checkInLabel}</label>
+              <label className='block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-1'>{checkInLabel}</label>
               <div className='relative group'>
-                <Calendar className='absolute left-3 top-2.5 text-cyan-600 group-focus-within:text-cyan-400 transition-colors' size={20} />
-                <input type={isDining ? 'datetime-local' : 'date'} className='w-full pl-10 pr-4 py-2.5 bg-slate-900/80 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:shadow-[0_0_10px_rgba(6,182,212,0.3)] outline-none text-cyan-100 placeholder-slate-600 transition-all' required />
+                <Calendar className='absolute left-4 top-3.5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors' size={20} />
+                <input type={isDining ? 'datetime-local' : 'date'} className='w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-gray-700 border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all font-medium' required />
               </div>
             </div>
             
             <div>
-              <label className='block text-xs font-bold text-cyan-300 uppercase tracking-wider mb-2'>{guestsLabel}</label>
+              <label className='block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-1'>{guestsLabel}</label>
               <div className='relative group'>
-                <User className='absolute left-3 top-2.5 text-cyan-600 group-focus-within:text-cyan-400 transition-colors' size={20} />
-                <select className='w-full pl-10 pr-4 py-2.5 bg-slate-900/80 border border-cyan-500/30 rounded-lg focus:border-cyan-400 focus:shadow-[0_0_10px_rgba(6,182,212,0.3)] outline-none text-cyan-100 appearance-none transition-all'>
+                <User className='absolute left-4 top-3.5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors' size={20} />
+                <select className='w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-gray-700 border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 outline-none text-gray-900 dark:text-white appearance-none transition-all font-medium'>
                   <option>1 {t?.detail?.pricePerPerson || '人'}</option>
                   <option>2 {t?.detail?.pricePerPerson || '人'}</option>
                   <option>3+ {t?.detail?.pricePerPerson || '人'}</option>
@@ -76,7 +73,7 @@ export default function BookingModal({ isOpen, onClose, poi, poiName, t = { book
               </div>
             </div>
 
-            <div className='bg-cyan-900/20 p-4 rounded-lg text-xs text-cyan-300 border-l-4 border-cyan-500/50 flex gap-3'>
+            <div className='bg-blue-50 dark:bg-gray-700 p-4 rounded-2xl text-xs font-medium text-blue-600 dark:text-blue-400 flex gap-3'>
               <CreditCard size={16} className='shrink-0 mt-0.5' />
               {t?.booking?.note || 'No payment required'}
             </div>
@@ -84,11 +81,11 @@ export default function BookingModal({ isOpen, onClose, poi, poiName, t = { book
             <button 
               type='submit' 
               disabled={loading}
-              className='w-full cyber-button mt-4 flex items-center justify-center gap-2'
+              className='w-full bg-black dark:bg-white text-white dark:text-black mt-2 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(0,0,0,0.15)] active:scale-95 transition-all hover:bg-gray-900 dark:hover:bg-gray-100'
             >
               {loading ? (
                   <>
-                    <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
+                    <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
                     {t?.booking?.submitting || 'Submitting...'}
                   </>
               ) : (t?.booking?.confirm || 'Confirm')}

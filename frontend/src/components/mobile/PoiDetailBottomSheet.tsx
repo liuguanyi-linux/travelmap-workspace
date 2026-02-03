@@ -1,13 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { motion, PanInfo, useAnimation, useDragControls } from 'framer-motion';
-import { X, Navigation, Star, Share2, Phone, Clock, MapPin, Heart } from 'lucide-react';
+import { X, Navigation, Star, Share2, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2 } from 'lucide-react';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { getReviews, createReview, deleteReview } from '../../api';
 
 interface PoiDetailBottomSheetProps {
   poi: any;
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface Review {
+  id: number;
+  rating: number;
+  content: string;
+  user: {
+    nickname: string | null;
+    email: string;
+  };
+  createdAt: string;
 }
 
 export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetailBottomSheetProps) {
@@ -16,6 +29,12 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
   const [viewState, setViewState] = useState<'hidden' | 'peek' | 'full'>('hidden');
   const { isFavorite, toggleFavorite } = useFavorites();
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'admin@travelmap.com';
+  
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const isFav = poi ? isFavorite(poi.id) : false;
 
@@ -23,11 +42,60 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
     if (isOpen) {
       setViewState('peek');
       controls.start('peek');
+      if (poi && poi.id) {
+          fetchReviews(poi.id);
+      }
     } else {
       setViewState('hidden');
       controls.start('hidden');
     }
-  }, [isOpen, controls]);
+  }, [isOpen, controls, poi]);
+
+  const fetchReviews = async (amapId: string) => {
+      try {
+          const data = await getReviews(amapId);
+          // Map to expected format
+          const formattedReviews = data.map((r: any) => ({
+              id: r.id,
+              rating: r.rating,
+              content: r.content,
+              user: {
+                  nickname: r.username || 'User',
+                  email: 'user@example.com' 
+              },
+              createdAt: r.created_at || r.createdAt
+          }));
+          setReviews(formattedReviews);
+      } catch (error) {
+          console.error('Failed to fetch reviews:', error);
+      }
+  };
+
+  const handlePublishComment = async () => {
+      if (!user || !newComment.trim() || !poi) return;
+      
+      setIsSubmitting(true);
+      try {
+          await createReview(user.id, poi.id, 5, newComment);
+          setNewComment('');
+          fetchReviews(poi.id);
+      } catch (error) {
+          console.error('Failed to publish comment:', error);
+      } finally {
+          setIsSubmitting(false);
+      }
+  };
+
+  const handleDeleteComment = async (reviewId: number) => {
+      if (!isAdmin) return;
+      if (!confirm('确定要删除这条评论吗？')) return;
+      try {
+          await deleteReview(reviewId);
+          setReviews(reviews.filter(r => r.id !== reviewId));
+      } catch (error) {
+          console.error('Failed to delete comment:', error);
+      }
+  };
 
   const variants = {
     hidden: { y: '100%' },
@@ -87,128 +155,182 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
           dragConstraints={{ top: 0 }}
           dragElastic={0.1}
           onDragEnd={handleDragEnd}
-          className="absolute left-0 right-0 h-[100vh] bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] overflow-hidden pointer-events-auto flex flex-col"
+          className="absolute left-0 right-0 h-[100vh] bg-white rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] overflow-hidden pointer-events-auto flex flex-col"
         >
           {/* Drag Handle Area - Active Drag Zone */}
           <div 
-            className="w-full flex justify-center pt-4 pb-2 cursor-grab active:cursor-grabbing bg-white z-20 shrink-0"
+            className="w-full flex justify-center pt-5 pb-3 cursor-grab active:cursor-grabbing bg-white z-20 shrink-0"
             onPointerDown={(e) => dragControls.start(e)}
           >
-            <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+            <div className="w-10 h-1 bg-gray-200 rounded-full" />
           </div>
 
           {/* Content Container */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
               
               {/* Header Info (Always visible) */}
-              <div className="px-6 pb-4 bg-white z-10 shrink-0">
+              <div className="px-8 pb-6 bg-white z-10 shrink-0">
                 <div className="flex justify-between items-start">
                     <div className="flex-1 mr-4">
-                        <h2 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{poi.name}</h2>
-                        <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                            <div className="flex text-yellow-400">
-                                <Star size={14} fill="currentColor" />
-                                <Star size={14} fill="currentColor" />
-                                <Star size={14} fill="currentColor" />
-                                <Star size={14} fill="currentColor" />
-                                <Star size={14} fill="currentColor" className="text-gray-200" />
+                        <h2 className="text-3xl font-bold text-gray-900 leading-tight mb-3 tracking-tight">{poi.name}</h2>
+                        <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
+                            <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
+                                <Star size={14} fill="#EAB308" className="text-yellow-500" />
+                                <span className="font-bold text-yellow-700">4.8</span>
                             </div>
-                            <span>4.2</span>
                             <span className="text-gray-300">|</span>
-                            <span>{poi.type?.split(';')[0] || t('common.unknownPlace')}</span>
+                            <span className="bg-gray-50 px-2 py-1 rounded-lg text-gray-600">{poi.type?.split(';')[0] || t('common.unknownPlace')}</span>
                             <span className="text-gray-300">|</span>
                             <span>1.2km</span>
                         </div>
                         <div className="flex items-center text-gray-500 text-sm">
-                            <MapPin size={14} className="mr-1 shrink-0" />
+                            <MapPin size={16} className="mr-1.5 shrink-0 text-gray-400" />
                             <span className="truncate">{poi.address || t('detail.noContact')}</span>
                         </div>
                     </div>
                     {/* Close Button for Peek Mode */}
                     <button 
                         onClick={onClose} 
-                        className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 shrink-0"
+                        className="p-2.5 bg-gray-50 rounded-full hover:bg-gray-100 shrink-0 transition-colors"
                     >
-                        <X size={20} className="text-gray-500" />
+                        <X size={20} className="text-gray-400" />
                     </button>
                 </div>
               </div>
 
-              {/* Scrollable Content (Visible in Full Mode or scrolling in Peek?) 
-                  In Peek mode (35% height), we see Drag Handle + Header + maybe top of photos.
-                  Let's make the whole body scrollable but drag handled by top.
-              */}
-              <div className="flex-1 overflow-y-auto bg-gray-50 pb-24">
+              {/* Scrollable Content (Visible in Full Mode or scrolling in Peek?) */}
+              <div className="flex-1 overflow-y-auto bg-gray-50/50 pb-28">
                   {/* Horizontal Photos */}
-                  <div className="mt-2 mb-6">
-                      <div className="flex gap-3 px-6 overflow-x-auto pb-4 scrollbar-hide snap-x">
-                          {[1, 2, 3, 4].map((i) => (
-                              <div key={i} className="w-40 h-28 shrink-0 rounded-xl overflow-hidden bg-gray-200 snap-center shadow-sm relative">
-                                  <img 
-                                    src={`https://picsum.photos/seed/${poi.id || 'poi'}${i}/300/200`} 
-                                    alt="Preview" 
-                                    className="w-full h-full object-cover"
-                                  />
-                              </div>
-                          ))}
+                  <div className="mt-4 mb-8">
+                      <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
+                          {poi.photos && poi.photos.length > 0 ? (
+                              poi.photos.map((photo: any, index: number) => (
+                                  <div key={index} className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 snap-center shadow-md relative">
+                                      <img 
+                                        src={photo.url} 
+                                        alt={photo.title || poi.name} 
+                                        className="w-full h-full object-cover"
+                                      />
+                                  </div>
+                              ))
+                          ) : (
+                              [1, 2, 3].map((i) => (
+                                  <div key={i} className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 snap-center shadow-sm relative">
+                                      <img 
+                                        src={`https://picsum.photos/seed/${poi.id || 'poi'}${i}/300/200`} 
+                                        alt="Preview" 
+                                        className="w-full h-full object-cover"
+                                      />
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                                          <span className="text-white text-xs font-medium bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full">暂无实景</span>
+                                      </div>
+                                  </div>
+                              ))
+                          )}
                       </div>
                   </div>
 
                   {/* Detailed Info */}
                   <div className="px-6 space-y-4">
                       {/* Hours & Phone */}
-                      <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                              <div className="flex items-center gap-2 mb-2 text-gray-400">
-                                  <Clock size={16} />
-                                  <span className="text-xs font-medium">{t('detail.openTime')}</span>
+                      <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-white p-5 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                              <div className="flex items-center gap-2 mb-3 text-gray-400">
+                                  <Clock size={18} />
+                                  <span className="text-xs font-bold uppercase tracking-wider">{t('detail.openTime')}</span>
                               </div>
-                              <div className="font-semibold text-gray-900">09:00 - 22:00</div>
-                              <div className="text-xs text-green-600 mt-1">{t('detail.operating')}</div>
+                              <div className="font-bold text-xl text-gray-900 mb-1">09:00 - 22:00</div>
+                              <div className="text-xs font-medium text-green-600 bg-green-50 inline-block px-2 py-1 rounded-lg">{t('detail.operating')}</div>
                           </div>
-                          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                              <div className="flex items-center gap-2 mb-2 text-gray-400">
-                                  <Phone size={16} />
-                                  <span className="text-xs font-medium">{t('detail.phone')}</span>
+                          <div className="bg-white p-5 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                              <div className="flex items-center gap-2 mb-3 text-gray-400">
+                                  <Phone size={18} />
+                                  <span className="text-xs font-bold uppercase tracking-wider">{t('detail.phone')}</span>
                               </div>
-                              <div className="font-semibold text-gray-900 truncate">021-12345678</div>
-                              <div className="text-xs text-blue-600 mt-1">{t('detail.clickToCall')}</div>
+                              <div className="font-bold text-xl text-gray-900 truncate mb-1">021-12345678</div>
+                              <div className="text-xs font-medium text-blue-600 bg-blue-50 inline-block px-2 py-1 rounded-lg">{t('detail.clickToCall')}</div>
                           </div>
                       </div>
 
                       {/* Introduction */}
-                      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                          <h3 className="font-bold text-gray-900 mb-3 text-lg">{t('detail.intro')}</h3>
-                          <p className="text-sm text-gray-600 leading-relaxed text-justify">
+                      <div className="bg-white p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                          <h3 className="font-bold text-gray-900 mb-4 text-xl">{t('detail.intro')}</h3>
+                          <p className="text-gray-600 leading-relaxed text-justify">
                               {t('detail.introDesc', { name: poi.name }).replace('{name}', poi.name)}
                               <br/><br/>
                           </p>
                       </div>
                       
                       {/* Reviews Preview */}
-                      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
-                          <div className="flex justify-between items-center mb-4">
-                              <h3 className="font-bold text-gray-900 text-lg">{t('detail.visitorReviews')}</h3>
-                              <span className="text-sm text-blue-600">{t('detail.viewAll')} &gt;</span>
+                      <div className="bg-white p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] mb-8">
+                          <div className="flex justify-between items-center mb-6">
+                              <h3 className="font-bold text-gray-900 text-xl">{t('detail.visitorReviews')}</h3>
+                              <span className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">{reviews.length} 条</span>
                           </div>
-                          <div className="space-y-4">
-                              {[1, 2].map(i => (
-                                  <div key={i} className="border-b border-gray-50 last:border-0 pb-3 last:pb-0">
-                                      <div className="flex justify-between items-center mb-1">
-                                          <span className="font-medium text-gray-800 text-sm">{t('detail.visitor')}{8866 + i}</span>
-                                          <div className="flex text-yellow-400 scale-75 origin-right">
-                                              <Star size={14} fill="currentColor" />
-                                              <Star size={14} fill="currentColor" />
-                                              <Star size={14} fill="currentColor" />
-                                              <Star size={14} fill="currentColor" />
-                                              <Star size={14} fill="currentColor" />
+                          
+                          {/* Review Input */}
+                          {user ? (
+                              <div className="mb-8">
+                                  <textarea 
+                                      className="w-full p-4 bg-gray-50 dark:bg-gray-700 border-none rounded-2xl focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all resize-none text-sm placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-white"
+                                      placeholder="分享您的游玩体验..."
+                                      rows={3}
+                                      value={newComment}
+                                      onChange={(e) => setNewComment(e.target.value)}
+                                  />
+                                  <div className="flex justify-end mt-3">
+                                      <button 
+                                          className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full px-6 py-2.5 text-sm font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200 dark:shadow-none active:scale-95 transition-all"
+                                          onClick={handlePublishComment}
+                                          disabled={isSubmitting || !newComment.trim()}
+                                      >
+                                          {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                          发布评论
+                                      </button>
+                                  </div>
+                              </div>
+                          ) : (
+                              <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl text-center text-gray-500 dark:text-gray-400 text-sm font-medium">
+                                  登录后即可发表评论
+                              </div>
+                          )}
+
+                          {/* Reviews List */}
+                          <div className="space-y-6">
+                              {reviews.length === 0 ? (
+                                  <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">暂无评论，快来抢沙发吧！</div>
+                              ) : (
+                                  reviews.map(review => (
+                                      <div key={review.id} className="border-b border-gray-50 dark:border-gray-700 last:border-0 pb-6 last:pb-0">
+                                          <div className="flex justify-between items-center mb-2">
+                                              <span className="font-bold text-gray-900 dark:text-white text-sm">
+                                                  {review.user.nickname || review.user.email.split('@')[0]}
+                                              </span>
+                                              <div className="flex items-center gap-3">
+                                              <div className="flex text-yellow-400 scale-90 origin-right">
+                                                  {[...Array(5)].map((_, i) => (
+                                                      <Star key={i} size={14} fill={i < review.rating ? "currentColor" : "none"} className={i >= review.rating ? "text-gray-200 dark:text-gray-600" : ""} />
+                                                  ))}
+                                              </div>
+                                              {isAdmin && (
+                                                  <button 
+                                                      onClick={() => handleDeleteComment(review.id)}
+                                                      className="text-gray-300 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 p-1 transition-colors"
+                                                  >
+                                                      <Trash2 size={14} />
+                                                  </button>
+                                              )}
+                                          </div>
+                                          </div>
+                                          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 whitespace-pre-wrap leading-relaxed">
+                                              {review.content}
+                                          </p>
+                                          <div className="text-xs text-gray-400 dark:text-gray-500 mt-2 font-medium">
+                                              {new Date(review.createdAt).toLocaleDateString()}
                                           </div>
                                       </div>
-                                      <p className="text-xs text-gray-500 line-clamp-2">
-                                          非常棒的体验！位置很好找，工作人员也很热情。强烈推荐给大家！
-                                      </p>
-                                  </div>
-                              ))}
+                                  ))
+                              )}
                           </div>
                       </div>
                   </div>
@@ -216,7 +338,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
           </div>
 
           {/* Fixed Bottom Buttons */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex gap-3 z-30 pb-8">
+          <div className="absolute bottom-0 left-0 right-0 p-5 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-30 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300">
               <button 
                 onClick={() => toggleFavorite({
                     id: poi.id,
@@ -226,14 +348,21 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                     location: poi.location,
                     imageUrl: `https://picsum.photos/seed/${poi.id || 'poi'}/300/200`
                 })}
-                className="flex flex-col items-center justify-center w-16 gap-1 text-gray-500 active:scale-95 transition-transform"
+                className="flex flex-col items-center justify-center w-16 gap-1 active:scale-95 transition-transform"
               >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isFav ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-500'}`}>
-                    <Heart size={20} fill={isFav ? "currentColor" : "none"} />
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-sm border border-gray-100 dark:border-gray-700 ${isFav ? 'bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 border-red-100 dark:border-red-900/30' : 'bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500'}`}>
+                    <Heart size={24} fill={isFav ? "currentColor" : "none"} />
                   </div>
-                  <span className={`text-xs ${isFav ? 'text-red-500' : ''}`}>{isFav ? '已收藏' : '收藏'}</span>
               </button>
-              <button className="flex-1 bg-blue-600 text-white rounded-full font-bold text-lg shadow-lg shadow-blue-200 active:scale-95 transition-transform flex items-center justify-center gap-2">
+              <button 
+                onClick={() => {
+                    if (poi.location) {
+                        const { lng, lat } = poi.location;
+                        window.open(`https://uri.amap.com/marker?position=${lng},${lat}&name=${encodeURIComponent(poi.name)}&coordinate=gaode&callnative=1`, '_blank');
+                    }
+                }}
+                className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg shadow-xl shadow-gray-200 dark:shadow-none active:scale-95 transition-transform flex items-center justify-center gap-3"
+              >
                   <Navigation size={20} fill="currentColor" />
                   <span>导航前往</span>
               </button>

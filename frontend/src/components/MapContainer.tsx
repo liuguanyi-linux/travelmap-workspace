@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import AMapLoader from '@amap/amap-jsapi-loader';
 import { Utensils, Hotel, Mountain, ShoppingBag, MapPin } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 import { Banknote } from 'lucide-react';
 
@@ -19,6 +21,8 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
   const aMapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const rootsRef = useRef<any[]>([]);
+  const { language } = useLanguage();
+  const { theme } = useTheme();
 
   const getMarkerConfig = (type: string = '') => {
     const t = type.toLowerCase();
@@ -43,7 +47,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       return { icon: ShoppingBag, color: '#EF4444', shape: 'rounded-lg', isDiamond: false };
     }
     // Default
-    return { icon: MapPin, color: '#0f172a', shape: 'rounded-full', borderColor: '#06b6d4', isDiamond: false };
+    return { icon: MapPin, color: theme === 'dark' ? '#1e293b' : '#0f172a', shape: 'rounded-full', borderColor: '#06b6d4', isDiamond: false };
   };
 
   // Init Map
@@ -77,6 +81,8 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
           viewMode: "3D",
           zoom: 13,
           center: [116.397428, 39.90923],
+          lang: language === 'zh-CN' ? 'zh_cn' : 'en',
+          mapStyle: theme === 'dark' ? 'amap://styles/dark' : 'amap://styles/normal',
         });
 
         // Add controls
@@ -97,7 +103,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         const handleZoomChange = () => {
           const zoom = map.getZoom();
           if (mapRef.current) {
-            if (zoom >= 15) {
+            if (zoom >= 14) { // Show labels sooner (level 14+)
               mapRef.current.classList.add('show-labels');
             } else {
               mapRef.current.classList.remove('show-labels');
@@ -105,6 +111,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
           }
         };
         map.on('zoomchange', handleZoomChange);
+        map.on('zoomend', handleZoomChange); // Also check on zoomend
         // Initial check
         handleZoomChange();
         
@@ -118,7 +125,14 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
     return () => {
       mapInstanceRef.current?.destroy();
     };
-  }, []);
+  }, [language]); // Removed theme from dependency to prevent re-init, handled in separate effect
+
+  // Update Map Style when theme changes
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+        mapInstanceRef.current.setMapStyle(theme === 'dark' ? 'amap://styles/dark' : 'amap://styles/normal');
+    }
+  }, [theme]);
 
   // Update Markers
   useEffect(() => {
@@ -148,7 +162,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       
       // State classes
       const stateClass = isSelected 
-        ? 'z-50 scale-125 animate-pulse-slow shadow-[0_0_20px_rgba(255,255,255,0.5)]' 
+        ? 'z-50 scale-125 animate-pulse-slow shadow-[0_0_20px_rgba(255,255,255,0.6)]' 
         : 'opacity-90 hover:opacity-100 hover:scale-110 hover:shadow-xl hover:z-40';
       
       markerContent.className = `${baseClass} ${stateClass}`;
@@ -169,13 +183,18 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       root.render(
         <IconComponent 
             size={config.size || 18} 
-            color={config.color === '#0f172a' ? '#22d3ee' : '#ffffff'} 
+            color={config.color === '#0f172a' || config.color === '#1e293b' ? '#22d3ee' : '#ffffff'} 
             strokeWidth={2.5} 
         />
       );
       rootsRef.current.push(root);
       
       markerContent.appendChild(iconContainer);
+
+      // Label styling based on theme
+      const labelStyle = theme === 'dark'
+        ? 'background-color: rgba(30, 41, 59, 0.95); color: #ffffff; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 16px rgba(0,0,0,0.4);'
+        : 'background-color: rgba(255, 255, 255, 0.95); color: #1e293b; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 4px 16px rgba(0,0,0,0.1);';
 
       const marker = new AMap.Marker({
         position: [poi.location.lng, poi.location.lat],
@@ -188,19 +207,18 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
               display: flex; 
               align-items: center; 
               justify-content: center;
-              background-color: rgba(255, 255, 255, 0.95); 
-              padding: 4px 10px; 
-              border-radius: 12px; 
-              font-size: 11px; 
+              padding: 6px 14px; 
+              border-radius: 20px; 
+              font-size: 13px; 
               font-weight: 700; 
-              color: #334155; 
-              box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-              backdrop-filter: blur(4px); 
-              border: 1px solid rgba(255,255,255,0.5); 
+              backdrop-filter: blur(8px); 
               white-space: nowrap; 
-              margin-top: 6px;
+              margin-bottom: 14px;
+              letter-spacing: 0.01em;
+              transition: all 0.3s ease;
+              ${labelStyle}
             ">${poi.name}</div>`,
-            direction: 'bottom',
+            direction: 'top',
             offset: new AMap.Pixel(0, 0),
         }
       });
@@ -218,19 +236,38 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       map.setFitView(markersRef.current);
     }
 
-  }, [markers, selectedPoi]);
+  }, [markers, selectedPoi, theme]); // Added theme dependency
 
   // Handle Selection Focus
-  useEffect(() => {
+    useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !selectedPoi || !selectedPoi.location) return;
 
     map.setZoomAndCenter(16, [selectedPoi.location.lng, selectedPoi.location.lat]);
-  }, [selectedPoi]);
+    }, [selectedPoi]);
 
-  return (
-    <div className="w-full h-full relative bg-white">
-      <div ref={mapRef} className="w-full h-full" />
-    </div>
-  );
+    return (
+        <div className="w-full h-full relative bg-white dark:bg-gray-900 transition-colors duration-300">
+            <style>{`
+                .amap-marker-label {
+                    border: none !important;
+                    background-color: transparent !important;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                }
+                .show-labels .amap-marker-label {
+                    opacity: 1;
+                }
+                
+                /* Dark Mode Map Controls Override */
+                html.dark .amap-ctrl-bar,
+                html.dark .amap-toolbar-vector,
+                html.dark .amap-scale-line,
+                html.dark .amap-geolocation-con {
+                    filter: invert(0.9) hue-rotate(180deg) !important;
+                }
+            `}</style>
+            <div ref={mapRef} className="w-full h-full" />
+        </div>
+    );
 }

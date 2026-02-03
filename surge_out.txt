@@ -1,0 +1,8 @@
+
+   [90mRunning as [4m1012494013@qq.com[24m[39m[90m (Student)[39m
+
+[90m        project:[39m dist
+[90m         domain:[39m travelmap-final-fix-10124.surge.sh
+[90m           size:[39m 6 files, 370.9 KB
+
+

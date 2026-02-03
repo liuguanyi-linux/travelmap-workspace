@@ -18,8 +18,8 @@ export default function BottomTabBar({ activeTab, onTabChange }: BottomTabBarPro
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-6 pt-2 px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 rounded-t-3xl">
-      <div className="flex justify-between items-end h-16 pb-4">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md pb-6 pt-2 px-6 shadow-[0_-10px_40px_rgba(0,0,0,0.04)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] z-50 rounded-t-[2.5rem] transition-colors duration-300">
+      <div className="flex justify-between items-end h-16 pb-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -27,21 +27,23 @@ export default function BottomTabBar({ activeTab, onTabChange }: BottomTabBarPro
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className="flex flex-col items-center justify-center w-16 relative"
+              className="flex flex-col items-center justify-center w-16 relative group"
             >
               <div 
                 className={`transition-all duration-300 ${
-                  isActive ? '-translate-y-2' : ''
+                  isActive ? '-translate-y-1' : ''
                 }`}
               >
-                <div className={`p-2 rounded-2xl transition-all duration-300 ${
-                  isActive ? 'bg-black text-white shadow-lg shadow-gray-200' : 'text-gray-400 bg-transparent'
+                <div className={`p-3 rounded-[1.2rem] transition-all duration-300 ${
+                  isActive 
+                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-[0_8px_20px_rgba(0,0,0,0.15)] scale-110' 
+                    : 'text-gray-400 dark:text-gray-500 bg-transparent group-hover:bg-gray-50 dark:group-hover:bg-gray-800'
                 }`}>
-                  <Icon size={24} strokeWidth={isActive ? 2 : 1.5} />
+                  <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
                 </div>
               </div>
-              <span className={`text-xs font-medium mt-1 transition-all duration-300 absolute -bottom-1 ${
-                isActive ? 'opacity-100 text-black translate-y-0' : 'opacity-0 text-gray-400 translate-y-2'
+              <span className={`text-[10px] font-bold mt-1 transition-all duration-300 absolute -bottom-2 ${
+                isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
               }`}>
                 {tab.label}
               </span>
