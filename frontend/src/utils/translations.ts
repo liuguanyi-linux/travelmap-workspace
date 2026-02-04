@@ -102,6 +102,15 @@ export const TRANSLATIONS: any = {
       moreCategories: '更多分类', demo: '功能演示',
       demoText: '此功能正在开发中，敬请期待！'
     },
+    cityDrawer: {
+      selectCity: '选择城市',
+      shoppingDeals: '购物优惠',
+      dutyFree: '免税店限定特价',
+      discount: '海外大牌低至3折',
+      ad: '广告',
+      viewNow: '立即查看',
+      noPlaces: '暂无相关地点'
+    },
     booking: {
       title: '预订酒店', checkIn: '入住日期', guests: '入住人数',
       confirm: '确认预订', submitting: '正在提交...',
@@ -229,6 +238,15 @@ export const TRANSLATIONS: any = {
       yourContributions: 'Your Contributions', noContributions: 'You haven\'t posted any reviews yet',
       moreCategories: 'More Categories', demo: 'Feature Demo',
       demoText: 'This feature is under development. Stay tuned!'
+    },
+    cityDrawer: {
+      selectCity: 'Select City',
+      shoppingDeals: 'Shopping Deals',
+      dutyFree: 'Duty Free Specials',
+      discount: 'Up to 70% Off Luxury Brands',
+      ad: 'Ad',
+      viewNow: 'View Now',
+      noPlaces: 'No places found'
     },
     booking: {
       title: 'Book Hotel', checkIn: 'Check-in Date', guests: 'Guests',

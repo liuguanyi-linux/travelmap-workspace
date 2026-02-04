@@ -109,16 +109,23 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
         dragConstraints={{ top: 0 }}
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
-        style={{ zIndex: 9999 }}
-        className="fixed bottom-0 left-0 right-0 h-[85vh] bg-white dark:bg-gray-900 rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300"
+        className="fixed bottom-0 left-0 right-0 z-40 h-[85vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden"
     >
       {/* Handle */}
       <div 
-        className="w-full flex justify-center pt-5 pb-3 cursor-grab active:cursor-grabbing shrink-0"
+        className="w-full flex justify-center pt-3 pb-3 cursor-grab active:cursor-grabbing shrink-0 z-10"
         onPointerDown={(e) => dragControls.start(e)}
       >
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full" />
+        <div className="w-12 h-1.5 bg-gray-200/80 dark:bg-gray-700/80 rounded-full" />
       </div>
+
+      {/* Close Button */}
+      <button 
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 bg-black/5 dark:bg-white/10 rounded-full text-gray-500 dark:text-gray-400 z-50 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+      >
+        <X size={20} />
+      </button>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 pb-40">

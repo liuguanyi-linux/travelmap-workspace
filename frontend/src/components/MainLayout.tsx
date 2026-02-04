@@ -9,6 +9,8 @@ import UserDrawer from './mobile/UserDrawer';
 import StrategyView from './mobile/StrategyView';
 import GuideView from './mobile/GuideView';
 import FloatingSearchBar from './mobile/FloatingSearchBar';
+import ExchangeRateWidget from './mobile/ExchangeRateWidget';
+import AtmWidget from './mobile/AtmWidget';
 import PoiDetailBottomSheet from './mobile/PoiDetailBottomSheet';
 
 export default function MainLayout() {
@@ -19,7 +21,7 @@ export default function MainLayout() {
   const [selectedPoi, setSelectedPoi] = useState<any>(null);
   
   // UI State
-  const [activeTab, setActiveTab] = useState('city');
+  const [activeTab, setActiveTab] = useState(''); // Default to empty (closed)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [activeCity, setActiveCity] = useState('上海'); // Default active city for custom POIs
   
@@ -194,6 +196,18 @@ export default function MainLayout() {
         onSearch={(keyword) => handleSearch(keyword)}
         onCategorySelect={handleCategorySelect}
       />
+
+      {/* Right Side Widgets */}
+      {activeTab === '' && (
+        <div className="fixed top-28 right-4 z-50 flex flex-col gap-3 pointer-events-none">
+          <div className="pointer-events-auto">
+            <ExchangeRateWidget />
+          </div>
+          <div className="pointer-events-auto">
+            <AtmWidget onSelect={() => handleCategorySelect('ATM')} />
+          </div>
+        </div>
+      )}
 
       {/* City Drawer (Replaces CityCategoryPanel) */}
       <CityDrawer 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Hotel, Utensils, ChevronLeft, Building2, ShoppingBag } from 'lucide-react';
+import { MapPin, Hotel, Utensils, ChevronLeft, Building2, ShoppingBag, X } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -18,8 +18,8 @@ interface CityDrawerProps {
 type ViewLevel = 'cities' | 'categories' | 'list';
 
 const CITIES = [
-  { name: '上海', center: [121.473701, 31.230416] as [number, number], zoom: 12 },
-  { name: '青岛', center: [120.38264, 36.067442] as [number, number], zoom: 13 },
+  { name: '上海', center: [121.473701, 31.230416] as [number, number], zoom: 10 },
+  { name: '青岛', center: [120.38264, 36.067442] as [number, number], zoom: 11 },
 ];
 
 export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, searchResults, onPoiClick, onClose }: CityDrawerProps) {
@@ -162,6 +162,14 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
           >
             <div className="w-12 h-1.5 bg-gray-200/80 dark:bg-gray-700/80 rounded-full" />
           </div>
+
+          {/* Close Button */}
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 bg-black/5 dark:bg-white/10 rounded-full text-gray-500 dark:text-gray-400 z-50 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+          >
+            <X size={20} />
+          </button>
 
           {/* Header with Back Button */}
           {level !== 'cities' && (
