@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, PanInfo, useAnimation, useDragControls } from 'framer-motion';
-import { X, Navigation, Star, Share2, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2 } from 'lucide-react';
+import { X, Navigation, Star, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2 } from 'lucide-react';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -103,9 +103,8 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
     full: { y: '0%' }   // Full screen
   };
 
-  const handleDragEnd = (event: any, info: PanInfo) => {
+  const handleDragEnd = (_: any, info: PanInfo) => {
     const { offset, velocity } = info;
-    const isFast = Math.abs(velocity.y) > 500;
     
     // Current visual position (roughly) can be inferred from state + offset
     // But easier to just use logic based on direction and distance
@@ -256,7 +255,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                       <div className="bg-white p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
                           <h3 className="font-bold text-gray-900 mb-4 text-xl">{t('detail.intro')}</h3>
                           <p className="text-gray-600 leading-relaxed text-justify">
-                              {t('detail.introDesc', { name: poi.name }).replace('{name}', poi.name)}
+                              {t('detail.introDesc').replace('{name}', poi.name)}
                               <br/><br/>
                           </p>
                       </div>

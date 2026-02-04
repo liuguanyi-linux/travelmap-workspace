@@ -26,11 +26,12 @@ export default function ExchangeRateWidget() {
       }
 
       // 2. Fetch fresh data
-      const response = await fetch(`https://open.er-api.com/v6/latest/CNY?t=${Date.now()}`);
+      // Use a more up-to-date API (currency-api)
+      const response = await fetch(`https://latest.currency-api.pages.dev/v1/currencies/cny.json?t=${Date.now()}`);
       const data = await response.json();
       
-      if (data && data.rates && data.rates.KRW) {
-        const newRate = data.rates.KRW;
+      if (data && data.cny && data.cny.krw) {
+        const newRate = data.cny.krw;
         setRate(newRate);
         const now = Date.now();
         setLastUpdated(new Date(now).toLocaleTimeString());

@@ -4,7 +4,7 @@ import { useFavorites } from '../../hooks/useFavorites';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Heart, MapPin, X, ChevronRight, User, Settings, CreditCard, Bell, Globe, Check, Phone, LogOut, Mail, Loader2, Moon, Sun } from 'lucide-react';
+import { Heart, MapPin, X, ChevronRight, User, Settings, Bell, Globe, Check, Phone, LogOut, Mail, Loader2, Moon, Sun } from 'lucide-react';
 
 interface UserDrawerProps {
   isVisible: boolean;
@@ -35,7 +35,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
     }
   }, [isVisible, controls]);
 
-  const handleDragEnd = (event: any, info: PanInfo) => {
+  const handleDragEnd = (_: any, info: PanInfo) => {
     const { offset, velocity } = info;
     if (offset.y > 100 || (velocity.y > 500 && offset.y > 0)) {
        onClose();
