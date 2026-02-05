@@ -80,7 +80,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         const map = new AMap.Map(mapRef.current, {
           viewMode: "3D",
           zoom: 13,
-          center: [116.397428, 39.90923],
+          center: [120.38264, 36.067442], // Qingdao
           lang: language === 'zh-CN' ? 'zh_cn' : 'en',
           mapStyle: theme === 'dark' ? 'amap://styles/dark' : 'amap://styles/normal',
         });

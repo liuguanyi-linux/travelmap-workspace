@@ -5,9 +5,10 @@ import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 
 interface GuideViewProps {
   isVisible: boolean;
   onClose: () => void;
+  activeCity?: string;
 }
 
-export default function GuideView({ isVisible, onClose }: GuideViewProps) {
+export default function GuideView({ isVisible, onClose, activeCity }: GuideViewProps) {
   const controls = useAnimation();
   const dragControls = useDragControls();
 
@@ -39,7 +40,9 @@ export default function GuideView({ isVisible, onClose }: GuideViewProps) {
       hasCar: true,
       title: '导游',
       avatar: 'https://picsum.photos/seed/guide1/200/200',
-      intro: '从业8年，专注于青岛历史文化讲解，为您提供最深度的旅行体验。'
+      intro: '从业8年，专注于青岛历史文化讲解，为您提供最深度的旅行体验。',
+      cities: ['青岛'],
+      rank: 1
     },
     {
       id: 2,
@@ -48,9 +51,34 @@ export default function GuideView({ isVisible, onClose }: GuideViewProps) {
       hasCar: false,
       title: '导游',
       avatar: 'https://picsum.photos/seed/guide2/200/200',
-      intro: '熟悉各大网红打卡点和地道美食，带你吃喝玩乐不踩雷！'
+      intro: '熟悉各大网红打卡点和地道美食，带你吃喝玩乐不踩雷！',
+      cities: ['青岛', '上海'],
+      rank: 2
+    },
+    {
+      id: 3,
+      name: '张老三',
+      gender: 'male',
+      hasCar: true,
+      title: '金牌司机',
+      avatar: 'https://picsum.photos/seed/guide3/200/200',
+      intro: '北京胡同串子，带你领略最地道的京味儿文化。',
+      cities: ['北京'],
+      rank: 3
     }
   ];
+
+  const filteredGuides = guides
+    .filter(g => {
+        // City Filter (if activeCity is provided)
+        if (activeCity && g.cities && !g.cities.includes(activeCity)) {
+            return false;
+        }
+        if (selectedGender && g.gender !== selectedGender) return false;
+        if (hasCar !== null && g.hasCar !== hasCar) return false;
+        return true;
+    })
+    .sort((a, b) => (a.rank || 99) - (b.rank || 99));
 
   return (
     <AnimatePresence>
@@ -136,11 +164,13 @@ export default function GuideView({ isVisible, onClose }: GuideViewProps) {
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-6 pb-24 space-y-4">
             
-            {/* Guide List - Filtered if needed, or just static placeholders for now */}
-            {guides.filter(g => 
-                (selectedGender ? g.gender === selectedGender : true) && 
-                (hasCar !== null ? g.hasCar === hasCar : true)
-            ).map(guide => (
+            {/* Guide List */}
+            {filteredGuides.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                    <div className="mb-2">暂无符合条件的导游</div>
+                    <div className="text-xs">请尝试调整筛选条件</div>
+                </div>
+            ) : filteredGuides.map(guide => (
                 <div key={guide.id} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-[1.8rem] p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
                     <div className="flex gap-5">
                         <div className="w-18 h-18 rounded-[1.2rem] overflow-hidden shrink-0 shadow-md">

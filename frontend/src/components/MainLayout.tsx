@@ -12,6 +12,7 @@ import FloatingSearchBar from './mobile/FloatingSearchBar';
 import AdsWidget from './mobile/AdsWidget';
 import AtmWidget from './mobile/AtmWidget';
 import PoiDetailBottomSheet from './mobile/PoiDetailBottomSheet';
+import SearchResultsDrawer from './mobile/SearchResultsDrawer';
 
 export default function MainLayout() {
   // Map State
@@ -23,7 +24,8 @@ export default function MainLayout() {
   // UI State
   const [activeTab, setActiveTab] = useState(''); // Default to empty (closed)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
-  const [activeCity, setActiveCity] = useState('上海'); // Default active city for custom POIs
+  const [isSearchListOpen, setIsSearchListOpen] = useState(false);
+  const [activeCity, setActiveCity] = useState('青岛'); // Default active city for custom POIs
   
   // Close bottom sheet when tab changes to avoid conflicts
   useEffect(() => {
@@ -136,12 +138,18 @@ export default function MainLayout() {
       placeSearch.searchNearBy(keyword, center, 5000, (status: string, result: any) => {
         if (status === 'complete' && result.info === 'OK') {
           setSearchResults(result.poiList.pois);
+          if (result.poiList.pois.length > 1) {
+            setIsSearchListOpen(true);
+          }
         }
       });
     } else {
       placeSearch.search(keyword, (status: string, result: any) => {
         if (status === 'complete' && result.info === 'OK') {
           setSearchResults(result.poiList.pois);
+          if (result.poiList.pois.length > 1) {
+             setIsSearchListOpen(true);
+          }
         }
       });
     }
@@ -233,6 +241,7 @@ export default function MainLayout() {
       <GuideView 
         isVisible={activeTab === 'guide' && !isBottomSheetOpen}
         onClose={() => setActiveTab('')}
+        activeCity={activeCity}
       />
 
       {/* User Drawer */}
@@ -256,6 +265,17 @@ export default function MainLayout() {
           setIsBottomSheetOpen(false);
           setSelectedPoi(null);
         }}
+      />
+      
+      {/* Search Results Drawer */}
+      <SearchResultsDrawer
+        isVisible={isSearchListOpen && !isBottomSheetOpen}
+        results={searchResults}
+        onPoiClick={(poi) => {
+            handleMarkerClick(poi);
+            setIsSearchListOpen(false);
+        }}
+        onClose={() => setIsSearchListOpen(false)}
       />
 
       {/* Modals */}
