@@ -47,6 +47,7 @@ export default function MainLayout() {
 
   // Refs
   const routePluginRef = useRef<any>(null);
+  const searchRequestId = useRef(0);
 
   const handleMapReady = (map: any, AMap: any) => {
     setMapInstance(map);
@@ -131,16 +132,19 @@ export default function MainLayout() {
       routePluginRef.current = null;
     }
 
+    const currentRequestId = ++searchRequestId.current;
+
     const placeSearch = new aMap.PlaceSearch({
       pageSize: 20,
       pageIndex: 1,
-      map: mapInstance,
-      autoFitView: true,
+      // map: mapInstance, // Removed to prevent double rendering and accumulation
+      // autoFitView: true, // Handled by MapContainer
     });
 
     if (isNearby) {
       const center = mapInstance.getCenter();
       placeSearch.searchNearBy(keyword, center, 5000, (status: string, result: any) => {
+        if (currentRequestId !== searchRequestId.current) return;
         if (status === 'complete' && result.info === 'OK') {
           setSearchResults(result.poiList.pois);
           if (result.poiList.pois.length > 1 && shouldOpenDrawer) {
@@ -150,6 +154,7 @@ export default function MainLayout() {
       });
     } else {
       placeSearch.search(keyword, (status: string, result: any) => {
+        if (currentRequestId !== searchRequestId.current) return;
         if (status === 'complete' && result.info === 'OK') {
           setSearchResults(result.poiList.pois);
           if (result.poiList.pois.length > 1 && shouldOpenDrawer) {
@@ -187,16 +192,19 @@ export default function MainLayout() {
     // Reset ATM active state
     setIsAtmActive(false);
 
+    const currentRequestId = ++searchRequestId.current;
+
     const placeSearch = new aMap.PlaceSearch({
       pageSize: 20,
       pageIndex: 1,
-      map: mapInstance,
+      // map: mapInstance,
       city: activeCity,
       citylimit: true,
-      autoFitView: true,
+      // autoFitView: true,
     });
 
     placeSearch.search(keyword, (status: string, result: any) => {
+      if (currentRequestId !== searchRequestId.current) return;
       if (status === 'complete' && result.info === 'OK') {
         setSearchResults(result.poiList.pois);
       } else {
@@ -208,6 +216,7 @@ export default function MainLayout() {
   const handleAtmToggle = () => {
     if (isAtmActive) {
         setIsAtmActive(false);
+        searchRequestId.current++; // Invalidate pending searches
         setSearchResults([]);
     } else {
         setIsAtmActive(true);
@@ -215,15 +224,19 @@ export default function MainLayout() {
         setActiveTab(''); // Close drawers
         
         if (!aMap) return;
+
+        const currentRequestId = ++searchRequestId.current;
+
         const placeSearch = new aMap.PlaceSearch({
             pageSize: 20,
             pageIndex: 1,
-            map: mapInstance,
+            // map: mapInstance,
             city: activeCity,
             citylimit: true,
-            autoFitView: true,
+            // autoFitView: true,
         });
         placeSearch.search('ATM', (status: string, result: any) => {
+             if (currentRequestId !== searchRequestId.current) return;
              if (status === 'complete' && result.info === 'OK') {
                setSearchResults(result.poiList.pois);
              } else {
