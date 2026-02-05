@@ -149,7 +149,10 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
     rootsRef.current = [];
 
     // Add new markers
-    markers.forEach((poi) => {
+    // If a POI is selected, only show that specific marker (User Request: hide others)
+    const displayMarkers = selectedPoi ? [selectedPoi] : markers;
+    
+    displayMarkers.forEach((poi) => {
       if (!poi.location) return;
       
       const isSelected = selectedPoi && selectedPoi.id === poi.id;
