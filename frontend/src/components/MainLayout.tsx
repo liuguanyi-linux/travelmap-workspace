@@ -26,6 +26,7 @@ export default function MainLayout() {
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [isSearchListOpen, setIsSearchListOpen] = useState(false);
   const [activeCity, setActiveCity] = useState('青岛'); // Default active city for custom POIs
+  const [isAtmActive, setIsAtmActive] = useState(false);
   
   // Close bottom sheet when tab changes to avoid conflicts
   useEffect(() => {
@@ -116,6 +117,9 @@ export default function MainLayout() {
   const handleSearch = (keyword: string, isNearby: boolean = false, shouldOpenDrawer: boolean = true) => {
     if (!aMap || !keyword) return;
 
+    // Reset ATM active state
+    setIsAtmActive(false);
+
     // Reset selection when searching
     setSelectedPoi(null);
     setIsBottomSheetOpen(false);
@@ -179,6 +183,9 @@ export default function MainLayout() {
   const handleCityScopedSearch = (keyword: string) => {
     if (!aMap || !keyword) return;
 
+    // Reset ATM active state
+    setIsAtmActive(false);
+
     const placeSearch = new aMap.PlaceSearch({
       pageSize: 20,
       pageIndex: 1,
@@ -195,6 +202,34 @@ export default function MainLayout() {
         setSearchResults([]);
       }
     });
+  };
+
+  const handleAtmToggle = () => {
+    if (isAtmActive) {
+        setIsAtmActive(false);
+        setSearchResults([]);
+    } else {
+        setIsAtmActive(true);
+        setIsBottomSheetOpen(false);
+        setActiveTab(''); // Close drawers
+        
+        if (!aMap) return;
+        const placeSearch = new aMap.PlaceSearch({
+            pageSize: 20,
+            pageIndex: 1,
+            map: mapInstance,
+            city: activeCity,
+            citylimit: true,
+            autoFitView: true,
+        });
+        placeSearch.search('ATM', (status: string, result: any) => {
+             if (status === 'complete' && result.info === 'OK') {
+               setSearchResults(result.poiList.pois);
+             } else {
+               setSearchResults([]);
+             }
+        });
+    }
   };
 
   const handleCitySelect = (city: { name: string, center: [number, number], zoom: number }) => {
@@ -237,7 +272,7 @@ export default function MainLayout() {
             <AdsWidget />
           </div>
           <div className="pointer-events-auto">
-            <AtmWidget onSelect={() => handleCategorySelect('ATM')} />
+            <AtmWidget onSelect={handleAtmToggle} isActive={isAtmActive} />
           </div>
         </div>
       )}
