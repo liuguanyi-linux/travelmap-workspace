@@ -218,6 +218,8 @@ export default function MainLayout() {
         setIsAtmActive(false);
         searchRequestId.current++; // Invalidate pending searches
         setSearchResults([]);
+        setSelectedPoi(null); // Clear selection
+        setIsBottomSheetOpen(false); // Close detail view
     } else {
         setIsAtmActive(true);
         setIsBottomSheetOpen(false);
