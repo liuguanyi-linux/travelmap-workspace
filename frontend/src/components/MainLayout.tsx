@@ -125,6 +125,7 @@ export default function MainLayout() {
     // Reset selection when searching
     setSelectedPoi(null);
     setIsBottomSheetOpen(false);
+    setSearchResults([]); // Clear previous results immediately
 
     // Clear existing routes
     if (routePluginRef.current) {
@@ -191,6 +192,7 @@ export default function MainLayout() {
 
     // Reset ATM active state
     setIsAtmActive(false);
+    setSearchResults([]); // Clear previous results immediately
 
     const currentRequestId = ++searchRequestId.current;
 
@@ -255,6 +257,19 @@ export default function MainLayout() {
     }
   };
 
+  const handleMapClick = () => {
+    // User Request: "当我退出或点击别任意地点后都应该清空只显示我目前所点击的"
+    // Interpretation: Clicking empty space clears selection and search results to clean up the map
+    setSelectedPoi(null);
+    setIsBottomSheetOpen(false);
+    
+    // Also clear search results to avoid "messy map"
+    // Exception: If we are in a specific mode that expects persistence, maybe keep it?
+    // But user explicitly complained about "messy map" and "residual dots".
+    setSearchResults([]);
+    setIsAtmActive(false); // Also exit ATM mode if active
+  };
+
   const handleTabChange = (tabId: string) => {
     if (activeTab === tabId) {
         setActiveTab('');
@@ -272,6 +287,7 @@ export default function MainLayout() {
           markers={searchResults}
           selectedPoi={selectedPoi}
           onMarkerClick={handleMarkerClick}
+          onMapClick={handleMapClick}
         />
       </div>
 

@@ -15,9 +15,10 @@ interface MapContainerProps {
   markers: any[];
   selectedPoi: any;
   onMarkerClick: (poi: any) => void;
+  onMapClick?: () => void;
 }
 
-export default function MapContainer({ onMapReady, markers, selectedPoi, onMarkerClick, disableFitView }: MapContainerProps) {
+export default function MapContainer({ onMapReady, markers, selectedPoi, onMarkerClick, onMapClick, disableFitView }: MapContainerProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const aMapRef = useRef<any>(null);
@@ -117,6 +118,15 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         // Initial check
         handleZoomChange();
         
+        // Map Click Handler
+        map.on('click', (e: any) => {
+            // Only trigger if clicking on map background (not markers)
+            // AMap event propagation usually handles this, but we can verify target if needed
+            if (onMapClick) {
+                onMapClick();
+            }
+        });
+
         mapInstanceRef.current = map;
         onMapReady(map, AMap);
       })
