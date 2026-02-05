@@ -98,13 +98,13 @@ export default function GuideView({ isVisible, onClose }: GuideViewProps) {
                     <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">选择性别</h3>
                     <div className="flex gap-3">
                         <button 
-                            onClick={() => setSelectedGender('male')}
+                            onClick={() => setSelectedGender(prev => prev === 'male' ? null : 'male')}
                             className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${selectedGender === 'male' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
                         >
                             男导游
                         </button>
                         <button 
-                            onClick={() => setSelectedGender('female')}
+                            onClick={() => setSelectedGender(prev => prev === 'female' ? null : 'female')}
                             className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${selectedGender === 'female' ? 'bg-pink-500 text-white shadow-lg shadow-pink-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
                         >
                             女导游
@@ -117,13 +117,13 @@ export default function GuideView({ isVisible, onClose }: GuideViewProps) {
                     <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">是否有车</h3>
                     <div className="flex gap-3">
                         <button 
-                            onClick={() => setHasCar(true)}
+                            onClick={() => setHasCar(prev => prev === true ? null : true)}
                             className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${hasCar === true ? 'bg-green-600 text-white shadow-lg shadow-green-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
                         >
                             有车
                         </button>
                         <button 
-                            onClick={() => setHasCar(false)}
+                            onClick={() => setHasCar(prev => prev === false ? null : false)}
                             className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${hasCar === false ? 'bg-gray-600 text-white shadow-lg shadow-gray-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
                         >
                             无车
