@@ -236,7 +236,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
             {/* Level 3: List */}
             {level === 'list' && (
                 <div className="space-y-4 pt-2">
-                    {selectedCategory === 'attraction' && (
+                    {['attraction', 'hotel', 'food'].includes(selectedCategory) && (
                         <div className="relative mb-2">
                             <input
                                 type="text"
@@ -248,10 +248,14 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                         onSearch(val);
                                     } else if (onSearch && val === '') {
                                         // If empty, maybe reset to category search?
-                                        onSelectCategory('attraction');
+                                        onSelectCategory(selectedCategory);
                                     }
                                 }}
-                                placeholder="搜索当前城市的景点..."
+                                placeholder={
+                                    selectedCategory === 'attraction' ? "搜索当前城市的景点..." :
+                                    selectedCategory === 'hotel' ? "搜索当前城市的酒店..." :
+                                    "搜索当前城市的美食..."
+                                }
                                 className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                             />
                             <Search className="absolute left-3 top-3.5 text-gray-400" size={18} />
