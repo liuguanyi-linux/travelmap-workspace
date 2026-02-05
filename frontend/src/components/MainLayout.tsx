@@ -13,6 +13,7 @@ import AdsWidget from './mobile/AdsWidget';
 import AtmWidget from './mobile/AtmWidget';
 import PoiDetailBottomSheet from './mobile/PoiDetailBottomSheet';
 import SearchResultsDrawer from './mobile/SearchResultsDrawer';
+import { DEFAULT_CITY } from '../config/cityConfig';
 
 export default function MainLayout() {
   // Map State
@@ -25,7 +26,7 @@ export default function MainLayout() {
   const [activeTab, setActiveTab] = useState(''); // Default to empty (closed)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [isSearchListOpen, setIsSearchListOpen] = useState(false);
-  const [activeCity, setActiveCity] = useState('青岛'); // Default active city for custom POIs
+  const [activeCity, setActiveCity] = useState(DEFAULT_CITY.name); // Default active city for custom POIs
   const [isAtmActive, setIsAtmActive] = useState(false);
   
   // Close bottom sheet when tab changes to avoid conflicts

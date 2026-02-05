@@ -18,12 +18,7 @@ interface CityDrawerProps {
 // Level 3: POI List for selected category
 type ViewLevel = 'cities' | 'categories' | 'list';
 
-const CITIES = [
-  { name: '上海', center: [121.473701, 31.230416] as [number, number], zoom: 9 },
-  { name: '青岛', center: [120.38264, 36.067442] as [number, number], zoom: 10 },
-  { name: '北京', center: [116.397428, 39.90923] as [number, number], zoom: 10 },
-  { name: '广州', center: [113.264434, 23.129162] as [number, number], zoom: 10 },
-];
+import { CITIES } from '../../config/cityConfig';
 
 export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, searchResults, onPoiClick, onClose, onSearch }: CityDrawerProps) {
   const [level, setLevel] = useState<ViewLevel>('cities');
