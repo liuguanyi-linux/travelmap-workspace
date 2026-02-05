@@ -4,7 +4,7 @@ import { useFavorites } from '../../hooks/useFavorites';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Heart, MapPin, X, ChevronRight, User, Settings, Bell, Globe, Check, Phone, LogOut, Mail, Loader2, Moon, Sun } from 'lucide-react';
+import { Heart, MapPin, X, ChevronRight, User, Settings, Bell, Globe, Check, Phone, LogOut, Mail, Loader2, Moon, Sun, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface UserDrawerProps {
   isVisible: boolean;
@@ -193,38 +193,45 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
                  ) : (
                     <div className="space-y-4">
                         {favorites.map((fav, index) => (
-                            <div key={fav.id} className="flex gap-3 bg-white border border-gray-100 p-3 rounded-xl shadow-sm active:scale-[0.98] transition-transform" onClick={() => onPoiClick && onPoiClick(fav)}>
-                                <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden shrink-0">
-                                    {fav.imageUrl && <img src={fav.imageUrl} className="w-full h-full object-cover" />}
-                                </div>
-                                <div className="flex-1 flex flex-col justify-between py-1">
-                                    <div>
-                                        <div className="flex justify-between items-start">
-                                            <h4 className="font-bold text-gray-900 line-clamp-1 mr-2">{fav.name}</h4>
-                                            <button 
-                                                onClick={(e) => { 
-                                                    e.stopPropagation(); 
-                                                    e.preventDefault();
-                                                    removeFavorite(fav.id); 
-                                                }}
-                                                className="relative z-10 text-gray-400 hover:text-red-500 p-2 -mt-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors"
-                                            >
-                                                <X size={18} />
-                                            </button>
+                            <div key={fav.id} className="flex bg-white border border-gray-100 rounded-xl shadow-sm active:scale-[0.98] transition-transform overflow-hidden" onClick={() => onPoiClick && onPoiClick(fav)}>
+                                {/* Content Area - with padding */}
+                                <div className="flex-1 flex gap-3 p-3">
+                                    <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden shrink-0">
+                                        {fav.imageUrl && <img src={fav.imageUrl} className="w-full h-full object-cover" />}
+                                    </div>
+                                    <div className="flex-1 flex flex-col justify-between py-1">
+                                        <div>
+                                            <div className="flex justify-between items-start">
+                                                <h4 className="font-bold text-gray-900 line-clamp-1 mr-2">{fav.name}</h4>
+                                                <button 
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        e.preventDefault();
+                                                        removeFavorite(fav.id); 
+                                                    }}
+                                                    className="relative z-10 text-gray-400 hover:text-red-500 p-2 -mt-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors"
+                                                >
+                                                    <X size={18} />
+                                                </button>
+                                            </div>
+                                            <div className="text-xs text-gray-500 mt-1 px-2 py-0.5 bg-gray-100 inline-block rounded-md">
+                                                {fav.type?.split(';')[0]}
+                                            </div>
                                         </div>
-                                        <div className="text-xs text-gray-500 mt-1 px-2 py-0.5 bg-gray-100 inline-block rounded-md">
-                                            {fav.type?.split(';')[0]}
+                                        <div className="text-xs text-gray-400 flex items-center">
+                                            <MapPin size={12} className="mr-1 shrink-0"/>
+                                            <span className="truncate">{fav.address || t('common.unknownPlace')}</span>
                                         </div>
                                     </div>
-                                    <div className="text-xs text-gray-400 flex items-center">
-                                        <MapPin size={12} className="mr-1 shrink-0"/>
-                                        <span className="truncate">{fav.address || t('common.unknownPlace')}</span>
-                                    </div>
                                 </div>
-                                {/* Reorder Controls */}
+                                
+                                {/* Reorder Controls - Full Height Side Panel */}
                                 <div 
-                                    className="flex flex-col justify-center items-center gap-1 border-l border-gray-100 pl-2"
-                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-14 flex flex-col border-l border-gray-100 bg-gray-50/50"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                    }}
                                 >
                                     <button 
                                         onClick={(e) => {
@@ -233,12 +240,11 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
                                             moveFavorite(index, 'up');
                                         }}
                                         disabled={index === 0}
-                                        className={`p-1 rounded-full ${index === 0 ? 'text-gray-200' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
+                                        className={`flex-1 flex items-center justify-center active:bg-gray-200 transition-colors ${index === 0 ? 'text-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}
                                     >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M18 15l-6-6-6 6"/>
-                                        </svg>
+                                        <ChevronUp size={24} />
                                     </button>
+                                    <div className="h-[1px] bg-gray-200 w-full"></div>
                                     <button 
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -246,11 +252,9 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
                                             moveFavorite(index, 'down');
                                         }}
                                         disabled={index === favorites.length - 1}
-                                        className={`p-1 rounded-full ${index === favorites.length - 1 ? 'text-gray-200' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
+                                        className={`flex-1 flex items-center justify-center active:bg-gray-200 transition-colors ${index === favorites.length - 1 ? 'text-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}
                                     >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M6 9l6 6 6-6"/>
-                                        </svg>
+                                        <ChevronDown size={24} />
                                     </button>
                                 </div>
                             </div>
