@@ -114,6 +114,10 @@ export default function MainLayout() {
   const handleSearch = (keyword: string, isNearby: boolean = false) => {
     if (!aMap || !keyword) return;
 
+    // Reset selection when searching
+    setSelectedPoi(null);
+    setIsBottomSheetOpen(false);
+
     // Clear existing routes
     if (routePluginRef.current) {
       routePluginRef.current.clear();
@@ -248,7 +252,10 @@ export default function MainLayout() {
       <PoiDetailBottomSheet 
         poi={selectedPoi}
         isOpen={isBottomSheetOpen}
-        onClose={() => setIsBottomSheetOpen(false)}
+        onClose={() => {
+          setIsBottomSheetOpen(false);
+          setSelectedPoi(null);
+        }}
       />
 
       {/* Modals */}
