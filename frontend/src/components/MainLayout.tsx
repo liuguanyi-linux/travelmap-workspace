@@ -176,6 +176,27 @@ export default function MainLayout() {
     handleSearch(category, true); // Search nearby for categories
   };
 
+  const handleCityScopedSearch = (keyword: string) => {
+    if (!aMap || !keyword) return;
+
+    const placeSearch = new aMap.PlaceSearch({
+      pageSize: 20,
+      pageIndex: 1,
+      map: mapInstance,
+      city: activeCity,
+      citylimit: true,
+      autoFitView: true,
+    });
+
+    placeSearch.search(keyword, (status: string, result: any) => {
+      if (status === 'complete' && result.info === 'OK') {
+        setSearchResults(result.poiList.pois);
+      } else {
+        setSearchResults([]);
+      }
+    });
+  };
+
   const handleCitySelect = (city: { name: string, center: [number, number], zoom: number }) => {
     setActiveCity(city.name); // Update active city context
     if (mapInstance) {
@@ -229,6 +250,7 @@ export default function MainLayout() {
         searchResults={searchResults}
         onPoiClick={handleMarkerClick}
         onClose={() => setActiveTab('')}
+        onSearch={handleCityScopedSearch}
       />
 
       {/* Strategy View */}

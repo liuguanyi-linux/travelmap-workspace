@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Hotel, Utensils, ChevronLeft, Building2, ShoppingBag, X } from 'lucide-react';
+import { MapPin, Hotel, Utensils, ChevronLeft, Building2, ShoppingBag, X, Search } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -10,6 +10,7 @@ interface CityDrawerProps {
   searchResults: any[]; // Pass search results to display in list
   onPoiClick: (poi: any) => void;
   onClose?: () => void;
+  onSearch?: (keyword: string) => void;
 }
 
 // Level 1: Cities
@@ -24,10 +25,11 @@ const CITIES = [
   { name: '广州', center: [113.264434, 23.129162] as [number, number], zoom: 10 },
 ];
 
-export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, searchResults, onPoiClick, onClose }: CityDrawerProps) {
+export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, searchResults, onPoiClick, onClose, onSearch }: CityDrawerProps) {
   const [level, setLevel] = useState<ViewLevel>('cities');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [searchKeyword, setSearchKeyword] = useState('');
   const { t } = useLanguage();
   
   const controls = useAnimation();
@@ -75,6 +77,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
+    setSearchKeyword(''); // Reset search keyword
     
     // For shopping, we don't need to trigger search, just show the ad view (which is implemented in the list view condition below)
     if (category !== 'shopping') {
@@ -233,6 +236,28 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
             {/* Level 3: List */}
             {level === 'list' && (
                 <div className="space-y-4 pt-2">
+                    {selectedCategory === 'attraction' && (
+                        <div className="relative mb-2">
+                            <input
+                                type="text"
+                                value={searchKeyword}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setSearchKeyword(val);
+                                    if (onSearch && val.trim()) {
+                                        onSearch(val);
+                                    } else if (onSearch && val === '') {
+                                        // If empty, maybe reset to category search?
+                                        onSelectCategory('attraction');
+                                    }
+                                }}
+                                placeholder="搜索当前城市的景点..."
+                                className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                            />
+                            <Search className="absolute left-3 top-3.5 text-gray-400" size={18} />
+                        </div>
+                    )}
+
                     {selectedCategory === 'shopping' ? (
                         // Shopping Ad View
                         <div className="space-y-4">
