@@ -113,7 +113,7 @@ export default function MainLayout() {
       setLocationError(null);
   };
 
-  const handleSearch = (keyword: string, isNearby: boolean = false) => {
+  const handleSearch = (keyword: string, isNearby: boolean = false, shouldOpenDrawer: boolean = true) => {
     if (!aMap || !keyword) return;
 
     // Reset selection when searching
@@ -138,7 +138,7 @@ export default function MainLayout() {
       placeSearch.searchNearBy(keyword, center, 5000, (status: string, result: any) => {
         if (status === 'complete' && result.info === 'OK') {
           setSearchResults(result.poiList.pois);
-          if (result.poiList.pois.length > 1) {
+          if (result.poiList.pois.length > 1 && shouldOpenDrawer) {
             setIsSearchListOpen(true);
           }
         }
@@ -147,7 +147,7 @@ export default function MainLayout() {
       placeSearch.search(keyword, (status: string, result: any) => {
         if (status === 'complete' && result.info === 'OK') {
           setSearchResults(result.poiList.pois);
-          if (result.poiList.pois.length > 1) {
+          if (result.poiList.pois.length > 1 && shouldOpenDrawer) {
              setIsSearchListOpen(true);
           }
         }
@@ -173,7 +173,7 @@ export default function MainLayout() {
   };
 
   const handleCategorySelect = (category: string) => {
-    handleSearch(category, true); // Search nearby for categories
+    handleSearch(category, true, false); // Search nearby for categories, do not open drawer
   };
 
   const handleCityScopedSearch = (keyword: string) => {
