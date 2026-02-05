@@ -53,3 +53,14 @@
   padding: 0 !important;
   box-shadow: none !important;
 }
+
+/* Flashing Marker Animation */
+@keyframes flash {
+  0% { opacity: 1; transform: scale(1.25); }
+  50% { opacity: 0.3; transform: scale(1.4); }
+  100% { opacity: 1; transform: scale(1.25); }
+}
+
+.marker-flash {
+  animation: flash 1s infinite ease-in-out;
+}

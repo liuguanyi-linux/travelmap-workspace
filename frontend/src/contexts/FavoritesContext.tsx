@@ -16,6 +16,7 @@ interface FavoritesContextType {
   removeFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
   toggleFavorite: (item: Omit<FavoriteItem, 'timestamp'>) => void;
+  moveFavorite: (index: number, direction: 'up' | 'down') => void;
 }
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
@@ -67,8 +68,21 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const moveFavorite = (index: number, direction: 'up' | 'down') => {
+    if (index < 0 || index >= favorites.length) return;
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === favorites.length - 1) return;
+
+    const newFavorites = [...favorites];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    [newFavorites[index], newFavorites[targetIndex]] = [newFavorites[targetIndex], newFavorites[index]];
+    
+    saveToStorage(newFavorites);
+  };
+
   return (
-    <FavoritesContext.Provider value={{ favorites, addFavorite, removeFavorite, isFavorite, toggleFavorite }}>
+    <FavoritesContext.Provider value={{ favorites, addFavorite, removeFavorite, isFavorite, toggleFavorite, moveFavorite }}>
       {children}
     </FavoritesContext.Provider>
   );

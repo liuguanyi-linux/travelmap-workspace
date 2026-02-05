@@ -17,7 +17,7 @@ type ViewState = 'menu' | 'favorites' | 'settings' | 'contact' | 'login' | 'noti
 export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawerProps) {
   const controls = useAnimation();
   const dragControls = useDragControls();
-  const { favorites, removeFavorite } = useFavorites();
+  const { favorites, removeFavorite, moveFavorite } = useFavorites();
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const { user, login, logout, isLoading } = useAuth();
@@ -192,7 +192,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
                     </div>
                  ) : (
                     <div className="space-y-4">
-                        {favorites.map(fav => (
+                        {favorites.map((fav, index) => (
                             <div key={fav.id} className="flex gap-3 bg-white border border-gray-100 p-3 rounded-xl shadow-sm active:scale-[0.98] transition-transform" onClick={() => onPoiClick && onPoiClick(fav)}>
                                 <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden shrink-0">
                                     {fav.imageUrl && <img src={fav.imageUrl} className="w-full h-full object-cover" />}
@@ -220,6 +220,38 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
                                         <MapPin size={12} className="mr-1 shrink-0"/>
                                         <span className="truncate">{fav.address || t('common.unknownPlace')}</span>
                                     </div>
+                                </div>
+                                {/* Reorder Controls */}
+                                <div 
+                                    className="flex flex-col justify-center items-center gap-1 border-l border-gray-100 pl-2"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            moveFavorite(index, 'up');
+                                        }}
+                                        disabled={index === 0}
+                                        className={`p-1 rounded-full ${index === 0 ? 'text-gray-200' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M18 15l-6-6-6 6"/>
+                                        </svg>
+                                    </button>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            moveFavorite(index, 'down');
+                                        }}
+                                        disabled={index === favorites.length - 1}
+                                        className={`p-1 rounded-full ${index === favorites.length - 1 ? 'text-gray-200' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M6 9l6 6 6-6"/>
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                         ))}

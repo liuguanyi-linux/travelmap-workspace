@@ -28,10 +28,15 @@ export default function GuideView({ isVisible, onClose }: GuideViewProps) {
     }
   };
 
+  const [selectedGender, setSelectedGender] = React.useState<'male' | 'female' | null>(null);
+  const [hasCar, setHasCar] = React.useState<boolean | null>(null);
+
   const guides = [
     {
       id: 1,
       name: '王金牌',
+      gender: 'male',
+      hasCar: true,
       title: '导游',
       avatar: 'https://picsum.photos/seed/guide1/200/200',
       intro: '从业8年，专注于青岛历史文化讲解，为您提供最深度的旅行体验。'
@@ -39,6 +44,8 @@ export default function GuideView({ isVisible, onClose }: GuideViewProps) {
     {
       id: 2,
       name: '李小美',
+      gender: 'female',
+      hasCar: false,
       title: '导游',
       avatar: 'https://picsum.photos/seed/guide2/200/200',
       intro: '熟悉各大网红打卡点和地道美食，带你吃喝玩乐不踩雷！'
@@ -80,14 +87,60 @@ export default function GuideView({ isVisible, onClose }: GuideViewProps) {
           {/* Header */}
           <div className="px-6 pb-4 shrink-0">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">找导游</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">专业导游，贴心服务</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">定制您的专属向导</p>
+          </div>
+
+          {/* Filter Options */}
+          <div className="px-6 mb-6">
+            <div className="space-y-4">
+                {/* Gender Selection */}
+                <div>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">选择性别</h3>
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => setSelectedGender('male')}
+                            className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${selectedGender === 'male' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
+                        >
+                            男导游
+                        </button>
+                        <button 
+                            onClick={() => setSelectedGender('female')}
+                            className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${selectedGender === 'female' ? 'bg-pink-500 text-white shadow-lg shadow-pink-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
+                        >
+                            女导游
+                        </button>
+                    </div>
+                </div>
+
+                {/* Vehicle Selection */}
+                <div>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">是否有车</h3>
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => setHasCar(true)}
+                            className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${hasCar === true ? 'bg-green-600 text-white shadow-lg shadow-green-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
+                        >
+                            有车
+                        </button>
+                        <button 
+                            onClick={() => setHasCar(false)}
+                            className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${hasCar === false ? 'bg-gray-600 text-white shadow-lg shadow-gray-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
+                        >
+                            无车
+                        </button>
+                    </div>
+                </div>
+            </div>
           </div>
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-6 pb-24 space-y-4">
             
-            {/* Guide List */}
-            {guides.map(guide => (
+            {/* Guide List - Filtered if needed, or just static placeholders for now */}
+            {guides.filter(g => 
+                (selectedGender ? g.gender === selectedGender : true) && 
+                (hasCar !== null ? g.hasCar === hasCar : true)
+            ).map(guide => (
                 <div key={guide.id} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-[1.8rem] p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
                     <div className="flex gap-5">
                         <div className="w-18 h-18 rounded-[1.2rem] overflow-hidden shrink-0 shadow-md">
@@ -97,7 +150,10 @@ export default function GuideView({ isVisible, onClose }: GuideViewProps) {
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">{guide.name}</h3>
-                                    <p className="text-xs text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full inline-block mt-1.5">{guide.title}</p>
+                                    <div className="flex gap-2 mt-1.5">
+                                        <span className="text-xs text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full">{guide.title}</span>
+                                        {guide.hasCar && <span className="text-xs text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-2.5 py-1 rounded-full">有车</span>}
+                                    </div>
                                 </div>
                             </div>
                             

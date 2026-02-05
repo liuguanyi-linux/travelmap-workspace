@@ -162,7 +162,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       
       // State classes
       const stateClass = isSelected 
-        ? 'z-50 scale-125 animate-pulse-slow shadow-[0_0_20px_rgba(255,255,255,0.6)]' 
+        ? 'z-50 scale-125 marker-flash shadow-[0_0_20px_rgba(255,255,255,0.6)]' 
         : 'opacity-90 hover:opacity-100 hover:scale-110 hover:shadow-xl hover:z-40';
       
       markerContent.className = `${baseClass} ${stateClass}`;
