@@ -86,7 +86,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         });
 
         // Add controls
-        map.addControl(new AMap.ToolBar({ position: 'RB', offset: [20, 140] }));
+        map.addControl(new AMap.ToolBar({ position: 'RB', offset: [20, 220] }));
         map.addControl(new AMap.Scale());
         map.addControl(new AMap.ControlBar({ position: 'RT' }));
         
@@ -94,7 +94,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
             enableHighAccuracy: true,
             timeout: 10000,
             position: 'RB',
-            offset: [20, 80], // Adjust position above ToolBar
+            offset: [20, 160], // Adjust position above ToolBar
             zoomToAccuracy: true,
         });
         map.addControl(geolocation);

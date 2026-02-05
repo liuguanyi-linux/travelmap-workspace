@@ -9,7 +9,7 @@ import UserDrawer from './mobile/UserDrawer';
 import StrategyView from './mobile/StrategyView';
 import GuideView from './mobile/GuideView';
 import FloatingSearchBar from './mobile/FloatingSearchBar';
-import ExchangeRateWidget from './mobile/ExchangeRateWidget';
+import AdsWidget from './mobile/AdsWidget';
 import AtmWidget from './mobile/AtmWidget';
 import PoiDetailBottomSheet from './mobile/PoiDetailBottomSheet';
 
@@ -201,7 +201,7 @@ export default function MainLayout() {
       {activeTab === '' && (
         <div className="fixed top-28 right-4 z-50 flex flex-col gap-3 pointer-events-none">
           <div className="pointer-events-auto">
-            <ExchangeRateWidget />
+            <AdsWidget />
           </div>
           <div className="pointer-events-auto">
             <AtmWidget onSelect={() => handleCategorySelect('ATM')} />
