@@ -143,21 +143,21 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
                     className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${selectedGender === 'male' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
                 >
                     <User size={16} />
-                    男导游
+                    男
                 </button>
                 <button 
                     onClick={() => setSelectedGender(prev => prev === 'female' ? null : 'female')}
                     className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${selectedGender === 'female' ? 'bg-pink-500 text-white shadow-lg shadow-pink-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
                 >
                     <User size={16} />
-                    女导游
+                    女
                 </button>
                 <button 
                     onClick={() => setHasCar(prev => prev === true ? null : true)}
                     className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${hasCar === true ? 'bg-green-600 text-white shadow-lg shadow-green-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
                 >
                     <div className="text-lg">🚗</div>
-                    有车
+                    车辆
                 </button>
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
                                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">{guide.name}</h3>
                                     <div className="flex gap-2 mt-1.5">
                                         <span className="text-xs text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full">{guide.title}</span>
-                                        {guide.hasCar && <span className="text-xs text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-2.5 py-1 rounded-full">有车</span>}
+                                        {guide.hasCar && <span className="text-xs text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-2.5 py-1 rounded-full">车辆</span>}
                                     </div>
                                 </div>
                             </div>
