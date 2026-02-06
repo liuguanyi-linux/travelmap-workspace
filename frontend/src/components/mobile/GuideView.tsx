@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, MessageCircle, Star, Award, ShieldCheck, X } from 'lucide-react';
+import { X, User } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 
 interface GuideViewProps {
