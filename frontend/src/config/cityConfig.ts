@@ -17,7 +17,7 @@ export const CITIES: CityConfig[] = [
   },
   { 
     name: '青岛', 
-    center: [120.38264, 36.067442], 
+    center: [120.28, 36.22], 
     zoom: 9 
   },
   { 
