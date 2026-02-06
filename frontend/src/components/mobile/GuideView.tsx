@@ -172,25 +172,26 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
                     <div className="text-xs">请尝试调整筛选条件</div>
                 </div>
             ) : filteredGuides.map(guide => (
-                <div key={guide.id} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-[1.8rem] p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
-                    <div className="flex gap-5">
-                        <div className="w-18 h-18 rounded-[1.2rem] overflow-hidden shrink-0 shadow-md">
+                <div key={guide.id} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
+                    <div className="flex gap-4">
+                        <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 shadow-sm">
                             <img src={guide.avatar} alt={guide.name} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-1">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{guide.name}</h3>
-                                    <div className="flex gap-2 mt-1.5">
-                                        <span className="text-xs text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full">{guide.title}</span>
-                                        {guide.hasCar && <span className="text-xs text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-2.5 py-1 rounded-full">车辆</span>}
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-base font-bold text-gray-900 dark:text-white">{guide.name}</h3>
+                                        <div className="flex gap-1">
+                                            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">{guide.title}</span>
+                                            {guide.hasCar && <span className="text-[10px] text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">车辆</span>}
+                                        </div>
                                     </div>
+                                    <p className="mt-2 text-xs text-gray-600 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                                        "{guide.intro}"
+                                    </p>
                                 </div>
                             </div>
-                            
-                            <p className="mt-4 text-sm text-gray-600 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-700/50 p-4 rounded-2xl">
-                                "{guide.intro}"
-                            </p>
                         </div>
                     </div>
                 </div>
