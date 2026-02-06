@@ -1,6 +1,7 @@
 import React from 'react';
 import { Compass, Map, Calendar, ChevronRight, X } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
+import { useData } from '../../contexts/DataContext';
 
 interface StrategyViewProps {
   isVisible: boolean;
@@ -28,35 +29,9 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
     }
   };
 
-  const routes = [
-    {
-      id: 1,
-      title: '青岛经典三日游',
-      days: '3天',
-      spots: ['栈桥', '八大关', '五四广场', '奥帆中心'],
-      image: 'https://picsum.photos/seed/qingdao1/200/200',
-      tags: ['经典路线', '海滨风光', '必打卡'],
-      rank: 1
-    },
-    {
-      id: 2,
-      title: '老城建筑人文之旅',
-      days: '1天',
-      spots: ['天主教堂', '信号山', '德国总督楼'],
-      image: 'https://picsum.photos/seed/qingdao2/200/200',
-      tags: ['历史建筑', '人文摄影', '文艺'],
-      rank: 2
-    },
-    {
-      id: 3,
-      title: '崂山风景区深度游',
-      days: '2天',
-      spots: ['太清宫', '仰口', '巨峰'],
-      image: 'https://picsum.photos/seed/laoshan/200/200',
-      tags: ['爬山', '自然风光', '道教文化'],
-      rank: 3
-    }
-  ].sort((a, b) => (a.rank || 99) - (b.rank || 99));
+  const { strategies } = useData();
+
+  const routes = strategies.sort((a, b) => (a.rank || 99) - (b.rank || 99));
 
   return (
     <AnimatePresence>

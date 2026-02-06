@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, User } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
+import { useData } from '../../contexts/DataContext';
 
 interface GuideViewProps {
   isVisible: boolean;
@@ -31,53 +32,7 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
 
   const [selectedGender, setSelectedGender] = React.useState<'male' | 'female' | null>(null);
   const [hasCar, setHasCar] = React.useState<boolean | null>(null);
-
-  const guides = [
-    {
-      id: 1,
-      name: '王金牌',
-      gender: 'male',
-      hasCar: true,
-      title: '导游',
-      avatar: 'https://picsum.photos/seed/guide1/200/200',
-      intro: '从业8年，专注于青岛历史文化讲解，为您提供最深度的旅行体验。',
-      cities: ['青岛'],
-      rank: 1
-    },
-    {
-      id: 2,
-      name: '李小美',
-      gender: 'female',
-      hasCar: false,
-      title: '导游',
-      avatar: 'https://picsum.photos/seed/guide2/200/200',
-      intro: '熟悉各大网红打卡点和地道美食，带你吃喝玩乐不踩雷！',
-      cities: ['青岛', '上海'],
-      rank: 2
-    },
-    {
-      id: 3,
-      name: '张老三',
-      gender: 'male',
-      hasCar: true,
-      title: '金牌司机',
-      avatar: 'https://picsum.photos/seed/guide3/200/200',
-      intro: '北京胡同串子，带你领略最地道的京味儿文化。',
-      cities: ['北京'],
-      rank: 3
-    },
-    {
-      id: 4,
-      name: '赵小兰',
-      gender: 'female',
-      hasCar: true,
-      title: '向导',
-      avatar: 'https://picsum.photos/seed/guide4/200/200',
-      intro: '青岛本地通，带车向导，舒适出行。',
-      cities: ['青岛'],
-      rank: 4
-    }
-  ];
+  const { guides } = useData();
 
   const filteredGuides = guides
     .filter(g => {
