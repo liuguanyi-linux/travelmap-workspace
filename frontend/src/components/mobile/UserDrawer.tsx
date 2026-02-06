@@ -26,7 +26,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
 
   useEffect(() => {
     if (isVisible) {
-      controls.start({ y: '40%' }); // Initial height
+      controls.start({ y: 0 }); // Show full height by default
     } else {
       controls.start({ y: '100%' });
       // Reset to menu view after closing
@@ -39,10 +39,8 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
     const { offset, velocity } = info;
     if (offset.y > 100 || (velocity.y > 500 && offset.y > 0)) {
        onClose();
-    } else if (offset.y < -50 || (velocity.y < -500 && offset.y < 0)) {
-       controls.start({ y: 0 }); // Expand to full
     } else {
-       controls.start({ y: '40%' }); // Snap back to initial
+       controls.start({ y: 0 }); // Snap back to full
     }
   };
 
@@ -81,7 +79,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
       try {
           await login(email);
           setViewState('menu');
-          controls.start({ y: '40%' });
+          controls.start({ y: 0 });
       } catch (error) {
           alert('Login failed. Please try again.');
       }
@@ -89,7 +87,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
 
   const handleBack = () => {
       setViewState('menu');
-      controls.start({ y: '40%' });
+      controls.start({ y: 0 });
   };
 
   const LANGUAGES = [

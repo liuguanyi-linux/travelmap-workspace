@@ -65,6 +65,17 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
       intro: '北京胡同串子，带你领略最地道的京味儿文化。',
       cities: ['北京'],
       rank: 3
+    },
+    {
+      id: 4,
+      name: '赵小兰',
+      gender: 'female',
+      hasCar: true,
+      title: '向导',
+      avatar: 'https://picsum.photos/seed/guide4/200/200',
+      intro: '青岛本地通，带车向导，舒适出行。',
+      cities: ['青岛'],
+      rank: 4
     }
   ];
 
@@ -75,7 +86,12 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
             return false;
         }
         if (selectedGender && g.gender !== selectedGender) return false;
-        if (hasCar !== null && g.hasCar !== hasCar) return false;
+        if (hasCar === true && !g.hasCar) return false;
+        // If hasCar is false or null, we don't strictly filter out cars, 
+        // but user specifically asked for "Has Car" button logic. 
+        // If user clicks "Has Car", we show cars. 
+        // If user doesn't click it, we show all (or maybe user implies "No Car" isn't a filter they care about).
+        // Let's stick to: if hasCar is true, show only cars. If null, show all.
         return true;
     })
     .sort((a, b) => (a.rank || 99) - (b.rank || 99));
@@ -120,44 +136,29 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
 
           {/* Filter Options */}
           <div className="px-6 mb-6">
-            <div className="space-y-4">
-                {/* Gender Selection */}
-                <div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">选择性别</h3>
-                    <div className="flex gap-3">
-                        <button 
-                            onClick={() => setSelectedGender(prev => prev === 'male' ? null : 'male')}
-                            className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${selectedGender === 'male' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
-                        >
-                            男导游
-                        </button>
-                        <button 
-                            onClick={() => setSelectedGender(prev => prev === 'female' ? null : 'female')}
-                            className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${selectedGender === 'female' ? 'bg-pink-500 text-white shadow-lg shadow-pink-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
-                        >
-                            女导游
-                        </button>
-                    </div>
-                </div>
-
-                {/* Vehicle Selection */}
-                <div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">是否有车</h3>
-                    <div className="flex gap-3">
-                        <button 
-                            onClick={() => setHasCar(prev => prev === true ? null : true)}
-                            className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${hasCar === true ? 'bg-green-600 text-white shadow-lg shadow-green-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
-                        >
-                            有车
-                        </button>
-                        <button 
-                            onClick={() => setHasCar(prev => prev === false ? null : false)}
-                            className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${hasCar === false ? 'bg-gray-600 text-white shadow-lg shadow-gray-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
-                        >
-                            无车
-                        </button>
-                    </div>
-                </div>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">筛选条件</h3>
+            <div className="flex gap-3">
+                <button 
+                    onClick={() => setSelectedGender(prev => prev === 'male' ? null : 'male')}
+                    className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${selectedGender === 'male' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
+                >
+                    <User size={16} />
+                    男导游
+                </button>
+                <button 
+                    onClick={() => setSelectedGender(prev => prev === 'female' ? null : 'female')}
+                    className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${selectedGender === 'female' ? 'bg-pink-500 text-white shadow-lg shadow-pink-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
+                >
+                    <User size={16} />
+                    女导游
+                </button>
+                <button 
+                    onClick={() => setHasCar(prev => prev === true ? null : true)}
+                    className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${hasCar === true ? 'bg-green-600 text-white shadow-lg shadow-green-200 dark:shadow-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
+                >
+                    <div className="text-lg">🚗</div>
+                    有车
+                </button>
             </div>
           </div>
 

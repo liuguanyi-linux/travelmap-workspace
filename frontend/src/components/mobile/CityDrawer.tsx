@@ -36,7 +36,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
       if (level === 'list') {
           controls.start({ y: 0 });
       } else {
-          controls.start({ y: '55%' }); 
+          controls.start({ y: 0 }); // Show full height by default as requested
       }
     } else {
       controls.start({ y: '100%' });
@@ -66,8 +66,8 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
           onSelectCity(city);
       });
       
-      // 3. Keep drawer at medium height
-      controls.start({ y: '55%' });
+      // 3. Keep drawer at full height
+      controls.start({ y: 0 });
   };
 
   const handleCategoryClick = (category: string) => {
@@ -91,12 +91,12 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
         setLevel('categories');
         setSelectedCategory('');
         onSelectCategory(''); // Clear filter
-        controls.start({ y: '55%' }); // Return to medium height
+        controls.start({ y: 0 }); // Return to full height
     } else if (level === 'categories') {
         setLevel('cities');
         setSelectedCity('');
         // Maybe zoom out map? Or keep it? Keeping is fine.
-        controls.start({ y: '55%' });
+        controls.start({ y: 0 });
     }
   };
   
