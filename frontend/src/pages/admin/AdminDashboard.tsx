@@ -3,7 +3,7 @@ import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Guide, Strategy, Spot, AdSlot, ContactInfo } from '../../types/data';
 import { CITIES } from '../../config/cityConfig';
-import { Trash2, Plus, Edit2, LogOut, X, Save, Settings, Phone, ShoppingBag } from 'lucide-react';
+import { Trash2, Plus, Edit2, LogOut, X, Save, Settings, Phone, ShoppingBag, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SystemSettings from './components/SystemSettings';
 
@@ -20,6 +20,7 @@ export default function AdminDashboard() {
   
   const [activeTab, setActiveTab] = useState<'guides' | 'strategies' | 'spots' | 'food' | 'hotel' | 'shopping' | 'ads' | 'contact' | 'system'>('guides');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const navigate = useNavigate();
 
@@ -112,10 +113,27 @@ export default function AdminDashboard() {
 // Removed duplicate handleExport
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex overflow-hidden">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 p-6 flex flex-col">
-        <h1 className="text-2xl font-bold text-blue-600 mb-10">TravelMap 后台</h1>
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 p-6 flex flex-col transition-transform duration-300 ease-in-out
+        md:relative md:translate-x-0
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="flex justify-between items-center mb-10">
+          <h1 className="text-2xl font-bold text-blue-600">TravelMap 后台</h1>
+          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-500 hover:text-gray-700">
+            <X size={24} />
+          </button>
+        </div>
         <nav className="space-y-2 flex-1">
           <TabButton active={activeTab === 'guides'} onClick={() => setActiveTab('guides')}>
             导游管理
@@ -180,9 +198,16 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8 overflow-y-auto relative">
-        <header className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-800">
+      <div className="flex-1 p-4 md:p-8 overflow-y-auto relative flex flex-col min-w-0">
+        <header className="flex justify-between items-center mb-6 md:mb-8">
+          <div className="flex items-center gap-3">
+            <button 
+              className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800">
             {activeTab === 'guides' && '导游列表'}
             {activeTab === 'strategies' && '攻略列表'}
             {activeTab === 'spots' && '景点列表'}
@@ -193,6 +218,7 @@ export default function AdminDashboard() {
             {activeTab === 'contact' && '联系方式设置'}
             {activeTab === 'system' && '系统设置'}
           </h2>
+          </div>
           {activeTab !== 'system' && activeTab !== 'contact' && (
           <button 
             onClick={handleAdd}
@@ -221,7 +247,7 @@ export default function AdminDashboard() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white">
+            <div className="p-4 sm:p-6 border-b flex justify-between items-center sticky top-0 bg-white">
               <h3 className="text-xl font-bold">
                 {editingItem ? '编辑' : '新建'}
                 {activeTab === 'guides' ? '导游' : activeTab === 'strategies' ? '攻略' : activeTab === 'spots' ? '景点' : activeTab === 'food' ? '美食' : activeTab === 'hotel' ? '酒店' : activeTab === 'shopping' ? '购物' : '广告位'}
@@ -230,7 +256,7 @@ export default function AdminDashboard() {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {activeTab === 'guides' && <GuideForm initialData={editingItem} onSave={handleSave} />}
               {activeTab === 'strategies' && <StrategyForm initialData={editingItem} onSave={handleSave} />}
               {(activeTab === 'spots' || activeTab === 'food' || activeTab === 'hotel' || activeTab === 'shopping') && <SpotForm key={activeTab} initialData={editingItem} defaultTag={activeTab === 'food' ? 'dining' : activeTab === 'hotel' ? 'accommodation' : activeTab === 'shopping' ? 'shopping' : 'spot'} onSave={handleSave} />}
@@ -260,10 +286,10 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
   return (
     <div className="space-y-4">
       {data.map(guide => (
-        <div key={guide.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start gap-6">
+        <div key={guide.id} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
           <img src={guide.avatar} alt={guide.name} className="w-16 h-16 rounded-full object-cover" />
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="flex-1 w-full">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
               <h3 className="text-lg font-bold">{guide.name}</h3>
               <span className={`px-2 py-0.5 text-xs rounded-full ${guide.gender === 'male' ? 'bg-blue-100 text-blue-600' : 'bg-pink-100 text-pink-600'}`}>
                 {guide.gender === 'male' ? '男' : '女'}
@@ -276,7 +302,7 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
             </div>
             <p className="text-gray-500 text-sm mb-2">{guide.intro}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
             <button onClick={() => onEdit(guide)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
               <Edit2 size={18} />
             </button>
@@ -294,10 +320,10 @@ function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete
   return (
     <div className="space-y-4">
       {data.map(item => (
-        <div key={item.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start gap-6">
-          <img src={item.image} alt={item.title} className="w-24 h-24 rounded-lg object-cover" />
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
+        <div key={item.id} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+          <img src={item.image} alt={item.title} className="w-full sm:w-24 h-48 sm:h-24 rounded-lg object-cover" />
+          <div className="flex-1 w-full">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
               <h3 className="text-lg font-bold">{item.title}</h3>
               <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700">
                 {item.days}
@@ -314,7 +340,7 @@ function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete
               ))}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
             <button onClick={() => onEdit(item)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
               <Edit2 size={18} />
             </button>
@@ -765,16 +791,16 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
   return (
     <div className="space-y-4">
       {data.map(item => (
-        <div key={item.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start gap-6">
-          <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+        <div key={item.id} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+          <div className="w-full sm:w-24 h-48 sm:h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
              {item.photos[0] ? (
                 <img src={item.photos[0]} alt={item.name} className="w-full h-full object-cover" />
              ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400">无图</div>
              )}
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="flex-1 w-full">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
               <h3 className="text-lg font-bold">{item.name}</h3>
               <div className="flex gap-1">
                 {item.tags.map(t => (
@@ -790,7 +816,7 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
             </div>
             <p className="text-gray-500 text-sm mb-2 line-clamp-2">{item.content}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
             <button onClick={() => onEdit(item)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
               <Edit2 size={18} />
             </button>
@@ -1094,16 +1120,16 @@ function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: nu
   return (
     <div className="space-y-4">
       {data.map(item => (
-        <div key={item.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start gap-6">
-          <img src={item.image} alt={item.title} className="w-24 h-24 rounded-lg object-cover" />
-          <div className="flex-1">
+        <div key={item.id} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+          <img src={item.image} alt={item.title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
+          <div className="flex-1 w-full">
             <h3 className="text-lg font-bold mb-1">{item.title}</h3>
             {item.description && <p className="text-gray-500 text-sm mb-2">{item.description}</p>}
             <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm hover:underline block truncate">
                 {item.link}
             </a>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
             <button onClick={() => onEdit(item)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
               <Edit2 size={18} />
             </button>
