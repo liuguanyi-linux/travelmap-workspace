@@ -13,6 +13,7 @@ import ActionModal from './ActionModal';
 import BookingModal from './BookingModal';
 import { getTranslation } from '../utils/translations';
 import { toggleFavorite, getFavorites, createOrUpdatePoi, getReviews, createReview } from '../api';
+import { useAuth } from '../contexts/AuthContext';
 
 const USER_ID = 1;
 
@@ -56,6 +57,7 @@ export default function Sidebar({
   const [activeTab, setActiveTab] = useState('overview');
   const [reviewContent, setReviewContent] = useState('');
   const [rating, setRating] = useState(5);
+  const { user } = useAuth();
   
   // Search Bar Refactoring State
   const [isDirectionsMode, setIsDirectionsMode] = useState(false);
@@ -140,7 +142,12 @@ export default function Sidebar({
     e.preventDefault();
     if (!selectedPoi.id) return;
     try {
-        await createReview(USER_ID, selectedPoi.id, rating, reviewContent);
+        const currentUserId = user?.id || USER_ID;
+        const userInfo = {
+            nickname: user?.nickname || '游客',
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUserId}`
+        };
+        await createReview(currentUserId, selectedPoi.id, rating, reviewContent, userInfo);
         setReviewContent('');
         loadReviews(selectedPoi.id);
         showToast(t.toast.reviewPublished);
@@ -745,6 +752,20 @@ export default function Sidebar({
 
                    {activeTab === 'photos' && (
                      <div className='animate-in fade-in slide-in-from-bottom-4 duration-500'>
+                        {/* Videos Section */}
+                        {selectedPoi.videos && selectedPoi.videos.length > 0 && (
+                          <div className="mb-6">
+                            <h3 className="text-cyan-100 font-bold mb-3 text-sm">Videos</h3>
+                            <div className="grid grid-cols-1 gap-3">
+                              {selectedPoi.videos.map((video: string, i: number) => (
+                                <div key={`vid-${i}`} className="rounded-2xl overflow-hidden border border-cyan-500/20 shadow-sm bg-black">
+                                  <video src={video} controls className="w-full aspect-video object-contain" />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <div className='grid grid-cols-2 gap-3'>
                           {(selectedPoi.photos || []).map((photo: any, i: number) => (
                              <div key={i} className='group relative aspect-square rounded-2xl overflow-hidden shadow-sm cursor-pointer border border-cyan-500/20'>

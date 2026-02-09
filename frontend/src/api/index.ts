@@ -167,14 +167,35 @@ const generateMockReviews = (poiId: number | string) => {
 
 export const getReviews = async (poiId: number | string) => {
   await delay(300);
+  
+  // 1. Get Local DB Reviews (Legacy/External)
   const dbReviews = getDb(DB_KEYS.REVIEWS)
     .filter((r: any) => String(r.poiId) === String(poiId))
-    .map((r: any) => ({ ...r, source: 'Local' })); // Add source to local reviews
+    .map((r: any) => ({ ...r, source: 'Local' }));
     
+  // 2. Get Reviews from Managed Spots (travelmap_spots)
+  let managedReviews: any[] = [];
+  try {
+    const spots = JSON.parse(localStorage.getItem('travelmap_spots') || '[]');
+    const spot = spots.find((s: any) => String(s.id) === String(poiId));
+    if (spot && spot.reviews) {
+      managedReviews = spot.reviews.map((r: any) => ({
+        ...r,
+        user_id: r.userId, // Map userId to user_id for frontend compatibility
+        poiId: poiId,
+        source: r.source || 'Local'
+      }));
+    }
+  } catch (e) {
+    console.error('Failed to load managed spots reviews', e);
+  }
+
+  // 3. Mock Reviews
   const mockReviews = generateMockReviews(poiId);
   
   // Combine and sort
-  return [...dbReviews, ...mockReviews]
+  // Prioritize managed reviews, then local db reviews, then mocks
+  return [...managedReviews, ...dbReviews, ...mockReviews]
     .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 };
 
@@ -184,27 +205,75 @@ export const getUserReviews = async (userId: number) => {
   return reviews.filter((r: any) => r.user_id === userId);
 };
 
-export const createReview = async (userId: number, poiId: number | string, rating: number, content: string) => {
+export const createReview = async (userId: number | string, poiId: number | string, rating: number, content: string, userInfo?: { nickname: string, avatar?: string }) => {
   await delay(400);
-  const reviews = getDb(DB_KEYS.REVIEWS);
+  
   const newReview = {
-    id: Date.now(),
-    user_id: userId,
+    id: Date.now().toString(),
+    userId: userId, // Store consistent field name
+    user_id: userId, // For compatibility
+    username: userInfo?.nickname || '游客',
+    avatar: userInfo?.avatar,
     poiId,
     rating,
     content,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    source: 'Local'
   };
+
+  // Try to save to Managed Spots first
+  try {
+    const spots = JSON.parse(localStorage.getItem('travelmap_spots') || '[]');
+    const spotIndex = spots.findIndex((s: any) => String(s.id) === String(poiId));
+    
+    if (spotIndex >= 0) {
+      if (!spots[spotIndex].reviews) {
+        spots[spotIndex].reviews = [];
+      }
+      spots[spotIndex].reviews.unshift(newReview);
+      localStorage.setItem('travelmap_spots', JSON.stringify(spots));
+      return newReview;
+    }
+  } catch (e) {
+    console.error('Failed to save to managed spots', e);
+  }
+
+  // Fallback to separate DB for unmanaged spots
+  const reviews = getDb(DB_KEYS.REVIEWS);
   reviews.push(newReview);
   setDb(DB_KEYS.REVIEWS, reviews);
+  
   return newReview;
 };
 
 export const deleteReview = async (reviewId: number | string) => {
   await delay(300);
+  
+  // 1. Try deleting from Managed Spots
+  try {
+    const spots = JSON.parse(localStorage.getItem('travelmap_spots') || '[]');
+    let found = false;
+    const newSpots = spots.map((spot: any) => {
+        if (spot.reviews) {
+            const initialLen = spot.reviews.length;
+            spot.reviews = spot.reviews.filter((r: any) => String(r.id) !== String(reviewId));
+            if (spot.reviews.length !== initialLen) found = true;
+        }
+        return spot;
+    });
+    if (found) {
+        localStorage.setItem('travelmap_spots', JSON.stringify(newSpots));
+        return { success: true };
+    }
+  } catch (e) {
+     console.error('Failed to delete from managed spots', e);
+  }
+
+  // 2. Delete from Local DB
   const reviews = getDb(DB_KEYS.REVIEWS);
   const newReviews = reviews.filter((r: any) => String(r.id) !== String(reviewId));
   setDb(DB_KEYS.REVIEWS, newReviews);
+  
   return { success: true };
 };
 

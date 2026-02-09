@@ -74,13 +74,10 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
     setSelectedCategory(category);
     setSearchKeyword(''); // Reset search keyword
     
-    // For shopping, we don't need to trigger search, just show the ad view (which is implemented in the list view condition below)
-    if (category !== 'shopping') {
-        // Trigger search asynchronously to avoid blocking UI animation
-        setTimeout(() => {
-            onSelectCategory(category);
-        }, 50);
-    }
+    // Trigger search asynchronously to avoid blocking UI animation
+    setTimeout(() => {
+        onSelectCategory(category);
+    }, 50);
     
     setLevel('list');
     controls.start({ y: 0 }); // Auto-expand to full height for list
@@ -231,7 +228,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
             {/* Level 3: List */}
             {level === 'list' && (
                 <div className="space-y-4 pt-2">
-                    {['attraction', 'hotel', 'food'].includes(selectedCategory) && (
+                    {['attraction', 'hotel', 'food', 'shopping'].includes(selectedCategory) && (
                         <div className="relative mb-2">
                             <input
                                 type="text"
@@ -249,6 +246,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                 placeholder={
                                     selectedCategory === 'attraction' ? "搜索当前城市的景点..." :
                                     selectedCategory === 'hotel' ? "搜索当前城市的酒店..." :
+                                    selectedCategory === 'shopping' ? "搜索当前城市的购物场所..." :
                                     "搜索当前城市的美食..."
                                 }
                                 className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
@@ -257,43 +255,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                         </div>
                     )}
 
-                    {selectedCategory === 'shopping' ? (
-                        // Shopping Ad View
-                        <div className="space-y-4">
-                            <div className="bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl p-6 text-white shadow-lg shadow-pink-200">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 className="text-2xl font-bold">免税店限时特惠</h3>
-                                        <p className="text-white/80 mt-1">国际大牌 3 折起</p>
-                                    </div>
-                                    <span className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold">广告</span>
-                                </div>
-                                <button className="w-full bg-white text-pink-600 font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-transform">
-                                    立即查看
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-700">
-                                    <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-xl mb-2 relative overflow-hidden">
-                                        <img src="https://picsum.photos/seed/bag/400/400" alt="Bag" className="w-full h-full object-cover" />
-                                        <span className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">-20%</span>
-                                    </div>
-                                    <h4 className="font-bold text-gray-800 dark:text-white text-sm line-clamp-1">时尚购物中心</h4>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">距离 1.2km</p>
-                                </div>
-                                <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-700">
-                                    <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-xl mb-2 relative overflow-hidden">
-                                        <img src="https://picsum.photos/seed/shop/400/400" alt="Shop" className="w-full h-full object-cover" />
-                                    </div>
-                                    <h4 className="font-bold text-gray-800 dark:text-white text-sm line-clamp-1">特产礼品店</h4>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">距离 500m</p>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        // Standard Search Results
-                        searchResults && searchResults.length > 0 ? (
+                    {searchResults && searchResults.length > 0 ? (
                         searchResults.map((item, index) => (
                             <div 
                                 key={item.id || index} 
@@ -327,7 +289,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                             <SearchIcon />
                             <p className="mt-2 text-sm">{t('cityDrawer.noPlaces')}</p>
                         </div>
-                    ))}
+                    )}
                 </div>
             )}
 

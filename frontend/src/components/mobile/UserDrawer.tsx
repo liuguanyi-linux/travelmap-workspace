@@ -4,7 +4,8 @@ import { useFavorites } from '../../hooks/useFavorites';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Heart, MapPin, X, ChevronRight, User, Settings, Bell, Globe, Check, Phone, LogOut, Mail, Loader2, Moon, Sun, ChevronUp, ChevronDown } from 'lucide-react';
+import { useData } from '../../contexts/DataContext';
+import { Heart, MapPin, X, ChevronRight, User, Settings, Bell, Globe, Check, Phone, LogOut, Mail, Loader2, Moon, Sun, ChevronUp, ChevronDown, MessageSquare } from 'lucide-react';
 
 interface UserDrawerProps {
   isVisible: boolean;
@@ -20,6 +21,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
   const { favorites, removeFavorite, moveFavorite } = useFavorites();
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const { contactInfo } = useData();
   const { user, login, logout, isLoading } = useAuth();
   const [viewState, setViewState] = useState<ViewState>('menu');
   const [email, setEmail] = useState('');
@@ -346,19 +348,77 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
                      <h2 className="text-2xl font-bold">{t('user.contact')}</h2>
                  </div>
                  
-                 <div className="bg-orange-50 rounded-2xl p-6 text-center border border-orange-100">
-                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500 shadow-sm">
-                        <Phone size={32} />
+                 <div className="bg-orange-50 rounded-2xl p-6 border border-orange-100">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500 shadow-sm">
+                 <Phone size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">{t('contact.title')}</h3>
+              <p className="text-gray-500 text-sm mb-6 text-center">
+                 {t('contact.desc')}
+              </p>
+              
+              <div className="space-y-4">
+                 {contactInfo?.phone && (
+                   <div className="bg-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
+                     <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600">
+                       <Phone size={20} />
                      </div>
-                     <h3 className="text-lg font-bold text-gray-900 mb-2">{t('contact.title')}</h3>
-                     <p className="text-gray-500 text-sm mb-6">
-                        {t('contact.desc')}
-                     </p>
-                     <div className="space-y-3">
-                        <div className="h-12 bg-white rounded-xl w-full animate-pulse"></div>
-                        <div className="h-12 bg-white rounded-xl w-full animate-pulse"></div>
+                     <div>
+                       <div className="text-xs text-gray-500">电话 / Phone</div>
+                       <div className="font-medium text-gray-900">{contactInfo.phone}</div>
                      </div>
-                 </div>
+                   </div>
+                 )}
+
+                 {contactInfo?.wechat && (
+                   <div className="bg-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
+                     <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600">
+                       <MessageSquare size={20} />
+                     </div>
+                     <div>
+                       <div className="text-xs text-gray-500">微信 / WeChat</div>
+                       <div className="font-medium text-gray-900">{contactInfo.wechat}</div>
+                     </div>
+                   </div>
+                 )}
+
+                 {contactInfo?.email && (
+                   <div className="bg-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
+                     <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                       <Mail size={20} />
+                     </div>
+                     <div>
+                       <div className="text-xs text-gray-500">邮箱 / Email</div>
+                       <div className="font-medium text-gray-900 break-all">{contactInfo.email}</div>
+                     </div>
+                   </div>
+                 )}
+
+                 {contactInfo?.website && (
+                   <div className="bg-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
+                     <div className="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
+                       <Globe size={20} />
+                     </div>
+                     <div>
+                       <div className="text-xs text-gray-500">网站 / Website</div>
+                       <div className="font-medium text-gray-900 break-all">{contactInfo.website}</div>
+                     </div>
+                   </div>
+                 )}
+                 
+                 {contactInfo?.address && (
+                   <div className="bg-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
+                     <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center text-red-600">
+                       <MapPin size={20} />
+                     </div>
+                     <div>
+                       <div className="text-xs text-gray-500">地址 / Address</div>
+                       <div className="font-medium text-gray-900">{contactInfo.address}</div>
+                     </div>
+                   </div>
+                 )}
+              </div>
+            </div>
              </div>
          )}
 

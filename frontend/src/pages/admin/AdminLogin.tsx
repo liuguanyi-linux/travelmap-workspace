@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     // Simple hardcoded check for demo purposes
-    if (username === 'admin' && password === 'admin123') {
+    if (username === 'admin' && password === 'travelmap2024') {
       localStorage.setItem('admin_token', 'demo_token');
+      // Login as admin user for frontend features (e.g. deleting comments)
+      await login('admin@travelmap.com');
       navigate('/admin/dashboard');
     } else {
-      alert('Invalid credentials');
+      alert('用户名或密码错误');
     }
   };
 
@@ -35,7 +39,7 @@ export default function AdminLogin() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              placeholder="admin"
+              placeholder="请输入用户名"
             />
           </div>
           <div>
@@ -45,7 +49,7 @@ export default function AdminLogin() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              placeholder="admin123"
+              placeholder="请输入密码"
             />
           </div>
           <button

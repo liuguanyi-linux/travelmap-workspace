@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, PanInfo, useAnimation, useDragControls } from 'framer-motion';
-import { X, Navigation, Star, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2 } from 'lucide-react';
+import { X, Navigation, Star, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2, Navigation2 } from 'lucide-react';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -187,27 +187,50 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                             <span className="truncate">{poi.address || t('detail.noContact')}</span>
                         </div>
                     </div>
-                    {/* Close Button for Peek Mode */}
-                    <button 
-                        onClick={onClose} 
-                        className="p-2.5 bg-gray-50 rounded-full hover:bg-gray-100 shrink-0 transition-colors"
-                    >
-                        <X size={20} className="text-gray-400" />
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex flex-col gap-2 shrink-0">
+                        <button 
+                            onClick={onClose} 
+                            className="p-2.5 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors self-end"
+                        >
+                            <X size={20} className="text-gray-400" />
+                        </button>
+                        <a 
+                            href={`https://uri.amap.com/marker?position=${poi.location?.lng},${poi.location?.lat}&name=${poi.name}&coordinate=gaode&callnative=1`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2.5 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center text-white"
+                            title="导航"
+                        >
+                            <Navigation size={20} />
+                        </a>
+                    </div>
                 </div>
               </div>
 
               {/* Scrollable Content (Visible in Full Mode or scrolling in Peek?) */}
               <div className="flex-1 overflow-y-auto bg-gray-50/50 pb-28">
-                  {/* Horizontal Photos */}
+                  {/* Horizontal Photos & Videos */}
                   <div className="mt-4 mb-8">
                       <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
+                          {/* Videos */}
+                          {poi.videos && poi.videos.length > 0 && poi.videos.map((video: string, index: number) => (
+                              <div key={`video-${index}`} className="w-64 h-32 shrink-0 rounded-3xl overflow-hidden bg-black snap-center shadow-md relative">
+                                  <video 
+                                    src={video} 
+                                    controls 
+                                    className="w-full h-full object-cover"
+                                  />
+                              </div>
+                          ))}
+                          
+                          {/* Photos */}
                           {poi.photos && poi.photos.length > 0 ? (
                               poi.photos.map((photo: any, index: number) => (
                                   <div key={index} className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 snap-center shadow-md relative">
                                       <img 
-                                        src={photo.url} 
-                                        alt={photo.title || poi.name} 
+                                        src={typeof photo === 'string' ? photo : photo.url} 
+                                        alt={typeof photo === 'string' ? poi.name : (photo.title || poi.name)} 
                                         className="w-full h-full object-cover"
                                       />
                                   </div>
@@ -255,7 +278,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                       <div className="bg-white p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
                           <h3 className="font-bold text-gray-900 mb-4 text-xl">{t('detail.intro')}</h3>
                           <p className="text-gray-600 leading-relaxed text-justify">
-                              {t('detail.introDesc').replace('{name}', poi.name)}
+                              {poi.content || t('detail.introDesc').replace('{name}', poi.name)}
                               <br/><br/>
                           </p>
                       </div>

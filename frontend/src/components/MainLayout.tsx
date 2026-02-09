@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useData } from '../contexts/DataContext';
 import MapContainer from './MapContainer';
 import LoginModal from './LoginModal';
 import LocationModal from './LocationModal';
@@ -28,6 +29,7 @@ export default function MainLayout() {
   const [isSearchListOpen, setIsSearchListOpen] = useState(false);
   const [activeCity, setActiveCity] = useState(DEFAULT_CITY.name); // Default active city for custom POIs
   const [isAtmActive, setIsAtmActive] = useState(false);
+  const { spots = [] } = useData();
   
   // Close bottom sheet when tab changes to avoid conflicts
   useEffect(() => {
@@ -284,7 +286,15 @@ export default function MainLayout() {
       <div className="absolute inset-0 z-0">
         <MapContainer 
           onMapReady={handleMapReady}
-          markers={searchResults}
+          markers={[
+            ...spots.filter(s => s.location).map(s => ({
+                ...s,
+                type: s.tags.join(';'),
+                address: '', // Admin spots might not have address, leave empty
+                isAdmin: true
+            })),
+            ...searchResults
+          ]}
           selectedPoi={selectedPoi}
           onMarkerClick={handleMarkerClick}
           onMapClick={handleMapClick}

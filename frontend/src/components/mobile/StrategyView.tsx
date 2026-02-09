@@ -11,6 +11,7 @@ interface StrategyViewProps {
 export default function StrategyView({ isVisible, onClose }: StrategyViewProps) {
   const controls = useAnimation();
   const dragControls = useDragControls();
+  const [selectedCategory, setSelectedCategory] = React.useState('全部');
 
   React.useEffect(() => {
     if (isVisible) {
@@ -31,7 +32,12 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
 
   const { strategies } = useData();
 
-  const routes = strategies.sort((a, b) => (a.rank || 99) - (b.rank || 99));
+  const allRoutes = strategies.sort((a, b) => (a.rank || 99) - (b.rank || 99));
+  const filteredRoutes = selectedCategory === '全部' 
+    ? allRoutes 
+    : allRoutes.filter(r => r.category === selectedCategory);
+
+  const categories = ['全部', '一日游', '2日游', '亲子游', '其他'];
 
   return (
     <AnimatePresence>
@@ -88,6 +94,23 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
               </div>
             </div>
 
+            {/* Category Filter */}
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors flex-shrink-0 ${
+                    selectedCategory === cat 
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
             {/* Route Lists */}
             <div>
               <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-3 flex items-center gap-2">
@@ -95,7 +118,7 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
                 推荐路线
               </h3>
               <div className="space-y-4">
-                {routes.map(route => (
+                {filteredRoutes.map(route => (
                   <div key={route.id} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-[1.8rem] p-5 shadow-sm border border-gray-100 dark:border-gray-700 active:scale-[0.98] transition-transform">
                     <div className="flex gap-5">
                       <div className="w-28 h-28 rounded-2xl overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 shadow-sm">
