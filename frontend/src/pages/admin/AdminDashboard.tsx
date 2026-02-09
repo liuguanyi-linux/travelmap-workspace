@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../../contexts/DataContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Guide, Strategy, Spot, AdSlot, ContactInfo } from '../../types/data';
 import { CITIES } from '../../config/cityConfig';
 import { Trash2, Plus, Edit2, LogOut, X, Save, Settings, Phone, ShoppingBag } from 'lucide-react';
@@ -15,6 +16,7 @@ export default function AdminDashboard() {
     contactInfo, updateContactInfo,
     isCloudSyncing, enableCloud
   } = useData();
+  const { logout } = useAuth();
   
   const [activeTab, setActiveTab] = useState<'guides' | 'strategies' | 'spots' | 'food' | 'hotel' | 'shopping' | 'ads' | 'contact' | 'system'>('guides');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,6 +24,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    logout();
     localStorage.removeItem('admin_token');
     navigate('/admin/login');
   };

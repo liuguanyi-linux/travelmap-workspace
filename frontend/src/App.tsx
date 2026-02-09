@@ -7,25 +7,30 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { DataProvider } from './contexts/DataContext';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <BrowserRouter>
-      <DataProvider>
-        <LanguageProvider>
-          <ThemeProvider>
-            <AuthProvider>
+      <AuthProvider>
+        <DataProvider>
+          <LanguageProvider>
+            <ThemeProvider>
               <FavoritesProvider>
                 <Routes>
                   <Route path="/" element={<MainLayout />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/dashboard" element={
+                    <ProtectedRoute>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } />
                 </Routes>
               </FavoritesProvider>
-            </AuthProvider>
-          </ThemeProvider>
-        </LanguageProvider>
-      </DataProvider>
+            </ThemeProvider>
+          </LanguageProvider>
+        </DataProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

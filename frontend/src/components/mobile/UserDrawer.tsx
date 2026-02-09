@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, useAnimation, useDragControls, PanInfo } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -23,6 +24,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
   const { theme, toggleTheme } = useTheme();
   const { contactInfo } = useData();
   const { user, login, logout, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [viewState, setViewState] = useState<ViewState>('menu');
   const [email, setEmail] = useState('');
 
@@ -80,8 +82,12 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
       if (!email) return;
       try {
           await login(email);
-          setViewState('menu');
-          controls.start({ y: 0 });
+          if (email === 'admin@travelmap.com') {
+              navigate('/admin/dashboard');
+          } else {
+              setViewState('menu');
+              controls.start({ y: 0 });
+          }
       } catch (error) {
           alert('Login failed. Please try again.');
       }

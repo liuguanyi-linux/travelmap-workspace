@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Guide, Strategy, Spot, AdSlot, ContactInfo } from '../types/data';
 import { initFirebase, subscribeToCloud, saveToCloud } from '../lib/firebase';
+import { useAuth } from './AuthContext';
 
 interface DataContextType {
   guides: Guide[];
@@ -8,6 +9,7 @@ interface DataContextType {
   spots: Spot[];
   ads: AdSlot[];
   contactInfo: ContactInfo;
+  isAdmin: boolean;
   updateGuide: (guide: Guide) => void;
   addGuide: (guide: Guide) => void;
   deleteGuide: (id: number) => void;
@@ -118,6 +120,7 @@ const INITIAL_CONTACT_INFO: ContactInfo = {
 };
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
+  const { isAdmin } = useAuth();
   const [guides, setGuides] = useState<Guide[]>(() => {
     const saved = localStorage.getItem('travelmap_guides');
     return saved ? JSON.parse(saved) : INITIAL_GUIDES;
@@ -294,7 +297,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <DataContext.Provider value={{
-      guides, strategies, spots, ads, contactInfo,
+      guides, strategies, spots, ads, contactInfo, isAdmin,
       updateGuide, addGuide, deleteGuide,
       updateStrategy, addStrategy, deleteStrategy,
       updateSpot, addSpot, deleteSpot,

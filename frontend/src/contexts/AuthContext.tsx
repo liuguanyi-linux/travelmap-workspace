@@ -8,6 +8,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  isAdmin: boolean;
   login: (email: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -16,16 +17,21 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(() => {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
 
-  useEffect(() => {
-    // Check local storage for existing session
+  const [isAdmin, setIsAdmin] = useState(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      return parsedUser.email === 'admin@travelmap.com';
     }
-  }, []);
+    return false;
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const login = async (email: string) => {
     setIsLoading(true);
@@ -40,6 +46,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       setUser(userData);
+      if (email === 'admin@travelmap.com') {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
       localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       console.error('Login error:', error);
@@ -51,11 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    setIsAdmin(false);
     localStorage.removeItem('user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, isAdmin, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

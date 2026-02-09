@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import MapContainer from './MapContainer';
 import LoginModal from './LoginModal';
 import LocationModal from './LocationModal';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import BottomTabBar from './mobile/BottomTabBar';
 import CityDrawer from './mobile/CityDrawer';
 import UserDrawer from './mobile/UserDrawer';
@@ -39,6 +41,8 @@ export default function MainLayout() {
   }, [activeTab]);
 
   const { t } = useLanguage();
+  const { login } = useAuth();
+  const navigate = useNavigate();
   
   // Modals
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -381,8 +385,15 @@ export default function MainLayout() {
       <LoginModal 
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
-        onLogin={(user) => {
-          localStorage.setItem('travelmap_user', JSON.stringify(user));
+        onLogin={async (email) => {
+          try {
+            await login(email);
+            if (email === 'admin@travelmap.com') {
+              navigate('/admin/dashboard');
+            }
+          } catch (error) {
+            console.error('Login failed', error);
+          }
           setIsLoginModalOpen(false);
         }}
         t={t}
