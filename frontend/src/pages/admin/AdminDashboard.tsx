@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Guide, Strategy, Spot, AdSlot, ContactInfo } from '../../types/data';
-import { CITIES } from '../../config/cityConfig';
-import { Trash2, Plus, Edit2, LogOut, X, Save, Settings, Phone, ShoppingBag, Menu } from 'lucide-react';
+import { Trash2, Plus, Edit2, LogOut, X, Save, Settings, Phone, ShoppingBag, Menu, Users, Map, Compass, BookOpen, Megaphone, Utensils, BedDouble, MapPin, Loader2, Train, Plane, Minus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SystemSettings from './components/SystemSettings';
+import UserList from './components/UserList';
+import CityManager from './components/CityManager';
+import SpotCategoryManager from './components/SpotCategoryManager';
+
+import ImageUploader from '../../components/admin/ImageUploader';
+import RichTextEditor from '../../components/admin/RichTextEditor';
+import { ReviewManager } from '../../components/admin/ReviewManager';
 
 export default function AdminDashboard() {
   const { 
     guides = [], addGuide, updateGuide, deleteGuide,
     strategies = [], addStrategy, updateStrategy, deleteStrategy,
+    spotCategories = [], addSpotCategory, deleteSpotCategory,
     spots = [], addSpot, updateSpot, deleteSpot,
     ads = [], addAd, updateAd, deleteAd,
     contactInfo, updateContactInfo,
@@ -18,11 +25,14 @@ export default function AdminDashboard() {
   } = useData();
   const { logout } = useAuth();
   
-  const [activeTab, setActiveTab] = useState<'guides' | 'strategies' | 'spots' | 'food' | 'hotel' | 'shopping' | 'ads' | 'contact' | 'system'>('guides');
+  const [activeTab, setActiveTab] = useState<string>('cities');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const navigate = useNavigate();
+
+
 
   const handleLogout = () => {
     logout();
@@ -71,6 +81,8 @@ export default function AdminDashboard() {
     reader.readAsText(file);
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleEdit = (item: any) => {
     setEditingItem(item);
     setIsModalOpen(true);
@@ -81,8 +93,13 @@ export default function AdminDashboard() {
     setIsModalOpen(true);
   };
 
-  const handleSave = (formData: any) => {
-    if (activeTab === 'guides') {
+  const handleSave = async (formData: any) => {
+    console.log('handleSave called with:', formData);
+    console.log('activeTab:', activeTab);
+    
+    setIsSaving(true);
+    try {
+      if (activeTab === 'guides') {
         if (editingItem) {
           updateGuide({ ...editingItem, ...formData });
         } else {
@@ -94,20 +111,29 @@ export default function AdminDashboard() {
         } else {
           addStrategy({ ...formData, id: Date.now(), rank: 99 });
         }
-      } else if (activeTab === 'spots' || activeTab === 'food' || activeTab === 'hotel') {
-        if (editingItem) {
-          updateSpot({ ...editingItem, ...formData });
-        } else {
-          addSpot({ ...formData, id: Date.now() });
-        }
       } else if (activeTab === 'ads') {
         if (editingItem) {
           updateAd({ ...editingItem, ...formData });
         } else {
           addAd({ ...formData, id: Date.now() });
         }
+      } else if (spotCategories.some(cat => cat.key === activeTab)) {
+        console.log('Matching spot category:', activeTab);
+        if (editingItem) {
+          await updateSpot({ ...editingItem, ...formData });
+        } else {
+          await addSpot({ ...formData, id: Date.now() });
+        }
+      } else {
+        console.warn('No matching tab found for save operation');
       }
       setIsModalOpen(false);
+    } catch (error: any) {
+       console.error('Error in handleSave:', error);
+       alert('保存失败: ' + (error.message || '未知错误'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
 // Removed duplicate handleExport
@@ -134,42 +160,77 @@ export default function AdminDashboard() {
             <X size={24} />
           </button>
         </div>
-        <nav className="space-y-2 flex-1">
+        <nav className="flex-1 overflow-y-auto py-4 space-y-2">
+          {/* 城市管理组 */}
+          <TabButton active={activeTab === 'cities'} onClick={() => setActiveTab('cities')}>
+            <div className="flex items-center gap-3">
+              <Map size={18} />
+              <span>城市列表</span>
+            </div>
+          </TabButton>
+          
+          {spotCategories
+            .filter(cat => ['spot', 'dining', 'accommodation', 'shopping', 'rail', 'airport'].includes(cat.key))
+            .sort((a, b) => {
+              const order = { spot: 1, dining: 2, accommodation: 3, shopping: 4, rail: 5, airport: 6 };
+              return (order[a.key as keyof typeof order] || 99) - (order[b.key as keyof typeof order] || 99);
+            })
+            .map(cat => (
+              <TabButton key={cat.key} active={activeTab === cat.key} onClick={() => setActiveTab(cat.key)}>
+                <div className="flex items-center gap-3">
+                  <Minus size={18} />
+                  <span>{cat.name}管理</span>
+                </div>
+              </TabButton>
+          ))}
+
+          {/* 内容运营组 */}
           <TabButton active={activeTab === 'guides'} onClick={() => setActiveTab('guides')}>
-            导游管理
+            <div className="flex items-center gap-3">
+              <Compass size={18} />
+              <span>导游管理</span>
+            </div>
           </TabButton>
           <TabButton active={activeTab === 'strategies'} onClick={() => setActiveTab('strategies')}>
-            攻略管理
+            <div className="flex items-center gap-3">
+              <BookOpen size={18} />
+              <span>攻略管理</span>
+            </div>
           </TabButton>
-          <TabButton active={activeTab === 'spots'} onClick={() => setActiveTab('spots')}>
-            景点管理
-          </TabButton>
-          <TabButton active={activeTab === 'food'} onClick={() => setActiveTab('food')}>
-            美食管理
-          </TabButton>
-          <TabButton active={activeTab === 'hotel'} onClick={() => setActiveTab('hotel')}>
-            酒店管理
-          </TabButton>
-          <TabButton active={activeTab === 'shopping'} onClick={() => setActiveTab('shopping')}>
-            购物管理
-          </TabButton>
+
+          {/* 营销推广组 */}
           <TabButton active={activeTab === 'ads'} onClick={() => setActiveTab('ads')}>
-            广告位管理
+            <div className="flex items-center gap-3">
+              <Megaphone size={18} />
+              <span>广告位管理</span>
+            </div>
+          </TabButton>
+
+          {/* 系统管理组 */}
+          <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')}>
+            <div className="flex items-center gap-3">
+              <Users size={18} />
+              <span>用户管理</span>
+            </div>
+          </TabButton>
+          <TabButton active={activeTab === 'menu_categories'} onClick={() => setActiveTab('menu_categories')}>
+            <div className="flex items-center gap-3">
+              <Menu size={18} />
+              <span>菜单分类</span>
+            </div>
           </TabButton>
           <TabButton active={activeTab === 'contact'} onClick={() => setActiveTab('contact')}>
-             <div className="flex items-center gap-2">
-               <Phone size={18} />
-               <span>联系方式</span>
-             </div>
+            <div className="flex items-center gap-3">
+              <Phone size={18} />
+              <span>联系方式</span>
+            </div>
           </TabButton>
-          <div className="pt-4 mt-4 border-t border-gray-100">
-             <TabButton active={activeTab === 'system'} onClick={() => setActiveTab('system')}>
-               <div className="flex items-center gap-2">
-                 <Settings size={18} />
-                 <span>系统设置</span>
-               </div>
-             </TabButton>
-          </div>
+          <TabButton active={activeTab === 'system'} onClick={() => setActiveTab('system')}>
+            <div className="flex items-center gap-3">
+              <Settings size={18} />
+              <span>系统设置</span>
+            </div>
+          </TabButton>
         </nav>
         
         <div className="py-4 border-t space-y-4">
@@ -210,34 +271,62 @@ export default function AdminDashboard() {
             <h2 className="text-xl md:text-2xl font-bold text-gray-800">
             {activeTab === 'guides' && '导游列表'}
             {activeTab === 'strategies' && '攻略列表'}
-            {activeTab === 'spots' && '景点列表'}
-            {activeTab === 'food' && '美食列表'}
-            {activeTab === 'hotel' && '酒店列表'}
-            {activeTab === 'shopping' && '购物列表'}
+            {activeTab === 'cities' && '城市管理'}
+            {activeTab === 'menu_categories' && '菜单分类管理'}
+            {spotCategories.map(cat => activeTab === cat.key && `${cat.name}列表`)}
             {activeTab === 'ads' && '广告位列表'}
+            {activeTab === 'users' && '用户列表'}
             {activeTab === 'contact' && '联系方式设置'}
             {activeTab === 'system' && '系统设置'}
           </h2>
           </div>
-          {activeTab !== 'system' && activeTab !== 'contact' && (
-          <button 
-            onClick={handleAdd}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
-          >
-            <Plus size={20} />
-            新建项目
-          </button>
+          {activeTab !== 'system' && activeTab !== 'contact' && activeTab !== 'users' && activeTab !== 'cities' && (
+          <div className="flex gap-2">
+            {activeTab === 'strategies' && (
+              <button 
+                onClick={() => setIsCategoryManagerOpen(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition-colors"
+              >
+                <Settings size={20} />
+                <span className="hidden sm:inline">分类管理</span>
+              </button>
+            )}
+            <button 
+              onClick={handleAdd}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
+            >
+              <Plus size={20} />
+              <span className="hidden sm:inline">新建项目</span>
+            </button>
+          </div>
           )}
         </header>
 
         <div className="grid grid-cols-1 gap-6">
             {activeTab === 'guides' && <GuidesList data={guides} onDelete={deleteGuide} onEdit={handleEdit} />}
-            {activeTab === 'strategies' && <StrategiesList data={strategies} onDelete={deleteStrategy} onEdit={handleEdit} />}
-            {activeTab === 'spots' && <SpotsList data={spots.filter(s => s.tags.includes('spot') || (!s.tags.includes('dining') && !s.tags.includes('accommodation') && !s.tags.includes('transport')))} onDelete={deleteSpot} onEdit={handleEdit} />}
-            {activeTab === 'food' && <SpotsList data={spots.filter(s => s.tags.includes('dining'))} onDelete={deleteSpot} onEdit={handleEdit} />}
-            {activeTab === 'hotel' && <SpotsList data={spots.filter(s => s.tags.includes('accommodation'))} onDelete={deleteSpot} onEdit={handleEdit} />}
-            {activeTab === 'shopping' && <SpotsList data={spots.filter(s => s.tags.includes('shopping'))} onDelete={deleteSpot} onEdit={handleEdit} />}
+          {activeTab === 'strategies' && <StrategiesList data={strategies} onDelete={deleteStrategy} onEdit={handleEdit} />}
+          {activeTab === 'cities' && <CityManager />}
+          {activeTab === 'menu_categories' && <SpotCategoryManager />}
+          {spotCategories.map(cat => (
+            activeTab === cat.key && (
+              <SpotsList 
+                key={cat.key} 
+                data={spots.filter(s => {
+                   if (cat.key === 'spot') {
+                     // Dynamic exclusion: exclude if it has ANY tag that corresponds to another category
+                     const otherCategories = spotCategories.filter(c => c.key !== 'spot').map(c => c.key);
+                     const hasOtherTag = s.tags.some(tag => otherCategories.includes(tag));
+                     return s.tags.includes('spot') || !hasOtherTag;
+                   }
+                   return s.tags.includes(cat.key);
+                })} 
+                onDelete={deleteSpot} 
+                onEdit={handleEdit} 
+              />
+            )
+          ))}
             {activeTab === 'ads' && <AdsList data={ads} onDelete={deleteAd} onEdit={handleEdit} />}
+            {activeTab === 'users' && <UserList />}
             {activeTab === 'contact' && <ContactSettings info={contactInfo} onSave={updateContactInfo} />}
             {activeTab === 'system' && <SystemSettings isCloudSyncing={isCloudSyncing} onEnableCloud={enableCloud} />}
         </div>
@@ -250,21 +339,90 @@ export default function AdminDashboard() {
             <div className="p-4 sm:p-6 border-b flex justify-between items-center sticky top-0 bg-white">
               <h3 className="text-xl font-bold">
                 {editingItem ? '编辑' : '新建'}
-                {activeTab === 'guides' ? '导游' : activeTab === 'strategies' ? '攻略' : activeTab === 'spots' ? '景点' : activeTab === 'food' ? '美食' : activeTab === 'hotel' ? '酒店' : activeTab === 'shopping' ? '购物' : '广告位'}
+                {activeTab === 'guides' ? '导游' : activeTab === 'strategies' ? '攻略' : activeTab === 'cities' ? '城市' : activeTab === 'ads' ? '广告位' : spotCategories.find(c => c.key === activeTab)?.name || '项目'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
                 <X size={20} />
               </button>
             </div>
             <div className="p-4 sm:p-6">
-              {activeTab === 'guides' && <GuideForm initialData={editingItem} onSave={handleSave} />}
-              {activeTab === 'strategies' && <StrategyForm initialData={editingItem} onSave={handleSave} />}
-              {(activeTab === 'spots' || activeTab === 'food' || activeTab === 'hotel' || activeTab === 'shopping') && <SpotForm key={activeTab} initialData={editingItem} defaultTag={activeTab === 'food' ? 'dining' : activeTab === 'hotel' ? 'accommodation' : activeTab === 'shopping' ? 'shopping' : 'spot'} onSave={handleSave} />}
+              {activeTab === 'guides' && <GuideForm initialData={editingItem} onSave={handleSave} isSaving={isSaving} />}
+              {activeTab === 'strategies' && <StrategyForm initialData={editingItem} onSave={handleSave} isSaving={isSaving} />}
+              {spotCategories.some(c => c.key === activeTab) && <SpotForm key={activeTab} initialData={editingItem} defaultTag={activeTab} onSave={handleSave} isSaving={isSaving} />}
               {activeTab === 'ads' && <AdForm initialData={editingItem} onSave={handleSave} />}
             </div>
           </div>
         </div>
       )}
+
+      {isCategoryManagerOpen && (
+        <StrategyCategoryManager onClose={() => setIsCategoryManagerOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+function StrategyCategoryManager({ onClose }: { onClose: () => void }) {
+  const { strategyCategories, addStrategyCategory, deleteStrategyCategory } = useData();
+  const [newCategory, setNewCategory] = useState('');
+
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newCategory.trim()) {
+      addStrategyCategory(newCategory.trim());
+      setNewCategory('');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="text-xl font-bold">管理攻略分类</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+            <X size={20} />
+          </button>
+        </div>
+        
+        <div className="p-4 overflow-y-auto flex-1">
+          <form onSubmit={handleAdd} className="flex gap-2 mb-6">
+            <input
+              type="text"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              placeholder="输入新分类名称..."
+              className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+            <button 
+              type="submit"
+              disabled={!newCategory.trim()}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              添加
+            </button>
+          </form>
+
+          <div className="space-y-2">
+            {strategyCategories.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">暂无分类</div>
+            ) : (
+              strategyCategories.map(cat => (
+                <div key={cat.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors">
+                  <span className="font-medium">{cat.name}</span>
+                  <button 
+                    onClick={() => deleteStrategyCategory(cat.id)}
+                    className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors"
+                    title="删除"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -354,16 +512,18 @@ function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete
   );
 }
 
-function GuideForm({ initialData, onSave }: { initialData?: Guide, onSave: (data: any) => void }) {
-  const [formData, setFormData] = useState(initialData || {
+function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onSave: (data: any) => void, isSaving?: boolean }) {
+  const { cities = [] } = useData();
+  const [formData, setFormData] = useState<Partial<Guide>>(initialData || {
     name: '',
     gender: 'male',
     hasCar: false,
     title: '导游',
     avatar: 'https://picsum.photos/200',
     intro: '',
-    cities: [],
-    photos: []
+    cities: [] as string[],
+    photos: [] as string[],
+    content: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -408,68 +568,25 @@ function GuideForm({ initialData, onSave }: { initialData?: Guide, onSave: (data
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">头像 (支持上传或URL)</label>
-        <div className="mb-2">
-            <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            setFormData({...formData, avatar: reader.result as string});
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                }}
-                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-        </div>
-        <input
-          type="text"
-          value={formData.avatar}
-          onChange={e => setFormData({...formData, avatar: e.target.value})}
-          className="w-full px-3 py-2 border rounded-lg"
-          placeholder="头像URL"
+        <ImageUploader
+          label="头像"
+          images={formData.avatar ? [formData.avatar] : []}
+          onChange={(images) => setFormData({ ...formData, avatar: images[0] || '' })}
+          single={true}
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">照片墙 (支持上传或URL)</label>
-        <div className="mb-2">
-             <input
-                 type="file"
-                 accept="image/*"
-                 multiple
-                 onChange={(e) => {
-                     const files = e.target.files;
-                     if (!files) return;
-                     Array.from(files).forEach(file => {
-                         const reader = new FileReader();
-                         reader.onloadend = () => {
-                             setFormData(prev => ({
-                                 ...prev,
-                                 photos: [...(prev.photos || []), reader.result as string]
-                             }));
-                         };
-                         reader.readAsDataURL(file);
-                     });
-                 }}
-                 className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-             />
-        </div>
-        <input
-          type="text"
-          value={formData.photos ? formData.photos.join(', ') : ''}
-          onChange={e => setFormData({...formData, photos: e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean)})}
-          className="w-full px-3 py-2 border rounded-lg"
-          placeholder="http://example.com/1.jpg, http://example.com/2.jpg"
+        <ImageUploader
+          label="照片墙"
+          images={formData.photos || []}
+          onChange={(images) => setFormData({ ...formData, photos: images })}
+          maxImages={9}
         />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">服务城市 (多选)</label>
         <div className="flex flex-wrap gap-4 pt-1">
-          {CITIES.map(city => (
+          {cities.map(city => (
             <label key={city.name} className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -499,8 +616,28 @@ function GuideForm({ initialData, onSave }: { initialData?: Guide, onSave: (data
           required
         />
       </div>
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
-        保存
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">详细介绍 (支持HTML, 点击后显示)</label>
+        <textarea
+          value={formData.content || ''}
+          onChange={e => setFormData({...formData, content: e.target.value})}
+          className="w-full px-3 py-2 border rounded-lg font-mono text-sm"
+          rows={6}
+          placeholder="<p>这里可以输入详细的导游介绍...</p>"
+        />
+      </div>
+      <ReviewManager targetId={formData.id} targetType="guide" />
+      <button 
+        type="submit" 
+        disabled={isSaving}
+        className={`w-full text-white py-2 rounded-lg font-medium ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+      >
+        {isSaving ? (
+          <div className="flex items-center justify-center gap-2">
+             <Loader2 size={18} className="animate-spin" />
+             <span>保存中...</span>
+          </div>
+        ) : '保存'}
       </button>
     </form>
   );
@@ -584,20 +721,28 @@ function ContactSettings({ info, onSave }: { info: ContactInfo, onSave: (data: C
   );
 }
 
-function StrategyForm({ initialData, onSave }: { initialData?: Strategy, onSave: (data: any) => void }) {
-  const { spots: availableSpots = [] } = useData();
-  const [formData, setFormData] = useState(initialData || {
+function StrategyForm({ initialData, onSave, isSaving }: { initialData?: Strategy, onSave: (data: any) => void, isSaving?: boolean }) {
+  const { spots: availableSpots = [], strategyCategories = [], cities = [] } = useData();
+  const [formData, setFormData] = useState<Partial<Strategy>>(initialData || {
     title: '',
     city: '青岛',
-    category: '其他',
+    category: strategyCategories.length > 0 ? strategyCategories[0].name : '',
     days: '1天',
-    spots: [],
+    spots: [] as string[],
     image: 'https://picsum.photos/200',
-    tags: [],
+    photos: [] as string[],
+    tags: [] as string[],
     content: ''
   });
 
   const [customSpot, setCustomSpot] = useState('');
+
+  // Update category when strategyCategories load if it's empty
+  useEffect(() => {
+    if (!formData.category && strategyCategories.length > 0) {
+      setFormData(prev => ({ ...prev, category: strategyCategories[0].name }));
+    }
+  }, [strategyCategories]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -635,7 +780,7 @@ function StrategyForm({ initialData, onSave }: { initialData?: Strategy, onSave:
           onChange={e => setFormData({...formData, city: e.target.value})}
           className="w-full px-3 py-2 border rounded-lg"
         >
-          {CITIES.map(city => (
+          {cities.map(city => (
             <option key={city.name} value={city.name}>{city.name}</option>
           ))}
         </select>
@@ -643,14 +788,14 @@ function StrategyForm({ initialData, onSave }: { initialData?: Strategy, onSave:
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">攻略分类</label>
         <select
-          value={formData.category || '其他'}
+          value={formData.category}
           onChange={e => setFormData({...formData, category: e.target.value})}
           className="w-full px-3 py-2 border rounded-lg"
         >
-          <option value="一日游">一日游</option>
-          <option value="2日游">2日游</option>
-          <option value="亲子游">亲子游</option>
-          <option value="其他">其他</option>
+          {strategyCategories.length === 0 && <option value="">无分类 (请先添加分类)</option>}
+          {strategyCategories.map(cat => (
+            <option key={cat.id} value={cat.name}>{cat.name}</option>
+          ))}
         </select>
       </div>
       <div>
@@ -670,8 +815,8 @@ function StrategyForm({ initialData, onSave }: { initialData?: Strategy, onSave:
         
         {/* Selected Spots Tags */}
         <div className="flex flex-wrap gap-2 mb-3 min-h-[40px] p-2 border rounded-lg bg-gray-50">
-          {formData.spots.length === 0 && <span className="text-gray-400 text-sm py-1">暂无景点</span>}
-          {formData.spots.map(spot => (
+          {(formData.spots || []).length === 0 && <span className="text-gray-400 text-sm py-1">暂无景点</span>}
+          {(formData.spots || []).map(spot => (
             <span key={spot} className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded text-sm">
               {spot}
               <button 
@@ -745,43 +890,41 @@ function StrategyForm({ initialData, onSave }: { initialData?: Strategy, onSave:
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">封面图片 (支持上传或URL)</label>
-        <div className="mb-2">
-            <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            setFormData({...formData, image: reader.result as string});
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                }}
-                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-        </div>
-        <input
-          type="text"
-          value={formData.image}
-          onChange={e => setFormData({...formData, image: e.target.value})}
-          className="w-full px-3 py-2 border rounded-lg"
-          placeholder="图片URL"
+        <ImageUploader
+          label="封面图片"
+          images={formData.image ? [formData.image] : []}
+          onChange={(images) => setFormData({ ...formData, image: images[0] || '' })}
+          single={true}
+        />
+      </div>
+      <div>
+        <ImageUploader
+          label="照片墙 (详情页轮播)"
+          images={formData.photos || []}
+          onChange={(images) => setFormData({ ...formData, photos: images })}
+          maxImages={9}
         />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">内容详情</label>
-        <textarea
+        <RichTextEditor
           value={formData.content || ''}
-          onChange={e => setFormData({...formData, content: e.target.value})}
-          className="w-full px-3 py-2 border rounded-lg"
-          rows={5}
+          onChange={value => setFormData({...formData, content: value})}
+          placeholder="请输入详细内容..."
         />
       </div>
-       <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
-        保存
+      <ReviewManager targetId={formData.id} targetType="strategy" />
+       <button 
+        type="submit" 
+        disabled={isSaving}
+        className={`w-full text-white py-2 rounded-lg font-medium ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+      >
+        {isSaving ? (
+          <div className="flex items-center justify-center gap-2">
+             <Loader2 size={18} className="animate-spin" />
+             <span>保存中...</span>
+          </div>
+        ) : '保存'}
       </button>
     </form>
   );
@@ -793,7 +936,7 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
       {data.map(item => (
         <div key={item.id} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
           <div className="w-full sm:w-24 h-48 sm:h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-             {item.photos[0] ? (
+             {item.photos?.[0] ? (
                 <img src={item.photos[0]} alt={item.name} className="w-full h-full object-cover" />
              ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400">无图</div>
@@ -803,11 +946,14 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
               <h3 className="text-lg font-bold">{item.name}</h3>
               <div className="flex gap-1">
-                {item.tags.map(t => (
+                {item.tags?.map(t => (
                     <span key={t} className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">
                         {t === 'spot' && '景点'}
                         {t === 'dining' && '美食'}
                         {t === 'accommodation' && '酒店'}
+                        {t === 'shopping' && '购物'}
+                        {t === 'rail' && '高铁'}
+                        {t === 'airport' && '机场'}
                         {t === 'transport' && '交通'}
                         {t === 'other' && '其他'}
                     </span>
@@ -830,56 +976,33 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
   );
 }
 
-function SpotForm({ initialData, defaultTag = 'spot', onSave }: { initialData?: Spot, defaultTag?: string, onSave: (data: any) => void }) {
-  const [formData, setFormData] = useState(initialData || {
+function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { initialData?: Spot, defaultTag?: string, onSave: (data: any) => void, isSaving?: boolean }) {
+  const { cities = [] } = useData();
+  const [formData, setFormData] = useState<Partial<Spot>>(initialData ? {
+    ...initialData,
+    // Ensure arrays are initialized correctly to prevent nulls
+    photos: initialData.photos || [],
+    tags: initialData.tags || [defaultTag],
+    reviews: initialData.reviews || []
+  } : {
     name: '',
     city: '青岛',
     address: '',
     location: { lng: 120.38, lat: 36.06 },
     photos: [],
-    videos: [],
     content: '',
-    tags: [defaultTag],
+    tags: [defaultTag || 'spot'],
     reviews: []
   });
 
-  const [newReview, setNewReview] = useState({
-    username: '游客',
-    rating: 5,
-    content: ''
-  });
-
-  const handleAddReview = () => {
-    if (!newReview.content.trim()) return;
-    
-    const review = {
-        id: Date.now().toString(),
-        userId: 'admin_added',
-        username: newReview.username || '游客',
-        rating: newReview.rating,
-        content: newReview.content,
-        created_at: new Date().toISOString(),
-        source: 'Local'
-    };
-
-    setFormData(prev => ({
-        ...prev,
-        reviews: [review, ...(prev.reviews || [])]
-    }));
-
-    setNewReview({ username: '游客', rating: 5, content: '' });
-  };
-
-  const handleDeleteReview = (reviewId: string) => {
-    setFormData(prev => ({
-        ...prev,
-        reviews: (prev.reviews || []).filter(r => r.id !== reviewId)
-    }));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    const dataToSave = {
+      ...formData,
+      photos: Array.isArray(formData.photos) ? formData.photos : []
+    };
+    console.log('Submitting Spot Data:', dataToSave);
+    onSave(dataToSave);
   };
 
   return (
@@ -895,21 +1018,31 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave }: { initialData?: 
         />
       </div>
       <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">中文名称 (详情页显示)</label>
+        <input
+          type="text"
+          value={formData.cnName || ''}
+          onChange={e => setFormData({...formData, cnName: e.target.value})}
+          className="w-full px-3 py-2 border rounded-lg"
+          placeholder="例如：汉拿山"
+        />
+      </div>
+      <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">所属城市</label>
         <select
           value={formData.city || '青岛'}
           onChange={e => {
-            const city = CITIES.find(c => c.name === e.target.value);
+            const city = cities.find(c => c.name === e.target.value);
             setFormData({
                 ...formData, 
                 city: e.target.value,
                 // Optional: Auto-update map center if new item
-                location: !initialData && city ? { lng: city.center[0], lat: city.center[1] } : formData.location
+                location: !initialData && city ? { lng: city.lng, lat: city.lat } : formData.location
             });
           }}
           className="w-full px-3 py-2 border rounded-lg"
         >
-          {CITIES.map(city => (
+          {cities.map(city => (
             <option key={city.name} value={city.name}>{city.name}</option>
           ))}
         </select>
@@ -957,7 +1090,7 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave }: { initialData?: 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">分类 (已锁定)</label>
         <select
-          value={formData.tags[0] || 'spot'}
+          value={formData.tags?.[0] || 'spot'}
           onChange={e => setFormData({...formData, tags: [e.target.value as any]})}
           className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
           disabled={true}
@@ -966,151 +1099,55 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave }: { initialData?: 
           <option value="dining">美食</option>
           <option value="accommodation">酒店</option>
           <option value="shopping">购物</option>
+          <option value="rail">高铁</option>
+          <option value="airport">机场</option>
           <option value="transport">交通</option>
           <option value="other">其他</option>
         </select>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">图片 (支持上传本地图片或输入URL)</label>
-        
-        {/* File Upload */}
-        <div className="mb-3">
-            <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => {
-                    const files = e.target.files;
-                    if (!files) return;
-                    
-                    Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const base64String = reader.result as string;
-                            setFormData(prev => ({
-                                ...prev,
-                                photos: [...(prev.photos || []), base64String]
-                            }));
-                        };
-                        reader.readAsDataURL(file);
-                    });
-                }}
-                className="block w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-full file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-                * 上传的图片将自动转换为Base64编码存储，无需手动放入文件夹。适合朋友使用。
-            </p>
-        </div>
-
-        {/* URL Input */}
-        <input
-          type="text"
-          value={formData.photos?.join(', ') || ''}
-          onChange={e => setFormData({...formData, photos: e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean)})}
-          className="w-full px-3 py-2 border rounded-lg"
-          placeholder="http://example.com/1.jpg, /images/local.jpg"
+        <ImageUploader
+          label="图片 (支持上传本地图片或输入URL)"
+          images={formData.photos || []}
+          onChange={(images) => setFormData({ ...formData, photos: images })}
+          maxImages={9}
         />
         <p className="text-xs text-gray-500 mt-1">
-          * 也可以手动输入图片链接，多个链接用逗号分隔
+          * 上传的图片将自动转换为Base64编码存储，适合朋友使用。
         </p>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">视频URL (选填)</label>
-        <input
-          type="text"
-          value={formData.videos?.join(', ') || ''}
-          onChange={e => setFormData({...formData, videos: e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean)})}
+        <label className="block text-sm font-medium text-gray-700 mb-1">简介 (用于卡片显示)</label>
+        <textarea
+          value={formData.intro || ''}
+          onChange={e => setFormData({...formData, intro: e.target.value})}
           className="w-full px-3 py-2 border rounded-lg"
-          placeholder="http://example.com/video.mp4, /videos/local.mp4"
+          rows={2}
+          placeholder="简短介绍，将显示在左侧列表卡片上"
         />
-        <p className="text-xs text-gray-500 mt-1">
-          * 本地视频请存放在 <code className="bg-gray-100 px-1 rounded">frontend/public/videos/</code> 目录下，并填写 <code className="bg-gray-100 px-1 rounded">/videos/文件名.mp4</code>
-        </p>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">内容详情</label>
-        <textarea
-          value={formData.content}
-          onChange={e => setFormData({...formData, content: e.target.value})}
-          className="w-full px-3 py-2 border rounded-lg"
-          rows={5}
-          required
+        <RichTextEditor
+          value={formData.content || ''}
+          onChange={value => setFormData({...formData, content: value})}
+          placeholder="请输入详细内容..."
         />
       </div>
 
-      {/* Review Management Section */}
-      <div className="border-t pt-4 mt-4">
-        <h3 className="font-bold text-gray-800 mb-3">评论管理</h3>
-        
-        {/* Add Review Form */}
-        <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
-            <div className="flex gap-3">
-                <input
-                    type="text"
-                    value={newReview.username}
-                    onChange={e => setNewReview({...newReview, username: e.target.value})}
-                    className="w-1/3 px-3 py-2 border rounded-lg text-sm"
-                    placeholder="用户名"
-                />
-                <select
-                    value={newReview.rating}
-                    onChange={e => setNewReview({...newReview, rating: Number(e.target.value)})}
-                    className="w-1/4 px-3 py-2 border rounded-lg text-sm"
-                >
-                    {[5,4,3,2,1].map(r => <option key={r} value={r}>{r} 星</option>)}
-                </select>
-            </div>
-            <div className="flex gap-3">
-                <input
-                    type="text"
-                    value={newReview.content}
-                    onChange={e => setNewReview({...newReview, content: e.target.value})}
-                    className="flex-1 px-3 py-2 border rounded-lg text-sm"
-                    placeholder="评论内容..."
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddReview())}
-                />
-                <button
-                    type="button"
-                    onClick={handleAddReview}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
-                >
-                    添加评论
-                </button>
-            </div>
-        </div>
+      <ReviewManager targetId={formData.id} targetType="spot" />
 
-        {/* Reviews List */}
-        <div className="space-y-3 max-h-60 overflow-y-auto">
-            {(formData.reviews || []).length === 0 && <p className="text-sm text-gray-400 text-center py-2">暂无评论</p>}
-            {(formData.reviews || []).map((review: any) => (
-                <div key={review.id} className="bg-white border rounded-lg p-3 flex justify-between items-start group">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="font-bold text-sm">{review.username}</span>
-                            <span className="text-yellow-500 text-xs">{'★'.repeat(review.rating)}</span>
-                            <span className="text-gray-400 text-xs">{new Date(review.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <p className="text-gray-600 text-sm">{review.content}</p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => handleDeleteReview(review.id)}
-                        className="text-gray-400 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                        <Trash2 size={16} />
-                    </button>
-                </div>
-            ))}
-        </div>
-      </div>
-
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
-        保存
+      <button 
+        type="submit" 
+        disabled={isSaving}
+        className={`w-full text-white py-2 rounded-lg font-medium ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+      >
+        {isSaving ? (
+          <div className="flex items-center justify-center gap-2">
+             <Loader2 size={18} className="animate-spin" />
+             <span>保存中...</span>
+          </div>
+        ) : '保存'}
       </button>
     </form>
   );
@@ -1180,31 +1217,11 @@ function AdForm({ initialData, onSave }: { initialData?: AdSlot, onSave: (data: 
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">图片 (支持上传或URL)</label>
-        <div className="mb-2">
-            <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            setFormData({...formData, image: reader.result as string});
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                }}
-                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-        </div>
-        <input
-          type="text"
-          value={formData.image}
-          onChange={e => setFormData({...formData, image: e.target.value})}
-          className="w-full px-3 py-2 border rounded-lg"
-          placeholder="图片URL"
-          required={!formData.image}
+        <ImageUploader
+          label="图片"
+          images={formData.image ? [formData.image] : []}
+          onChange={(images) => setFormData({ ...formData, image: images[0] || '' })}
+          single={true}
         />
       </div>
       <div>

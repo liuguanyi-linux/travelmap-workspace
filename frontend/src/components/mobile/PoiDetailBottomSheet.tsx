@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion, PanInfo, useAnimation, useDragControls } from 'framer-motion';
-import { X, Navigation, Star, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2, Navigation2 } from 'lucide-react';
+import { X, Navigation, Star, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2, Navigation2, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useData } from '../../contexts/DataContext';
 import { getReviews, createReview, deleteReview } from '../../api';
 
 interface PoiDetailBottomSheetProps {
@@ -23,6 +24,49 @@ interface Review {
   createdAt: string;
 }
 
+// Robust Image Component with Fallback
+const SafeImage = ({ src, alt, className, onClick }: { src: string, alt: string, className?: string, onClick?: () => void }) => {
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Handle relative paths - ensure they start with / if missing (though usually browser handles this)
+  // Also fix potential double slashes if prepending base url
+  const finalSrc = src; 
+
+  if (error || !src) {
+    return (
+      <div 
+        className={`flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-400 ${className}`}
+        onClick={onClick}
+      >
+        <ImageIcon size={24} className="mb-1 opacity-50" />
+        <span className="text-[10px]">无法加载</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`relative overflow-hidden ${className}`} onClick={onClick}>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-10">
+           <Loader2 className="animate-spin text-gray-400" size={20} />
+        </div>
+      )}
+      <img
+        src={finalSrc}
+        alt={alt}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}
+        onError={() => {
+            console.warn('Image failed to load:', src);
+            setError(true);
+            setLoading(false);
+        }}
+        onLoad={() => setLoading(false)}
+      />
+    </div>
+  );
+};
+
 export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetailBottomSheetProps) {
   const controls = useAnimation();
   const dragControls = useDragControls();
@@ -30,12 +74,15 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
   const { isFavorite, toggleFavorite } = useFavorites();
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { spotCategories } = useData();
   const isAdmin = user?.email === 'admin@travelmap.com';
   
   const [reviews, setReviews] = useState<Review[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+
   const isFav = poi ? isFavorite(poi.id) : false;
 
   useEffect(() => {
@@ -137,11 +184,80 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
 
   return (
     <div className="fixed inset-0 z-50 pointer-events-none flex flex-col justify-end">
-        {/* Backdrop - only visible when full screen? Or never? 
-            User said: "map still scalable/movable when panel at 1/3".
-            So no backdrop in peek mode. In full mode maybe?
-            Let's skip backdrop for now to keep it clean/modern.
-        */}
+        {/* Image Preview Modal */}
+        {previewIndex !== null && poi.photos && (
+            <div 
+              className="fixed inset-0 z-[60] bg-black flex items-center justify-center p-4 pointer-events-auto"
+              onClick={() => setPreviewIndex(null)}
+            >
+              <button 
+                className="absolute top-4 right-4 p-2 bg-white/10 rounded-full text-white hover:bg-white/20 z-20"
+                onClick={(e) => { e.stopPropagation(); setPreviewIndex(null); }}
+              >
+                <X size={24} />
+              </button>
+
+              {/* Navigation Buttons */}
+              {poi.photos.length > 1 && (
+                <>
+                  <button 
+                    className="absolute left-4 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 z-20 backdrop-blur-sm transition-colors"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewIndex((prev) => (prev !== null ? (prev - 1 + poi.photos.length) % poi.photos.length : 0));
+                    }}
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <button 
+                    className="absolute right-4 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 z-20 backdrop-blur-sm transition-colors"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewIndex((prev) => (prev !== null ? (prev + 1) % poi.photos.length : 0));
+                    }}
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                  
+                  {/* Counter */}
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-black/50 backdrop-blur-md rounded-full text-white text-sm font-medium z-20">
+                    {previewIndex + 1} / {poi.photos.length}
+                  </div>
+                </>
+              )}
+
+              <div className="relative w-full h-full flex items-center justify-center">
+                  <motion.img 
+                    key={previewIndex}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                    src={typeof poi.photos[previewIndex] === 'string' ? poi.photos[previewIndex] : poi.photos[previewIndex].url} 
+                    alt="Preview" 
+                    className="max-w-full max-h-full object-contain rounded-lg select-none shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                    drag="x"
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.2}
+                    onDragEnd={(e, { offset, velocity }) => {
+                      const swipe = offset.x;
+                      if (swipe < -50) {
+                         setPreviewIndex((prev) => (prev !== null ? (prev + 1) % poi.photos.length : 0));
+                      } else if (swipe > 50) {
+                         setPreviewIndex((prev) => (prev !== null ? (prev - 1 + poi.photos.length) % poi.photos.length : 0));
+                      }
+                    }}
+                    onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null; 
+                        // Use a reliable placeholder or just a generic error image
+                        target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NjYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiIvPjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ii8+PHBvbHlsaW5lIHBvaW50cz0iMjEgMTUgMTYgMTAgNSAyMSIvPjwvc3ZnPg==';
+                        target.className = "w-24 h-24 opacity-50"; // Make it small and subtle
+                     }} 
+                  />
+              </div>
+            </div>
+        )}
         
         <motion.div
           initial="hidden"
@@ -154,11 +270,11 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
           dragConstraints={{ top: 0 }}
           dragElastic={0.1}
           onDragEnd={handleDragEnd}
-          className="absolute left-0 right-0 h-[100vh] bg-white rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] overflow-hidden pointer-events-auto flex flex-col"
+          className="absolute left-0 right-0 h-[100vh] bg-white rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] overflow-hidden pointer-events-auto flex flex-col will-change-transform"
         >
           {/* Drag Handle Area - Active Drag Zone */}
           <div 
-            className="w-full flex justify-center pt-5 pb-3 cursor-grab active:cursor-grabbing bg-white z-20 shrink-0"
+            className="w-full flex justify-center pt-5 pb-3 cursor-grab active:cursor-grabbing bg-white z-20 shrink-0 touch-none"
             onPointerDown={(e) => dragControls.start(e)}
           >
             <div className="w-10 h-1 bg-gray-200 rounded-full" />
@@ -167,18 +283,30 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
           {/* Content Container */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
               
-              {/* Header Info (Always visible) */}
-              <div className="px-8 pb-6 bg-white z-10 shrink-0">
+              {/* Header Info (Always visible) - Also Draggable */}
+              <div 
+                className="px-8 pb-6 bg-white z-10 shrink-0 touch-none"
+                onPointerDown={(e) => dragControls.start(e)}
+              >
                 <div className="flex justify-between items-start">
                     <div className="flex-1 mr-4">
-                        <h2 className="text-3xl font-bold text-gray-900 leading-tight mb-3 tracking-tight">{poi.name}</h2>
+                        <h2 className="text-3xl font-bold text-gray-900 leading-tight mb-1 tracking-tight">{poi.cnName || poi.name}</h2>
+                        {poi.cnName && poi.name && poi.cnName !== poi.name && (
+                            <div className="text-sm text-gray-500 mb-3">{poi.name}</div>
+                        )}
                         <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
                             <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
                                 <Star size={14} fill="#EAB308" className="text-yellow-500" />
                                 <span className="font-bold text-yellow-700">4.8</span>
                             </div>
                             <span className="text-gray-300">|</span>
-                            <span className="bg-gray-50 px-2 py-1 rounded-lg text-gray-600">{poi.type?.split(';')[0] || t('common.unknownPlace')}</span>
+                            <span className="bg-gray-50 px-2 py-1 rounded-lg text-gray-600">
+                                {spotCategories?.find(c => poi.tags?.includes(c.key))?.name || 
+                                 spotCategories?.find(c => c.key === (poi.type?.split(';')[0]))?.name || 
+                                 poi.tags?.[0] || 
+                                 poi.type?.split(';')[0] || 
+                                 t('common.unknownPlace')}
+                            </span>
                             <span className="text-gray-300">|</span>
                             <span>1.2km</span>
                         </div>
@@ -191,6 +319,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                     <div className="flex flex-col gap-2 shrink-0">
                         <button 
                             onClick={onClose} 
+                            onPointerDown={(e) => e.stopPropagation()}
                             className="p-2.5 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors self-end"
                         >
                             <X size={20} className="text-gray-400" />
@@ -199,6 +328,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                             href={`https://uri.amap.com/marker?position=${poi.location?.lng},${poi.location?.lat}&name=${poi.name}&coordinate=gaode&callnative=1`}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onPointerDown={(e) => e.stopPropagation()}
                             className="p-2.5 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center text-white"
                             title="导航"
                         >
@@ -210,31 +340,26 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
 
               {/* Scrollable Content (Visible in Full Mode or scrolling in Peek?) */}
               <div className="flex-1 overflow-y-auto bg-gray-50/50 pb-28">
-                  {/* Horizontal Photos & Videos */}
-                  <div className="mt-4 mb-8">
+                  {/* Photos Section */}
+                  <div className="mt-4 mb-2">
                       <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
-                          {/* Videos */}
-                          {poi.videos && poi.videos.length > 0 && poi.videos.map((video: string, index: number) => (
-                              <div key={`video-${index}`} className="w-64 h-32 shrink-0 rounded-3xl overflow-hidden bg-black snap-center shadow-md relative">
-                                  <video 
-                                    src={video} 
-                                    controls 
-                                    className="w-full h-full object-cover"
-                                  />
-                              </div>
-                          ))}
-                          
-                          {/* Photos */}
                           {poi.photos && poi.photos.length > 0 ? (
-                              poi.photos.map((photo: any, index: number) => (
-                                  <div key={index} className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 snap-center shadow-md relative">
-                                      <img 
-                                        src={typeof photo === 'string' ? photo : photo.url} 
-                                        alt={typeof photo === 'string' ? poi.name : (photo.title || poi.name)} 
-                                        className="w-full h-full object-cover"
-                                      />
-                                  </div>
-                              ))
+                              poi.photos.map((photo: any, index: number) => {
+                                  const imgSrc = typeof photo === 'string' ? photo : photo.url;
+                                  return (
+                                      <div 
+                                        key={index} 
+                                        className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 snap-center shadow-md relative cursor-pointer"
+                                      >
+                                          <SafeImage 
+                                            src={imgSrc} 
+                                            alt={typeof photo === 'string' ? poi.name : (photo.title || poi.name)} 
+                                            className="w-full h-full rounded-3xl"
+                                            onClick={() => setPreviewIndex(index)}
+                                          />
+                                      </div>
+                                  );
+                              })
                           ) : (
                               [1, 2, 3].map((i) => (
                                   <div key={i} className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 snap-center shadow-sm relative">
@@ -252,35 +377,153 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                       </div>
                   </div>
 
-                  {/* Detailed Info */}
-                  <div className="px-6 space-y-4">
-                      {/* Hours & Phone */}
-                      <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-white p-5 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                              <div className="flex items-center gap-2 mb-3 text-gray-400">
-                                  <Clock size={18} />
-                                  <span className="text-xs font-bold uppercase tracking-wider">{t('detail.openTime')}</span>
+                  {/* Copy Info Section (Name & Address) */}
+                  <div className="mt-4 mb-6 px-6">
+                      <div className="bg-white p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] flex flex-col gap-4">
+                          {/* Name Copy Row */}
+                          <div className="flex items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-gray-500 mb-1">地名</p>
+                                  <p className="font-bold text-gray-900 text-lg truncate">{poi.name}</p>
                               </div>
-                              <div className="font-bold text-xl text-gray-900 mb-1">09:00 - 22:00</div>
-                              <div className="text-xs font-medium text-green-600 bg-green-50 inline-block px-2 py-1 rounded-lg">{t('detail.operating')}</div>
+                              <button 
+                                onClick={() => {
+                                    const text = poi.name;
+                                    // Try Clipboard API first
+                                    if (navigator.clipboard && window.isSecureContext) {
+                                        navigator.clipboard.writeText(text).catch(() => {
+                                            // Fallback if API fails
+                                            const textArea = document.createElement("textarea");
+                                            textArea.value = text;
+                                            textArea.style.position = "fixed";
+                                            textArea.style.left = "-9999px";
+                                            document.body.appendChild(textArea);
+                                            textArea.focus();
+                                            textArea.select();
+                                            try {
+                                                document.execCommand('copy');
+                                            } catch (err) {
+                                                console.error('Copy failed', err);
+                                            }
+                                            document.body.removeChild(textArea);
+                                        });
+                                    } else {
+                                        // Fallback for non-secure context
+                                        const textArea = document.createElement("textarea");
+                                        textArea.value = text;
+                                        textArea.style.position = "fixed";
+                                        textArea.style.left = "-9999px";
+                                        document.body.appendChild(textArea);
+                                        textArea.focus();
+                                        textArea.select();
+                                        try {
+                                            document.execCommand('copy');
+                                        } catch (err) {
+                                            console.error('Copy failed', err);
+                                        }
+                                        document.body.removeChild(textArea);
+                                    }
+
+                                    // Visual Feedback
+                                    const btn = document.getElementById('copy-name-btn');
+                                    if (btn) {
+                                        const originalText = btn.innerText;
+                                        btn.innerText = '已复制';
+                                        btn.classList.add('bg-green-600', 'text-white');
+                                        btn.classList.remove('bg-gray-100', 'text-gray-600');
+                                        setTimeout(() => {
+                                            btn.innerText = originalText;
+                                            btn.classList.remove('bg-green-600', 'text-white');
+                                            btn.classList.add('bg-gray-100', 'text-gray-600');
+                                        }, 1500);
+                                    }
+                                }}
+                                id="copy-name-btn"
+                                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                              >
+                                  复制地名
+                              </button>
                           </div>
-                          <div className="bg-white p-5 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                              <div className="flex items-center gap-2 mb-3 text-gray-400">
-                                  <Phone size={18} />
-                                  <span className="text-xs font-bold uppercase tracking-wider">{t('detail.phone')}</span>
+                          
+                          {/* Divider */}
+                          <div className="h-px bg-gray-100" />
+                          
+                          {/* Address Copy Row */}
+                          <div className="flex items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-gray-500 mb-1">地址</p>
+                                  <p className="font-medium text-gray-700 text-sm truncate">{poi.address || '暂无地址'}</p>
                               </div>
-                              <div className="font-bold text-xl text-gray-900 truncate mb-1">021-12345678</div>
-                              <div className="text-xs font-medium text-blue-600 bg-blue-50 inline-block px-2 py-1 rounded-lg">{t('detail.clickToCall')}</div>
+                              <button 
+                                onClick={() => {
+                                    if (poi.address) {
+                                        const text = poi.address;
+                                        // Try Clipboard API first
+                                        if (navigator.clipboard && window.isSecureContext) {
+                                            navigator.clipboard.writeText(text).catch(() => {
+                                                // Fallback
+                                                const textArea = document.createElement("textarea");
+                                                textArea.value = text;
+                                                textArea.style.position = "fixed";
+                                                textArea.style.left = "-9999px";
+                                                document.body.appendChild(textArea);
+                                                textArea.focus();
+                                                textArea.select();
+                                                try {
+                                                    document.execCommand('copy');
+                                                } catch (err) {
+                                                    console.error('Copy failed', err);
+                                                }
+                                                document.body.removeChild(textArea);
+                                            });
+                                        } else {
+                                            // Fallback for non-secure context
+                                            const textArea = document.createElement("textarea");
+                                            textArea.value = text;
+                                            textArea.style.position = "fixed";
+                                            textArea.style.left = "-9999px";
+                                            document.body.appendChild(textArea);
+                                            textArea.focus();
+                                            textArea.select();
+                                            try {
+                                                document.execCommand('copy');
+                                            } catch (err) {
+                                                console.error('Copy failed', err);
+                                            }
+                                            document.body.removeChild(textArea);
+                                        }
+
+                                        // Visual Feedback
+                                        const btn = document.getElementById('copy-addr-btn');
+                                        if (btn) {
+                                            const originalText = btn.innerText;
+                                            btn.innerText = '已复制';
+                                            btn.classList.add('bg-green-600', 'text-white');
+                                            btn.classList.remove('bg-gray-100', 'text-gray-600');
+                                            setTimeout(() => {
+                                                btn.innerText = originalText;
+                                                btn.classList.remove('bg-green-600', 'text-white');
+                                                btn.classList.add('bg-gray-100', 'text-gray-600');
+                                            }, 1500);
+                                        }
+                                    }
+                                }}
+                                id="copy-addr-btn"
+                                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={!poi.address}
+                              >
+                                  复制地址
+                              </button>
                           </div>
                       </div>
+                  </div>
 
+                  {/* Detailed Info */}
+                  <div className="px-6 space-y-4">
                       {/* Introduction */}
                       <div className="bg-white p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                          <h3 className="font-bold text-gray-900 mb-4 text-xl">{t('detail.intro')}</h3>
-                          <p className="text-gray-600 leading-relaxed text-justify">
-                              {poi.content || t('detail.introDesc').replace('{name}', poi.name)}
-                              <br/><br/>
-                          </p>
+                          <h3 className="font-bold text-gray-900 mb-4 text-xl">内容</h3>
+                          <div className="text-gray-600 leading-relaxed text-justify whitespace-pre-line" dangerouslySetInnerHTML={{ __html: poi.content || t('detail.introDesc').replace('{name}', poi.name) }} />
                       </div>
                       
                       {/* Reviews Preview */}

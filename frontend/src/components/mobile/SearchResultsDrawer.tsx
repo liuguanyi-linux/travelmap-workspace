@@ -46,24 +46,28 @@ export default function SearchResultsDrawer({ isVisible, results, onPoiClick, on
           dragConstraints={{ top: 0 }}
           dragElastic={0.1}
           onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 z-40 h-[75vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden"
+          className="fixed bottom-0 left-0 right-0 z-40 h-[75vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
         >
           {/* Handle */}
           <div 
-            className="w-full flex justify-center pt-3 pb-3 cursor-grab active:cursor-grabbing shrink-0 z-10"
+            className="w-full flex justify-center pt-3 pb-3 cursor-grab active:cursor-grabbing shrink-0 z-10 touch-none"
             onPointerDown={(e) => dragControls.start(e)}
           >
             <div className="w-12 h-1.5 bg-gray-200/80 dark:bg-gray-700/80 rounded-full" />
           </div>
 
           {/* Header */}
-          <div className="px-6 pb-4 shrink-0 flex justify-between items-center">
+          <div 
+            className="px-6 pb-4 shrink-0 flex justify-between items-center touch-none"
+            onPointerDown={(e) => dragControls.start(e)}
+          >
             <div>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">搜索结果</h1>
                 <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">找到 {results.length} 个相关地点</p>
             </div>
             <button 
               onClick={onClose}
+              onPointerDown={(e) => e.stopPropagation()}
               className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               <X size={20} />

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Hotel, Utensils, ChevronLeft, Building2, ShoppingBag, X, Search } from 'lucide-react';
+import { X, ChevronLeft, Search, MapPin, ArrowRight, Building2 } from 'lucide-react';
+import * as Icons from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useData } from '../../contexts/DataContext';
 
 interface CityDrawerProps {
   isVisible: boolean;
@@ -10,7 +12,7 @@ interface CityDrawerProps {
   searchResults: any[]; // Pass search results to display in list
   onPoiClick: (poi: any) => void;
   onClose?: () => void;
-  onSearch?: (keyword: string) => void;
+  onSearch?: (keyword: string, category?: string) => void;
 }
 
 // Level 1: Cities
@@ -18,7 +20,7 @@ interface CityDrawerProps {
 // Level 3: POI List for selected category
 type ViewLevel = 'cities' | 'categories' | 'list';
 
-import { CITIES } from '../../config/cityConfig';
+import { City } from '../../types/data';
 
 export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, searchResults, onPoiClick, onClose, onSearch }: CityDrawerProps) {
   const [level, setLevel] = useState<ViewLevel>('cities');
@@ -26,6 +28,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchKeyword, setSearchKeyword] = useState('');
   const { t } = useLanguage();
+  const { cities = [], spotCategories = [] } = useData();
   
   const controls = useAnimation();
   const dragControls = useDragControls();
@@ -33,66 +36,87 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
   // Reset view and position when drawer closes/opens
   useEffect(() => {
     if (isVisible) {
-      if (level === 'list') {
-          controls.start({ y: 0 });
-      } else {
-          controls.start({ y: 0 }); // Show full height by default as requested
-      }
+      controls.start({ y: 0 });
     } else {
       controls.start({ y: '100%' });
-      // Optionally reset state on close, but keeping state might be better UX?
-      // For now, let's reset to initial state if it was fully closed
-      if (!isVisible) {
-          // delayed reset or just keep it? Let's keep it for now unless user explicitly closed it
-      }
     }
-  }, [isVisible, controls, level]);
+  }, [isVisible, controls]);
 
-  const categories = [
-    { id: 'attraction', label: t('categories.attraction'), icon: MapPin, color: 'text-green-600 bg-green-50' },
-    { id: 'hotel', label: t('categories.hotel'), icon: Hotel, color: 'text-blue-600 bg-blue-50' },
-    { id: 'food', label: t('categories.food'), icon: Utensils, color: 'text-orange-600 bg-orange-50' },
-    { id: 'shopping', label: t('categories.shopping'), icon: ShoppingBag, color: 'text-pink-600 bg-pink-50' },
-  ];
-
-  const handleCityClick = (city: typeof CITIES[0]) => {
-      setSelectedCity(city.name);
+  // Use dynamic categories from DataContext
+  const categories = (spotCategories || [])
+    .filter(cat => cat && cat.key && cat.name) // Filter invalid categories
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+    .map(cat => {
+      let IconComponent = MapPin;
+      try {
+        if (cat.icon && (Icons as any)[cat.icon]) {
+            IconComponent = (Icons as any)[cat.icon];
+        }
+      } catch (e) {
+        console.warn('Icon load failed for', cat.icon);
+      }
       
-      // 1. First set state to show category view
+      return {
+        id: cat.key,
+        label: cat.name,
+        icon: IconComponent,
+        color: cat.key === 'spot' ? 'text-green-600 bg-green-50' :
+               cat.key === 'accommodation' ? 'text-blue-600 bg-blue-50' :
+               cat.key === 'dining' ? 'text-orange-600 bg-orange-50' :
+               cat.key === 'shopping' ? 'text-pink-600 bg-pink-50' :
+               cat.key === 'transport' ? 'text-indigo-600 bg-indigo-50' :
+               'text-gray-600 bg-gray-50'
+      };
+    });
+
+  // Ensure cities is an array and filter invalid entries
+  const cityList = (Array.isArray(cities) ? cities : [])
+    .filter(city => city && city.name);
+
+  useEffect(() => {
+    console.log('[CityDrawer] Mounted. isVisible:', isVisible, 'Cities:', cityList.length, 'Categories:', categories.length);
+  }, [isVisible, cityList.length, categories.length]);
+
+  const handleCityClick = (city: City) => {
+      if (!city || !city.name) return;
+      console.log('[CityDrawer] City clicked:', city.name);
+      
+      setSelectedCity(city.name);
       setLevel('categories');
       
-      // 2. Animate map smoothly (non-blocking)
+      // Defer map movement to prevent UI blocking
       requestAnimationFrame(() => {
-          onSelectCity(city);
+          try {
+            onSelectCity({ name: city.name, center: [city.lng || 0, city.lat || 0], zoom: city.zoom || 12 });
+          } catch (e) {
+            console.error('Map update failed', e);
+          }
       });
       
-      // 3. Keep drawer at full height
       controls.start({ y: 0 });
   };
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
-    setSearchKeyword(''); // Reset search keyword
+    setSearchKeyword('');
     
-    // Trigger search asynchronously to avoid blocking UI animation
     setTimeout(() => {
         onSelectCategory(category);
     }, 50);
     
     setLevel('list');
-    controls.start({ y: 0 }); // Auto-expand to full height for list
+    controls.start({ y: 0 });
   };
 
   const handleBack = () => {
     if (level === 'list') {
         setLevel('categories');
         setSelectedCategory('');
-        onSelectCategory(''); // Clear filter
-        controls.start({ y: 0 }); // Return to full height
+        onSelectCategory('');
+        controls.start({ y: 0 });
     } else if (level === 'categories') {
         setLevel('cities');
         setSelectedCity('');
-        // Maybe zoom out map? Or keep it? Keeping is fine.
         controls.start({ y: 0 });
     }
   };
@@ -103,35 +127,24 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
     const isFast = Math.abs(velocity.y) > 500;
 
     if (isDraggingDown) {
-      // Dragging down
       if (level === 'list') {
          if (offset.y > 100 || isFast) {
-             // If in list view, dragging down goes back to categories (medium height)
              handleBack();
          } else {
-             controls.start({ y: 0 }); // Revert to full
+             controls.start({ y: 0 });
          }
       } else {
-         // In cities or categories view (medium height)
-         if (offset.y > 100 || isFast) {
-            // Close drawer if onClose provided
-            if (onClose) {
-                onClose();
-            } else {
-                controls.start({ y: '55%' });
-            }
+         // In compact menu mode, drag down closes the drawer
+         if (offset.y > 50 || isFast) {
+            if (onClose) onClose();
+            else controls.start({ y: '100%' });
          } else {
-             controls.start({ y: '55%' });
+             controls.start({ y: 0 });
          }
       }
     } else {
-      // Dragging up
-      if (offset.y < -50 || isFast) {
-        controls.start({ y: 0 }); // Expand to full
-      } else {
-        // Revert
-        controls.start({ y: level === 'list' ? 0 : '55%' });
-      }
+      // Dragging up - ensure it snaps back to 0 (visible)
+      controls.start({ y: 0 });
     }
   };
 
@@ -142,15 +155,15 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
           initial={{ y: '100%' }}
           animate={controls}
           exit={{ y: '100%' }}
-          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          transition={{ type: 'spring', damping: 30, stiffness: 250, mass: 0.8 }}
           drag="y"
           dragControls={dragControls}
           dragListener={false}
           dragConstraints={{ top: 0 }}
-          dragElastic={0.2}
+          dragElastic={0.1}
           onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col transition-colors duration-300"
-          style={{ height: '85vh' }}
+          className="fixed bottom-0 left-0 right-0 z-[60] bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col transition-colors duration-300 will-change-transform"
+          style={{ height: level === 'list' ? '85vh' : 'auto', maxHeight: '85vh' }}
         >
           {/* Drag Handle */}
           <div 
@@ -163,6 +176,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
           {/* Close Button */}
           <button 
             onClick={onClose}
+            onPointerDown={(e) => e.stopPropagation()}
             className="absolute top-4 right-4 p-2 bg-black/5 dark:bg-white/10 rounded-full text-gray-500 dark:text-gray-400 z-50 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
           >
             <X size={20} />
@@ -170,35 +184,41 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
 
           {/* Header with Back Button */}
           {level !== 'cities' && (
-              <div className="px-6 pb-2 flex items-center gap-2 shrink-0">
+              <div 
+                className="px-6 pb-2 flex items-center gap-2 shrink-0 touch-none"
+                onPointerDown={(e) => dragControls.start(e)}
+              >
                   <button 
                     onClick={handleBack}
+                    onPointerDown={(e) => e.stopPropagation()}
                     className="p-1.5 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors"
                   >
                       <ChevronLeft size={24} className="text-gray-600 dark:text-gray-300" />
                   </button>
                   <span className="text-lg font-bold text-gray-800 dark:text-white">
-                      {level === 'categories' ? selectedCity : selectedCategory === 'shopping' ? t('cityDrawer.shoppingDeals') : selectedCategory === 'attraction' ? t('categories.attraction') : selectedCategory === 'hotel' ? t('categories.hotel') : t('categories.food')}
+                      {level === 'categories' ? selectedCity : spotCategories.find(c => c.key === selectedCategory)?.name || selectedCategory}
                   </span>
               </div>
           )}
           
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 pb-20">
+          <div className={`flex-1 overflow-y-auto overflow-x-hidden px-4 ${level === 'list' ? 'pb-24' : 'pb-5'}`}>
             
             {/* Level 1: City List */}
             {level === 'cities' && (
                 <div className="space-y-4 pt-2">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('cityDrawer.selectCity')}</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                        {CITIES.map(city => (
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white px-1">{t('city.select')}</h2>
+                    <div className="flex overflow-x-auto gap-3 px-2 pb-4 snap-x snap-mandatory scrollbar-hide -mx-2">
+                        {cityList.map((city, index) => (
                             <button
-                                key={city.name}
+                                key={city.name || index}
                                 onClick={() => handleCityClick(city)}
-                                className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl border border-gray-100 dark:border-gray-700 hover:bg-white/80 dark:hover:bg-gray-800/80 active:scale-95 transition-all shadow-sm"
+                                className="flex-none w-28 flex flex-col items-center justify-center p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform h-24 snap-center"
                             >
-                                <Building2 size={32} className="text-gray-400 dark:text-gray-500 mb-2" />
-                                <span className="text-lg font-bold text-gray-800 dark:text-white">{city.name}</span>
+                                <div className="p-2 rounded-full bg-gray-50 dark:bg-gray-700 mb-2 text-gray-400 dark:text-gray-300">
+                                    <Building2 size={24} />
+                                </div>
+                                <span className="font-bold text-gray-800 dark:text-white text-sm z-10 text-center leading-tight w-full truncate">{city.name}</span>
                             </button>
                         ))}
                     </div>
@@ -207,18 +227,18 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
 
             {/* Level 2: Categories */}
             {level === 'categories' && (
-                <div className="space-y-6 pt-4">
-                    <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4 pt-3">
+                    <div className="flex overflow-x-auto gap-3 px-2 pb-4 snap-x snap-mandatory scrollbar-hide -mx-2">
                         {categories.map((cat) => (
                         <button
                             key={cat.id}
                             onClick={() => handleCategoryClick(cat.id)}
-                            className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform"
+                            className="flex-none w-24 flex flex-col items-center justify-center p-2 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform h-24 snap-center"
                         >
-                            <div className={`p-4 rounded-2xl ${cat.color} dark:bg-opacity-20 mb-1`}>
-                                <cat.icon size={32} />
+                            <div className={`p-2.5 rounded-xl ${cat.color} dark:bg-opacity-20 mb-1.5 flex items-center justify-center`}>
+                                <cat.icon size={22} />
                             </div>
-                            <span className="font-bold text-gray-800 dark:text-white text-lg z-10">{cat.label}</span>
+                            <span className="font-bold text-gray-800 dark:text-white text-[10px] z-10 text-center leading-tight w-full truncate">{cat.label}</span>
                         </button>
                         ))}
                     </div>
@@ -237,7 +257,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                     const val = e.target.value;
                                     setSearchKeyword(val);
                                     if (onSearch && val.trim()) {
-                                        onSearch(val);
+                                        onSearch(val, selectedCategory);
                                     } else if (onSearch && val === '') {
                                         // If empty, maybe reset to category search?
                                         onSelectCategory(selectedCategory);
@@ -273,7 +293,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                 </div>
                                 <div className="flex-1 flex flex-col justify-between py-1">
                                     <div>
-                                        <h3 className="font-bold text-gray-800 line-clamp-1">{item.name}</h3>
+                                        <h3 className="font-bold text-gray-800 line-clamp-1">{index + 1}、{item.name}</h3>
                                         <p className="text-sm text-gray-500 line-clamp-2 mt-1">{item.address || '暂无地址信息'}</p>
                                     </div>
                                     <div className="flex items-center gap-1 text-xs text-orange-500 font-medium">

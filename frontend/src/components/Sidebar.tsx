@@ -800,7 +800,13 @@ export default function Sidebar({
                           <div>
                             <div className='font-semibold text-cyan-100 group-hover:text-cyan-400 transition-colors text-lg'>{poi.name}</div>
                             <div className='text-sm text-slate-400 mt-1 truncate flex items-center gap-1'>
-                                <MapPin size={12} /> {poi.address}
+                                {poi.intro ? (
+                                    <span>{poi.intro}</span>
+                                ) : (
+                                    <>
+                                        <MapPin size={12} /> {poi.address}
+                                    </>
+                                )}
                             </div>
                           </div>
                           {poi.photos && poi.photos[0] && (

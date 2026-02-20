@@ -43,4 +43,19 @@ export class ReviewsController {
   async findAllByPoiId(@Param('poiId', ParseIntPipe) poiId: number) {
     return this.reviewsService.findAllByPoiId(poiId);
   }
+
+  @Get('spot/:spotId')
+  async findAllBySpotId(@Param('spotId', ParseIntPipe) spotId: number) {
+    return this.reviewsService.findAllBySpotId(spotId);
+  }
+
+  @Get('guide/:guideId')
+  async findAllByGuideId(@Param('guideId', ParseIntPipe) guideId: number) {
+    return this.reviewsService.findAllByGuideId(guideId);
+  }
+
+  @Get('strategy/:strategyId')
+  async findAllByStrategyId(@Param('strategyId', ParseIntPipe) strategyId: number) {
+    return this.reviewsService.findAllByStrategyId(strategyId);
+  }
 }

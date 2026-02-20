@@ -7,16 +7,21 @@ export class ReviewsService {
   constructor(private prisma: PrismaService) {}
 
   async create(data: Prisma.ReviewUncheckedCreateInput) {
+    // Ensure at least one target is present
+    if (!data.poiId && !data.spotId && !data.guideId && !data.strategyId) {
+        throw new Error('Review must be associated with a target (POI, Spot, Guide, or Strategy)');
+    }
+
     return this.prisma.review.create({
       data,
-      include: { user: true, poi: true }
+      include: { user: true }
     });
   }
 
   async findAllByUserId(userId: number) {
     return this.prisma.review.findMany({
       where: { userId },
-      include: { poi: true },
+      include: { poi: true, spot: true, guide: true, strategy: true },
       orderBy: { createdAt: 'desc' }
     });
   }
@@ -24,6 +29,30 @@ export class ReviewsService {
   async findAllByPoiId(poiId: number) {
     return this.prisma.review.findMany({
       where: { poiId },
+      include: { user: true },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async findAllBySpotId(spotId: number) {
+    return this.prisma.review.findMany({
+      where: { spotId },
+      include: { user: true },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async findAllByGuideId(guideId: number) {
+    return this.prisma.review.findMany({
+      where: { guideId },
+      include: { user: true },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async findAllByStrategyId(strategyId: number) {
+    return this.prisma.review.findMany({
+      where: { strategyId },
       include: { user: true },
       orderBy: { createdAt: 'desc' }
     });

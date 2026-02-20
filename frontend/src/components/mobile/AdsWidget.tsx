@@ -71,7 +71,7 @@ export default function AdsWidget() {
       <div className="animate-in fade-in slide-in-from-right-4 duration-500">
         <div 
           onClick={() => setIsOpen(true)}
-          className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/30 flex flex-col items-center justify-center gap-2 w-32 cursor-pointer hover:scale-105 active:scale-95 transition-all group relative overflow-hidden h-[88px]"
+          className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/30 flex flex-col items-center justify-center gap-2 w-32 cursor-pointer hover:scale-105 active:scale-95 transition-all group relative overflow-hidden h-[88px]"
         >
           <AnimatePresence mode='wait'>
             <motion.div
@@ -152,7 +152,7 @@ export default function AdsWidget() {
                   return (
                     <div 
                       key={ad.id}
-                      className="min-w-[140px] snap-start bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 flex flex-col items-center text-center gap-3 border border-gray-100 dark:border-gray-700 active:scale-95 transition-transform"
+                      className="w-[40%] shrink-0 snap-start bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 flex flex-col items-center text-center gap-3 border border-gray-100 dark:border-gray-700 active:scale-95 transition-transform"
                       onClick={() => {
                         console.log('Clicked ad:', ad.title);
                         if (ad.link) window.open(ad.link, '_blank'); 

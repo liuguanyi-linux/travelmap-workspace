@@ -41,10 +41,25 @@ model Review {
   rating    Int
   content   String?
   images    String?
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  poiId     Int
-  poi       Poi      @relation(fields: [poiId], references: [id])
+  
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  
+  nickname  String?  // For bot/guest reviews
+  avatar    String?  // For bot/guest reviews
+
+  poiId     Int?
+  poi       Poi?     @relation(fields: [poiId], references: [id])
+
+  spotId    Int?
+  spot      Spot?    @relation(fields: [spotId], references: [id])
+
+  guideId   Int?
+  guide     Guide?   @relation(fields: [guideId], references: [id])
+
+  strategyId Int?
+  strategy   Strategy? @relation(fields: [strategyId], references: [id])
+
   createdAt DateTime @default(now())
 }
 
@@ -69,4 +84,107 @@ model Booking {
   guests    Int      @default(1)
   status    String   @default("pending")
   createdAt DateTime @default(now())
+}
+
+// Admin Dashboard Models
+
+model Guide {
+  id        Int      @id @default(autoincrement())
+  name      String
+  gender    String   // 'male' | 'female'
+  hasCar    Boolean  @default(false)
+  title     String
+  avatar    String
+  intro     String
+  cities    String   // JSON string
+  rank      Int      @default(99)
+  content   String?
+  photos    String?  // JSON string
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reviews   Review[]
+}
+
+model City {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  lng       Float
+  lat       Float
+  zoom      Int      @default(10)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Spot {
+  id        Int      @id @default(autoincrement())
+  name      String
+  cnName    String?  // Chinese Name for detail view
+  city      String
+  address   String?
+  lng       Float?
+  lat       Float?
+  photos    String?  // JSON string
+  videos    String?  // JSON string
+  intro     String?
+  content   String?
+  tags      String   // JSON string
+  reviews   Review[] // Relation to Review table
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Strategy {
+  id        Int      @id @default(autoincrement())
+  title     String
+  city      String?
+  category  String
+  days      String
+  spots     String   // JSON string
+  image     String   // Cover image
+  tags      String   // JSON string
+  rank      Int      @default(99)
+  content   String?
+  photos    String?  // JSON string - Additional photos
+  videos    String?  // JSON string
+  reviews   Review[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StrategyCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Ad {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  image       String
+  link        String?
+  layout      String?  // 'standard' | 'full'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ContactInfo {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  email     String
+  wechat    String?
+  website   String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SpotCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  key       String   @unique // e.g. "dining" - used as tag
+  icon      String   // e.g. "Utensils" - lucide icon name
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

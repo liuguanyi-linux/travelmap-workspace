@@ -10,6 +10,11 @@ export class UsersController {
     return this.usersService.login(email);
   }
 
+  @Get()
+  async findAll() {
+    return this.usersService.findAll();
+  }
+
   @Get(':email')
   async findByEmail(@Param('email') email: string) {
     return this.usersService.findByEmail(email);

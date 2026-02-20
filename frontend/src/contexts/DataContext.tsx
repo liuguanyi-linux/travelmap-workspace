@@ -1,14 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Guide, Strategy, Spot, AdSlot, ContactInfo } from '../types/data';
+import { Guide, Strategy, StrategyCategory, Spot, AdSlot, ContactInfo, City, SpotCategory } from '../types/data';
 import { initFirebase, subscribeToCloud, saveToCloud } from '../lib/firebase';
 import { useAuth } from './AuthContext';
+import { guideService, strategyService, strategyCategoryService, spotService, adService, contactService, cityService, spotCategoryService } from '../services/api';
 
 interface DataContextType {
   guides: Guide[];
   strategies: Strategy[];
+  strategyCategories: StrategyCategory[];
+  spotCategories: SpotCategory[];
   spots: Spot[];
   ads: AdSlot[];
   contactInfo: ContactInfo;
+  cities: City[];
   isAdmin: boolean;
   updateGuide: (guide: Guide) => void;
   addGuide: (guide: Guide) => void;
@@ -16,6 +20,10 @@ interface DataContextType {
   updateStrategy: (strategy: Strategy) => void;
   addStrategy: (strategy: Strategy) => void;
   deleteStrategy: (id: number) => void;
+  addStrategyCategory: (name: string) => void;
+  deleteStrategyCategory: (id: number) => void;
+  addSpotCategory: (data: any) => void;
+  deleteSpotCategory: (id: number) => void;
   updateSpot: (spot: Spot) => void;
   addSpot: (spot: Spot) => void;
   deleteSpot: (id: number) => void;
@@ -23,132 +31,87 @@ interface DataContextType {
   addAd: (ad: AdSlot) => void;
   deleteAd: (id: number) => void;
   updateContactInfo: (info: ContactInfo) => void;
+  addCity: (city: City) => void;
+  deleteCity: (id: number) => void;
   isCloudSyncing: boolean;
   enableCloud: (config: any) => boolean;
+  refreshData: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const INITIAL_GUIDES: Guide[] = [
-    {
-      id: 1,
-      name: '王金牌',
-      gender: 'male',
-      hasCar: true,
-      title: '导游',
-      avatar: 'https://picsum.photos/seed/guide1/200/200',
-      intro: '从业8年，专注于青岛历史文化讲解，为您提供最深度的旅行体验。',
-      cities: ['青岛'],
-      rank: 1
-    },
-    {
-      id: 2,
-      name: '李小美',
-      gender: 'female',
-      hasCar: false,
-      title: '导游',
-      avatar: 'https://picsum.photos/seed/guide2/200/200',
-      intro: '熟悉各大网红打卡点和地道美食，带你吃喝玩乐不踩雷！',
-      cities: ['青岛', '上海'],
-      rank: 2
-    },
-    {
-      id: 3,
-      name: '张老三',
-      gender: 'male',
-      hasCar: true,
-      title: '金牌司机',
-      avatar: 'https://picsum.photos/seed/guide3/200/200',
-      intro: '北京胡同串子，带你领略最地道的京味儿文化。',
-      cities: ['北京'],
-      rank: 3
-    },
-    {
-      id: 4,
-      name: '赵小兰',
-      gender: 'female',
-      hasCar: true,
-      title: '向导',
-      avatar: 'https://picsum.photos/seed/guide4/200/200',
-      intro: '青岛本地通，带车向导，舒适出行。',
-      cities: ['青岛'],
-      rank: 4
-    }
-];
-
-const INITIAL_STRATEGIES: Strategy[] = [
-    {
-      id: 1,
-      title: '青岛经典三日游',
-      category: '亲子游',
-      days: '3天',
-      spots: ['栈桥', '八大关', '五四广场', '奥帆中心'],
-      image: 'https://picsum.photos/seed/qingdao1/200/200',
-      tags: ['经典路线', '海滨风光', '必打卡'],
-      rank: 1
-    },
-    {
-      id: 2,
-      title: '老城建筑人文之旅',
-      category: '一日游',
-      days: '1天',
-      spots: ['天主教堂', '信号山', '德国总督楼'],
-      image: 'https://picsum.photos/seed/qingdao2/200/200',
-      tags: ['历史建筑', '人文摄影', '文艺'],
-      rank: 2
-    },
-    {
-      id: 3,
-      title: '崂山风景区深度游',
-      category: '2日游',
-      days: '2天',
-      spots: ['太清宫', '仰口', '巨峰'],
-      image: 'https://picsum.photos/seed/laoshan/200/200',
-      tags: ['爬山', '自然风光', '道教文化'],
-      rank: 3
-    }
-];
-
-const INITIAL_SPOTS: Spot[] = [];
-const INITIAL_ADS: AdSlot[] = [];
 const INITIAL_CONTACT_INFO: ContactInfo = {
-  phone: '13800138000',
-  email: 'contact@example.com',
-  wechat: 'TravelMapHelper',
-  website: 'www.travelmap.com',
-  address: '青岛市市南区'
+  phone: '',
+  email: '',
+  wechat: '',
+  website: '',
+  address: ''
 };
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { isAdmin } = useAuth();
-  const [guides, setGuides] = useState<Guide[]>(() => {
-    const saved = localStorage.getItem('travelmap_guides');
-    return saved ? JSON.parse(saved) : INITIAL_GUIDES;
-  });
-
-  const [strategies, setStrategies] = useState<Strategy[]>(() => {
-    const saved = localStorage.getItem('travelmap_strategies');
-    return saved ? JSON.parse(saved) : INITIAL_STRATEGIES;
-  });
-
-  const [spots, setSpots] = useState<Spot[]>(() => {
-    const saved = localStorage.getItem('travelmap_spots');
-    return saved ? JSON.parse(saved) : INITIAL_SPOTS;
-  });
-
-  const [ads, setAds] = useState<AdSlot[]>(() => {
-    const saved = localStorage.getItem('travelmap_ads');
-    return saved ? JSON.parse(saved) : INITIAL_ADS;
-  });
-
-  const [contactInfo, setContactInfo] = useState<ContactInfo>(() => {
-    const saved = localStorage.getItem('travelmap_contact');
-    return saved ? JSON.parse(saved) : INITIAL_CONTACT_INFO;
-  });
+  const [guides, setGuides] = useState<Guide[]>([]);
+  const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [strategyCategories, setStrategyCategories] = useState<StrategyCategory[]>([]);
+  const [spotCategories, setSpotCategories] = useState<SpotCategory[]>([]);
+  const [spots, setSpots] = useState<Spot[]>([]);
+  const [ads, setAds] = useState<AdSlot[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [contactInfo, setContactInfo] = useState<ContactInfo>(INITIAL_CONTACT_INFO);
 
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
 
-  // Initialize Cloud
+  // Function to fetch all data from backend
+  const refreshData = async () => {
+    try {
+      const [g, s, sc, sp, a, c, ci, spc] = await Promise.all([
+        guideService.getAll(),
+        strategyService.getAll(),
+        strategyCategoryService.getAll(),
+        spotService.getAll(),
+        adService.getAll(),
+        contactService.get(),
+        cityService.getAll(),
+        spotCategoryService.getAll()
+      ]);
+      setGuides(g);
+      setStrategies(s);
+      setStrategyCategories(sc);
+      setSpots(sp);
+      setAds(a);
+      setContactInfo(c);
+      setCities(ci);
+      setSpotCategories(spc);
+
+      // Cache critical data for faster initial load
+      localStorage.setItem('cached_cities', JSON.stringify(ci));
+      localStorage.setItem('cached_spotCategories', JSON.stringify(spc));
+      localStorage.setItem('cached_spots', JSON.stringify(sp));
+    } catch (error) {
+      console.error("Failed to fetch data from API:", error);
+    }
+  };
+
+  // Initial Load
+  useEffect(() => {
+    // Load from cache first for immediate UI feedback
+    try {
+        const cachedCities = localStorage.getItem('cached_cities');
+        if (cachedCities) setCities(JSON.parse(cachedCities));
+        
+        const cachedSpotCats = localStorage.getItem('cached_spotCategories');
+        if (cachedSpotCats) setSpotCategories(JSON.parse(cachedSpotCats));
+        
+        const cachedSpots = localStorage.getItem('cached_spots');
+        if (cachedSpots) setSpots(JSON.parse(cachedSpots));
+    } catch (e) {
+        console.error('Failed to load cached data', e);
+    }
+
+    refreshData();
+  }, []);
+
+  // Initialize Cloud (Keep existing logic if needed, but primarily use API now)
   useEffect(() => {
     const configStr = localStorage.getItem('firebase_config');
     if (configStr) {
@@ -163,147 +126,250 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Subscribe to Cloud
+  // Cloud subscriptions (Optional: if we want to keep Firebase as a secondary sync, but likely we want to move away from it. 
+  // For now, I'll keep the logic but it might conflict if we are not careful. 
+  // Given the user wants "Backend Sync", the API is the source of truth.)
+  // I will comment out cloud subscriptions for data to avoid conflicts with API.
+  /*
   useEffect(() => {
     if (!isCloudSyncing) return;
-
     const unsubGuides = subscribeToCloud('guides', (data) => { if (data) setGuides(data); });
-    const unsubStrategies = subscribeToCloud('strategies', (data) => { if (data) setStrategies(data); });
-    const unsubSpots = subscribeToCloud('spots', (data) => { if (data) setSpots(data); });
-    const unsubAds = subscribeToCloud('ads', (data) => { if (data) setAds(data); });
-    const unsubContact = subscribeToCloud('contact', (data) => { if (data) setContactInfo(data); });
-
-    return () => {
-      unsubGuides();
-      unsubStrategies();
-      unsubSpots();
-      unsubAds();
-      unsubContact();
-    };
+    // ...
+    return () => { unsubGuides(); ... };
   }, [isCloudSyncing]);
+  */
 
   const enableCloud = (config: any) => {
     if (initFirebase(config)) {
       localStorage.setItem('firebase_config', JSON.stringify(config));
       setIsCloudSyncing(true);
-      // Force initial push if cloud is empty? Or just let it sync?
-      // For safety, we might want to ask user to "Push Local to Cloud".
-      // But for now, we just enable sync.
       return true;
     }
     return false;
   };
 
-  // Persistence Effects (Local Backup)
-  useEffect(() => { localStorage.setItem('travelmap_guides', JSON.stringify(guides)); }, [guides]);
-  useEffect(() => { localStorage.setItem('travelmap_strategies', JSON.stringify(strategies)); }, [strategies]);
-  useEffect(() => { localStorage.setItem('travelmap_spots', JSON.stringify(spots)); }, [spots]);
-  useEffect(() => { localStorage.setItem('travelmap_ads', JSON.stringify(ads)); }, [ads]);
-  useEffect(() => { localStorage.setItem('travelmap_contact', JSON.stringify(contactInfo)); }, [contactInfo]);
+  // --- CRUD Operations Wrapper ---
 
-  // Methods with Cloud Sync
-  const updateGuide = (guide: Guide) => {
-    setGuides(prev => {
-      const next = prev.map(g => g.id === guide.id ? guide : g);
-      if (isCloudSyncing) saveToCloud('guides', next);
-      return next;
-    });
-  };
-  const addGuide = (guide: Guide) => {
-    setGuides(prev => {
-      const next = [...prev, guide];
-      if (isCloudSyncing) saveToCloud('guides', next);
-      return next;
-    });
-  };
-  const deleteGuide = (id: number) => {
-    setGuides(prev => {
-      const next = prev.filter(g => g.id !== id);
-      if (isCloudSyncing) saveToCloud('guides', next);
-      return next;
-    });
+  const addGuide = async (guide: Guide) => {
+    try {
+      // API call
+      const { id, ...rest } = guide; // Backend generates ID
+      const newGuide = await guideService.create(rest);
+      setGuides(prev => [...prev, newGuide]);
+    } catch (error) {
+      console.error("Failed to add guide", error);
+      throw error;
+    }
   };
 
-  const updateStrategy = (strategy: Strategy) => {
-    setStrategies(prev => {
-      const next = prev.map(s => s.id === strategy.id ? strategy : s);
-      if (isCloudSyncing) saveToCloud('strategies', next);
-      return next;
-    });
-  };
-  const addStrategy = (strategy: Strategy) => {
-    setStrategies(prev => {
-      const next = [...prev, strategy];
-      if (isCloudSyncing) saveToCloud('strategies', next);
-      return next;
-    });
-  };
-  const deleteStrategy = (id: number) => {
-    setStrategies(prev => {
-      const next = prev.filter(s => s.id !== id);
-      if (isCloudSyncing) saveToCloud('strategies', next);
-      return next;
-    });
+  const updateGuide = async (guide: Guide) => {
+    try {
+      const updated = await guideService.update(guide.id, guide);
+      setGuides(prev => prev.map(item => item.id === guide.id ? updated : item));
+    } catch (error) {
+      console.error("Failed to update guide", error);
+      throw error;
+    }
   };
 
-  const updateSpot = (spot: Spot) => {
-    setSpots(prev => {
-      const next = prev.map(s => s.id === spot.id ? spot : s);
-      if (isCloudSyncing) saveToCloud('spots', next);
-      return next;
-    });
-  };
-  const addSpot = (spot: Spot) => {
-    setSpots(prev => {
-      const next = [...prev, spot];
-      if (isCloudSyncing) saveToCloud('spots', next);
-      return next;
-    });
-  };
-  const deleteSpot = (id: number) => {
-    setSpots(prev => {
-      const next = prev.filter(s => s.id !== id);
-      if (isCloudSyncing) saveToCloud('spots', next);
-      return next;
-    });
+  const deleteGuide = async (id: number) => {
+    try {
+      await guideService.delete(id);
+      setGuides(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      console.error("Failed to delete guide", error);
+      throw error;
+    }
   };
 
-  const updateAd = (ad: AdSlot) => {
-    setAds(prev => {
-      const next = prev.map(a => a.id === ad.id ? ad : a);
-      if (isCloudSyncing) saveToCloud('ads', next);
-      return next;
-    });
-  };
-  const addAd = (ad: AdSlot) => {
-    setAds(prev => {
-      const next = [...prev, ad];
-      if (isCloudSyncing) saveToCloud('ads', next);
-      return next;
-    });
-  };
-  const deleteAd = (id: number) => {
-    setAds(prev => {
-      const next = prev.filter(a => a.id !== id);
-      if (isCloudSyncing) saveToCloud('ads', next);
-      return next;
-    });
+  const addStrategy = async (strategy: Strategy) => {
+    try {
+        const { id, ...rest } = strategy;
+        const newStrategy = await strategyService.create(rest);
+        setStrategies(prev => [...prev, newStrategy]);
+    } catch (error) {
+        console.error("Failed to add strategy", error);
+        throw error;
+    }
   };
 
-  const updateContactInfo = (info: ContactInfo) => {
-    setContactInfo(info);
-    if (isCloudSyncing) saveToCloud('contact', info);
+  const updateStrategy = async (strategy: Strategy) => {
+      try {
+          const updated = await strategyService.update(strategy.id, strategy);
+          setStrategies(prev => prev.map(item => item.id === strategy.id ? updated : item));
+      } catch (error) {
+          console.error("Failed to update strategy", error);
+          throw error;
+      }
+  };
+
+  const deleteStrategy = async (id: number) => {
+      try {
+          await strategyService.delete(id);
+          setStrategies(prev => prev.filter(item => item.id !== id));
+      } catch (error) {
+          console.error("Failed to delete strategy", error);
+          throw error;
+      }
+  };
+
+  const addSpot = async (spot: Spot) => {
+      try {
+          const { id, ...rest } = spot;
+          console.log('Adding spot:', rest);
+          const newSpot = await spotService.create(rest);
+          setSpots(prev => [...prev, newSpot]);
+          console.log('Spot added successfully:', newSpot);
+      } catch (error) {
+          console.error("Failed to add spot", error);
+          throw error;
+      }
+  };
+
+  const updateSpot = async (spot: Spot) => {
+      try {
+          const updated = await spotService.update(spot.id, spot);
+          setSpots(prev => prev.map(item => item.id === spot.id ? updated : item));
+      } catch (error) {
+          console.error("Failed to update spot", error);
+          throw error;
+      }
+  };
+
+  const deleteSpot = async (id: number) => {
+      try {
+          await spotService.delete(id);
+          setSpots(prev => prev.filter(item => item.id !== id));
+      } catch (error) {
+          console.error("Failed to delete spot", error);
+          throw error;
+      }
+  };
+
+  const addAd = async (ad: AdSlot) => {
+    try {
+      const newAd = await adService.create(ad);
+      setAds(prev => [...prev, newAd]);
+    } catch (error) {
+      console.error("Failed to add ad:", error);
+    }
+  };
+
+  const updateAd = async (ad: AdSlot) => {
+    try {
+      const updated = await adService.update(ad.id, ad);
+      setAds(prev => prev.map(item => item.id === ad.id ? updated : item));
+    } catch (error) {
+      console.error("Failed to update ad:", error);
+    }
+  };
+
+  const deleteAd = async (id: number) => {
+    try {
+      await adService.delete(id);
+      setAds(prev => prev.filter(a => a.id !== id));
+    } catch (error) {
+      console.error("Failed to delete ad:", error);
+    }
+  };
+
+  const updateContactInfo = async (info: ContactInfo) => {
+    try {
+      // Assuming ID 1 for singleton contact info, or use what's returned from get()
+      const updated = await contactService.update(info);
+      setContactInfo(updated);
+    } catch (error) {
+      console.error("Failed to update contact info:", error);
+    }
+  };
+
+  const addCity = async (city: City) => {
+    try {
+      const newCity = await cityService.create(city);
+      setCities(prev => [...prev, newCity]);
+    } catch (error) {
+      console.error("Failed to add city:", error);
+    }
+  };
+
+  const deleteCity = async (id: number) => {
+    try {
+      await cityService.delete(id);
+      setCities(prev => prev.filter(c => c.id !== id));
+    } catch (error) {
+      console.error("Failed to delete city:", error);
+    }
+  };
+
+  const addStrategyCategory = async (name: string) => {
+    try {
+      const newCategory = await strategyCategoryService.create(name);
+      setStrategyCategories(prev => [...prev, newCategory]);
+    } catch (error) {
+      console.error("Failed to add strategy category:", error);
+    }
+  };
+
+  const deleteStrategyCategory = async (id: number) => {
+    try {
+      await strategyCategoryService.delete(id);
+      setStrategyCategories(prev => prev.filter(c => c.id !== id));
+    } catch (error) {
+      console.error("Failed to delete strategy category:", error);
+    }
+  };
+
+  const addSpotCategory = async (data: any) => {
+    try {
+      const newCategory = await spotCategoryService.create(data);
+      setSpotCategories(prev => [...prev, newCategory]);
+    } catch (error) {
+      console.error("Failed to add spot category:", error);
+    }
+  };
+
+  const deleteSpotCategory = async (id: number) => {
+    try {
+      await spotCategoryService.delete(id);
+      setSpotCategories(prev => prev.filter(c => c.id !== id));
+    } catch (error) {
+      console.error("Failed to delete spot category:", error);
+    }
   };
 
   return (
     <DataContext.Provider value={{
-      guides, strategies, spots, ads, contactInfo, isAdmin,
-      updateGuide, addGuide, deleteGuide,
-      updateStrategy, addStrategy, deleteStrategy,
-      updateSpot, addSpot, deleteSpot,
-      updateAd, addAd, deleteAd,
+      guides,
+      strategies,
+      strategyCategories,
+      spotCategories,
+      spots,
+      ads,
+      contactInfo,
+      cities,
+      isAdmin,
+      updateGuide,
+      addGuide,
+      deleteGuide,
+      updateStrategy,
+      addStrategy,
+      deleteStrategy,
+      addStrategyCategory,
+      deleteStrategyCategory,
+      addSpotCategory,
+      deleteSpotCategory,
+      updateSpot,
+      addSpot,
+      deleteSpot,
+      updateAd,
+      addAd,
+      deleteAd,
       updateContactInfo,
-      isCloudSyncing, enableCloud
+      addCity,
+      deleteCity,
+      isCloudSyncing,
+      enableCloud: () => false, // Disabled cloud sync in favor of API
+      refreshData
     }}>
       {children}
     </DataContext.Provider>

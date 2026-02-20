@@ -147,7 +147,7 @@ const generateMockReviews = (poiId: number | string) => {
   const seed = String(poiId).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const count = (seed % 5) + 3; // Generate 3-7 reviews
 
-  const reviews = [];
+  const reviews: any[] = [];
   for (let i = 0; i < count; i++) {
     const isMeituan = (seed + i) % 2 === 0;
     reviews.push({
