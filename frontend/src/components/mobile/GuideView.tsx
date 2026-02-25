@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, User, ArrowLeft, Phone, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useData } from '../../contexts/DataContext';
 
 interface GuideViewProps {
@@ -10,6 +11,7 @@ interface GuideViewProps {
 }
 
 export default function GuideView({ isVisible, onClose, activeCity }: GuideViewProps) {
+  const { t } = useLanguage();
   const controls = useAnimation();
   const dragControls = useDragControls();
   const [previewImage, setPreviewImage] = React.useState<string | null>(null);
@@ -170,9 +172,7 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
                   <div className="px-6 space-y-6">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">个人简介</h3>
-                      <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">
-                        {selectedGuide.intro}
-                      </p>
+                      <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm bg-gray-50 dark:bg-gray-800 p-4 rounded-xl prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: selectedGuide.intro }} />
                     </div>
 
                     {selectedGuide.content && (
@@ -190,13 +190,13 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
             <>
               {/* Header */}
               <div className="px-6 pb-4 shrink-0">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">找导游</h1>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">定制您的专属向导</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('guide.title')}</h1>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('guide.subtitle')}</p>
               </div>
 
               {/* Filter Options */}
               <div className="px-6 mb-6">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">筛选条件</h3>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">{t('guide.filter')}</h3>
                 <div className="flex gap-3">
                     <button 
                         onClick={() => setSelectedGender(prev => prev === 'male' ? null : 'male')}
@@ -251,9 +251,10 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
                                                 {guide.hasCar && <span className="text-[10px] text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">车辆</span>}
                                             </div>
                                         </div>
-                                        <p className="mt-2 text-xs text-gray-600 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
-                                            "{guide.intro}"
-                                        </p>
+                                        <div 
+                                            className="mt-2 text-xs text-gray-600 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg"
+                                            dangerouslySetInnerHTML={{ __html: guide.intro || '' }}
+                                        />
                                     </div>
                                 </div>
                             </div>

@@ -5,8 +5,14 @@ import { PrismaService } from '../prisma.service';
 export class AdsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    return this.prisma.ad.findMany();
+  async findAll(includeExpired: boolean = false) {
+    const where = includeExpired ? {} : {
+      OR: [
+        { expiryDate: null },
+        { expiryDate: { gt: new Date() } }
+      ]
+    };
+    return this.prisma.ad.findMany({ where });
   }
 
   async findOne(id: number) {

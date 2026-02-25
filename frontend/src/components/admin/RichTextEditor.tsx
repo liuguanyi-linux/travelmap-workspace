@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from 'react';
-import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Link, Type, Minus, Heading1, Heading2 } from 'lucide-react';
+import React from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 interface RichTextEditorProps {
   value: string;
@@ -7,116 +8,176 @@ interface RichTextEditorProps {
   placeholder?: string;
 }
 
+const CustomToolbar = ({ id }: { id: string }) => (
+  <div id={id} className="custom-quill-toolbar">
+    <span className="ql-formats">
+      <select className="ql-header" defaultValue="" onChange={e => e.persist()}>
+        <option value="1">标题 1</option>
+        <option value="2">标题 2</option>
+        <option value="">正文</option>
+      </select>
+      <select className="ql-size" defaultValue="" onChange={e => e.persist()}>
+        <option value="small">小号</option>
+        <option value="">默认</option>
+        <option value="large">大号</option>
+        <option value="huge">超大</option>
+      </select>
+    </span>
+    <span className="ql-formats">
+      <button className="ql-bold" title="加粗" />
+      <button className="ql-italic" title="斜体" />
+      <button className="ql-underline" title="下划线" />
+      <button className="ql-strike" title="删除线" />
+      <button className="ql-blockquote" title="引用" />
+    </span>
+    <span className="ql-formats">
+      <select className="ql-color" title="字体颜色">
+        <option selected></option>
+        <option value="#e60000"></option>
+        <option value="#ff9900"></option>
+        <option value="#ffff00"></option>
+        <option value="#008a00"></option>
+        <option value="#0066cc"></option>
+        <option value="#9933ff"></option>
+        <option value="#ffffff"></option>
+        <option value="#facccc"></option>
+        <option value="#ffebcc"></option>
+        <option value="#ffffcc"></option>
+        <option value="#cce8cc"></option>
+        <option value="#cce0f5"></option>
+        <option value="#ebd6ff"></option>
+        <option value="#bbbbbb"></option>
+        <option value="#f06666"></option>
+        <option value="#ffc266"></option>
+        <option value="#ffff66"></option>
+        <option value="#66b966"></option>
+        <option value="#66a3e0"></option>
+        <option value="#c285ff"></option>
+        <option value="#888888"></option>
+        <option value="#a10000"></option>
+        <option value="#b26b00"></option>
+        <option value="#b2b200"></option>
+        <option value="#006100"></option>
+        <option value="#0047b2"></option>
+        <option value="#6b24b2"></option>
+        <option value="#444444"></option>
+        <option value="#5c0000"></option>
+        <option value="#663d00"></option>
+        <option value="#666600"></option>
+        <option value="#003700"></option>
+        <option value="#002966"></option>
+        <option value="#3d1466"></option>
+      </select>
+      <select className="ql-background" title="背景颜色">
+        <option selected></option>
+        <option value="#e60000"></option>
+        <option value="#ff9900"></option>
+        <option value="#ffff00"></option>
+        <option value="#008a00"></option>
+        <option value="#0066cc"></option>
+        <option value="#9933ff"></option>
+        <option value="#ffffff"></option>
+        <option value="#facccc"></option>
+        <option value="#ffebcc"></option>
+        <option value="#ffffcc"></option>
+        <option value="#cce8cc"></option>
+        <option value="#cce0f5"></option>
+        <option value="#ebd6ff"></option>
+        <option value="#bbbbbb"></option>
+        <option value="#f06666"></option>
+        <option value="#ffc266"></option>
+        <option value="#ffff66"></option>
+        <option value="#66b966"></option>
+        <option value="#66a3e0"></option>
+        <option value="#c285ff"></option>
+        <option value="#888888"></option>
+        <option value="#a10000"></option>
+        <option value="#b26b00"></option>
+        <option value="#b2b200"></option>
+        <option value="#006100"></option>
+        <option value="#0047b2"></option>
+        <option value="#6b24b2"></option>
+        <option value="#444444"></option>
+        <option value="#5c0000"></option>
+        <option value="#663d00"></option>
+        <option value="#666600"></option>
+        <option value="#003700"></option>
+        <option value="#002966"></option>
+        <option value="#3d1466"></option>
+      </select>
+    </span>
+    <span className="ql-formats">
+      <button className="ql-list" value="ordered" title="有序列表" />
+      <button className="ql-list" value="bullet" title="无序列表" />
+      <button className="ql-indent" value="-1" title="减少缩进" />
+      <button className="ql-indent" value="+1" title="增加缩进" />
+    </span>
+    <span className="ql-formats">
+      <button className="ql-direction" value="rtl" title="文字方向" />
+      <select className="ql-align" title="对齐方式" />
+    </span>
+    <span className="ql-formats">
+      <button className="ql-link" title="插入链接" />
+      <button className="ql-image" title="插入图片" />
+      <button className="ql-video" title="插入视频" />
+    </span>
+    <span className="ql-formats">
+      <button className="ql-clean" title="清除格式" />
+    </span>
+  </div>
+);
+
 export default function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
-  const editorRef = useRef<HTMLDivElement>(null);
+  const toolbarId = React.useMemo(() => `toolbar-${Math.random().toString(36).substring(2, 9)}`, []);
 
-  // Sync value to innerHTML when value changes externally
-  useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      // Only update if significantly different to avoid cursor jumping
-      // A simple check is usually not enough for contenteditable, but for this simple use case:
-      if (document.activeElement !== editorRef.current) {
-         editorRef.current.innerHTML = value || '';
-      }
+  const modules = {
+    toolbar: {
+      container: `#${toolbarId}`,
     }
-  }, [value]);
-
-  const execCommand = (command: string, value: string | undefined = undefined) => {
-    document.execCommand(command, false, value);
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
-    editorRef.current?.focus();
   };
 
-  const ToolbarButton = ({ icon: Icon, command, arg, title }: any) => (
-    <button
-      type="button"
-      onClick={() => execCommand(command, arg)}
-      className="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-      title={title}
-    >
-      <Icon size={18} />
-    </button>
-  );
+  const formats = [
+    'header', 'font', 'size',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'list', 'bullet', 'indent',
+    'link', 'image', 'video',
+    'color', 'background', 'align', 'direction'
+  ];
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-gray-50">
-        <ToolbarButton icon={Bold} command="bold" title="Bold" />
-        <ToolbarButton icon={Italic} command="italic" title="Italic" />
-        <ToolbarButton icon={Underline} command="underline" title="Underline" />
-        
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-        
-        <ToolbarButton icon={Heading1} command="formatBlock" arg="H1" title="Heading 1" />
-        <ToolbarButton icon={Heading2} command="formatBlock" arg="H2" title="Heading 2" />
-        
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-
-        <ToolbarButton icon={AlignLeft} command="justifyLeft" title="Align Left" />
-        <ToolbarButton icon={AlignCenter} command="justifyCenter" title="Align Center" />
-        <ToolbarButton icon={AlignRight} command="justifyRight" title="Align Right" />
-
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-
-        <ToolbarButton icon={List} command="insertUnorderedList" title="Bullet List" />
-        <ToolbarButton icon={ListOrdered} command="insertOrderedList" title="Numbered List" />
-
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-
-        <button
-          type="button"
-          onClick={() => {
-            const url = prompt('Enter URL:');
-            if (url) execCommand('createLink', url);
-          }}
-          className="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-          title="Insert Link"
-        >
-          <Link size={18} />
-        </button>
-        
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-        
-        <div className="flex items-center gap-1">
-             <button 
-                type="button"
-                onClick={() => execCommand('foreColor', '#000000')}
-                className="w-5 h-5 rounded-full bg-black border border-gray-200"
-                title="Black"
-             />
-             <button 
-                type="button"
-                onClick={() => execCommand('foreColor', '#EF4444')}
-                className="w-5 h-5 rounded-full bg-red-500 border border-gray-200"
-                title="Red"
-             />
-             <button 
-                type="button"
-                onClick={() => execCommand('foreColor', '#3B82F6')}
-                className="w-5 h-5 rounded-full bg-blue-500 border border-gray-200"
-                title="Blue"
-             />
-             <button 
-                type="button"
-                onClick={() => execCommand('foreColor', '#10B981')}
-                className="w-5 h-5 rounded-full bg-green-500 border border-gray-200"
-                title="Green"
-             />
-        </div>
-      </div>
-
-      {/* Editor Area */}
-      <div
-        ref={editorRef}
-        contentEditable
-        className="p-4 min-h-[200px] outline-none prose max-w-none text-sm"
-        onInput={(e) => onChange(e.currentTarget.innerHTML)}
-        dangerouslySetInnerHTML={{ __html: value }}
-        style={{ minHeight: '200px' }}
+    <div className="rich-text-editor">
+      <CustomToolbar id={toolbarId} />
+      <ReactQuill 
+        theme="snow"
+        value={value || ''}
+        onChange={onChange}
+        modules={modules}
+        formats={formats}
+        placeholder={placeholder}
+        className="bg-white rounded-lg"
       />
+      <style>{`
+        .ql-container {
+          min-height: 200px;
+          font-size: 16px;
+        }
+        .ql-editor {
+          min-height: 200px;
+        }
+        /* Fix toolbar spacing */
+        .custom-quill-toolbar {
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+        .ql-toolbar.ql-snow {
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+        .ql-container.ql-snow {
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+        }
+      `}</style>
     </div>
   );
 }

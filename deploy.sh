@@ -59,7 +59,6 @@ cd /www/travelmap/backend
 npm install
 npx prisma generate
 npx prisma db push --accept-data-loss
-npx ts-node prisma/seed.ts
 # Build skipped (artifacts uploaded)
 pm2 delete travelmap-backend || true
 pm2 start dist/src/main.js --name travelmap-backend

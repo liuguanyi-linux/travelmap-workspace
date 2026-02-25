@@ -61,6 +61,13 @@ export class SpotCategoriesService implements OnModuleInit {
     });
   }
 
+  update(id: number, data: { name?: string; key?: string; icon?: string; sortOrder?: number }) {
+    return this.prisma.spotCategory.update({
+      where: { id },
+      data,
+    });
+  }
+
   remove(id: number) {
     return this.prisma.spotCategory.delete({
       where: { id },

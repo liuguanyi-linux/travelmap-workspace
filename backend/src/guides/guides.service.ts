@@ -5,13 +5,15 @@ import { PrismaService } from '../prisma.service';
 export class GuidesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    const guides = await this.prisma.guide.findMany();
-    return guides.map(g => ({
-      ...g,
-      cities: JSON.parse(g.cities),
-      photos: g.photos ? JSON.parse(g.photos) : []
-    }));
+  async findAll(includeExpired: boolean = false) {
+    const where = includeExpired ? {} : {
+      OR: [
+        { expiryDate: null },
+        { expiryDate: { gt: new Date() } }
+      ]
+    };
+    const guides = await this.prisma.guide.findMany({ where });
+    return guides.map(g => this.transform(g));
   }
 
   async findOne(id: number) {

@@ -5,18 +5,47 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Start seeding ...');
 
-  // 1. Seed Default City
-  const seoul = await prisma.city.upsert({
-    where: { name: '首尔' },
-    update: {},
-    create: {
-      name: '首尔',
-      lng: 126.9780,
-      lat: 37.5665,
-      zoom: 12,
-    },
+  // 1. Seed Cities (Only requested cities)
+  const cities = [
+    { name: '北京', nameEn: 'Beijing', nameKo: '베이징', lng: 116.4074, lat: 39.9042, zoom: 12 },
+    { name: '上海', nameEn: 'Shanghai', nameKo: '상하이', lng: 121.4737, lat: 31.2304, zoom: 12 },
+    { name: '广州', nameEn: 'Guangzhou', nameKo: '광저우', lng: 113.2644, lat: 23.1291, zoom: 12 },
+    { name: '深圳', nameEn: 'Shenzhen', nameKo: '선전', lng: 114.0579, lat: 22.5431, zoom: 12 },
+    { name: '青岛', nameEn: 'Qingdao', nameKo: '칭다오', lng: 120.3826, lat: 36.0671, zoom: 12 },
+  ];
+
+  // Optional: Remove cities that are not in the list (Be careful with this in production!)
+  // In this specific case, user wants only these cities.
+  const cityNames = cities.map(c => c.name);
+  console.log('Cleaning up extra cities...');
+  const deleteResult = await prisma.city.deleteMany({
+      where: {
+          name: {
+              notIn: cityNames
+          }
+      }
   });
-  console.log('Seeded City:', seoul);
+  console.log(`Deleted ${deleteResult.count} extra cities.`);
+
+  for (const c of cities) {
+    const city = await prisma.city.upsert({
+      where: { name: c.name },
+      update: {
+        nameEn: c.nameEn,
+        nameKo: c.nameKo,
+        // We do NOT update lng/lat/zoom to preserve user adjustments
+      },
+      create: {
+        name: c.name,
+        nameEn: c.nameEn,
+        nameKo: c.nameKo,
+        lng: c.lng,
+        lat: c.lat,
+        zoom: c.zoom,
+      },
+    });
+    console.log(`Seeded/Updated City: ${city.name}`);
+  }
 
   // 2. Seed Spot Categories
   const spotCategories = [
@@ -25,15 +54,18 @@ async function main() {
     { name: '住宿', key: 'accommodation', icon: 'Hotel', sortOrder: 3 },
     { name: '购物', key: 'shopping', icon: 'ShoppingBag', sortOrder: 4 },
     { name: '交通', key: 'transport', icon: 'Train', sortOrder: 5 },
+    { name: '机场', key: 'airport', icon: 'Plane', sortOrder: 6 },
+    { name: '高铁', key: 'high_speed_rail', icon: 'TrainFront', sortOrder: 7 },
   ];
 
   for (const cat of spotCategories) {
-    const category = await prisma.spotCategory.upsert({
-      where: { key: cat.key },
-      update: { icon: cat.icon, sortOrder: cat.sortOrder },
-      create: cat,
-    });
-    console.log(`Seeded SpotCategory: ${category.name}`);
+    const existing = await prisma.spotCategory.findUnique({ where: { key: cat.key } });
+    if (!existing) {
+      await prisma.spotCategory.create({ data: cat });
+      console.log(`Created SpotCategory: ${cat.name} (${cat.key})`);
+    } else {
+      console.log(`SpotCategory ${cat.name} (${cat.key}) already exists, skipping.`);
+    }
   }
 
   // 3. Seed Strategy Categories
@@ -48,10 +80,10 @@ async function main() {
     console.log(`Seeded StrategyCategory: ${category.name}`);
   }
 
-  // 4. Seed Contact Info (Optional default)
-  const contact = await prisma.contactInfo.upsert({
+  // 4. Seed Contact Info
+  await prisma.contactInfo.upsert({
     where: { id: 1 },
-    update: {},
+    update: {}, // Don't overwrite existing contact info
     create: {
       phone: '123-456-7890',
       email: 'contact@travelmap.com',
@@ -59,28 +91,6 @@ async function main() {
     },
   });
   console.log('Seeded ContactInfo');
-
-  // 5. Recover Missing Cities from Spots
-  // If user deleted a city but spots still reference it, re-create the city so spots become visible.
-  const spots = await prisma.spot.findMany({ select: { city: true } });
-  const uniqueCities = [...new Set(spots.map(s => s.city).filter(Boolean))];
-
-  for (const cityName of uniqueCities) {
-    // Check if city exists
-    const cityExists = await prisma.city.findUnique({ where: { name: cityName } });
-    if (!cityExists) {
-        // Create city with default Seoul coordinates as fallback
-        await prisma.city.create({
-            data: {
-                name: cityName,
-                lng: 126.9780, 
-                lat: 37.5665,
-                zoom: 12,
-            }
-        });
-        console.log(`Recovered missing city from existing spots: ${cityName}`);
-    }
-  }
 
   console.log('Seeding finished.');
 }

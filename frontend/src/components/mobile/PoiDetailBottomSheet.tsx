@@ -1,6 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { motion, PanInfo, useAnimation, useDragControls } from 'framer-motion';
 import { X, Navigation, Star, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2, Navigation2, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
+
+// Define API URL logic outside component to reuse
+const getFullImageUrl = (path: string | undefined) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    
+    // Remove leading slash to avoid double slashes
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    
+    // Get base URL from VITE_API_URL (e.g., http://110.42.143.48/api -> http://110.42.143.48)
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    const baseUrl = apiUrl.replace(/\/api\/?$/, '');
+    
+    return `${baseUrl}/${cleanPath}`;
+};
+
 import { useFavorites } from '../../hooks/useFavorites';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -146,7 +162,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
 
   const variants = {
     hidden: { y: '100%' },
-    peek: { y: '65%' }, // Show bottom 35%
+    peek: { y: '75%' }, // Show bottom 25% (was 35%)
     full: { y: '0%' }   // Full screen
   };
 
@@ -232,7 +248,10 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.2 }}
-                    src={typeof poi.photos[previewIndex] === 'string' ? poi.photos[previewIndex] : poi.photos[previewIndex].url} 
+                    src={(() => {
+                        const p = poi.photos[previewIndex];
+                        return getFullImageUrl(typeof p === 'string' ? p : p.url);
+                    })()}
                     alt="Preview" 
                     className="max-w-full max-h-full object-contain rounded-lg select-none shadow-2xl"
                     onClick={(e) => e.stopPropagation()}
@@ -345,7 +364,8 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                       <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
                           {poi.photos && poi.photos.length > 0 ? (
                               poi.photos.map((photo: any, index: number) => {
-                                  const imgSrc = typeof photo === 'string' ? photo : photo.url;
+                                  const imgSrc = getFullImageUrl(typeof photo === 'string' ? photo : photo.url);
+                                  
                                   return (
                                       <div 
                                         key={index} 

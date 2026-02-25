@@ -23,6 +23,7 @@ interface DataContextType {
   addStrategyCategory: (name: string) => void;
   deleteStrategyCategory: (id: number) => void;
   addSpotCategory: (data: any) => void;
+  updateSpotCategory: (id: number, data: any) => void;
   deleteSpotCategory: (id: number) => void;
   updateSpot: (spot: Spot) => void;
   addSpot: (spot: Spot) => void;
@@ -32,6 +33,7 @@ interface DataContextType {
   deleteAd: (id: number) => void;
   updateContactInfo: (info: ContactInfo) => void;
   addCity: (city: City) => void;
+  updateCity: (id: number, city: Partial<City>) => void;
   deleteCity: (id: number) => void;
   isCloudSyncing: boolean;
   enableCloud: (config: any) => boolean;
@@ -64,31 +66,61 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // Function to fetch all data from backend
   const refreshData = async () => {
     try {
-      const [g, s, sc, sp, a, c, ci, spc] = await Promise.all([
-        guideService.getAll(),
-        strategyService.getAll(),
+      const params = isAdmin ? { includeExpired: true } : {};
+      
+      // Use allSettled to prevent one failure from blocking others
+      const results = await Promise.allSettled([
+        guideService.getAll(params),
+        strategyService.getAll(params),
         strategyCategoryService.getAll(),
-        spotService.getAll(),
-        adService.getAll(),
+        spotService.getAll(params),
+        adService.getAll(params),
         contactService.get(),
         cityService.getAll(),
         spotCategoryService.getAll()
       ]);
-      setGuides(g);
-      setStrategies(s);
-      setStrategyCategories(sc);
-      setSpots(sp);
-      setAds(a);
-      setContactInfo(c);
-      setCities(ci);
-      setSpotCategories(spc);
 
-      // Cache critical data for faster initial load
-      localStorage.setItem('cached_cities', JSON.stringify(ci));
-      localStorage.setItem('cached_spotCategories', JSON.stringify(spc));
-      localStorage.setItem('cached_spots', JSON.stringify(sp));
+      // Helper to get value or fallback
+      const getVal = (res: PromiseSettledResult<any>, fallback: any) => 
+        res.status === 'fulfilled' ? res.value : fallback;
+
+      // Log errors if any
+      results.forEach((res, index) => {
+        if (res.status === 'rejected') {
+          console.error(`API Call ${index} failed:`, res.reason);
+        }
+      });
+
+      const g = getVal(results[0], []);
+      const s = getVal(results[1], []);
+      const sc = getVal(results[2], []);
+      const sp = getVal(results[3], []);
+      const a = getVal(results[4], []);
+      const c = getVal(results[5], INITIAL_CONTACT_INFO);
+      const ci = getVal(results[6], []);
+      const spc = getVal(results[7], []);
+
+      // Only update state if data is valid (non-empty or at least array)
+      if (results[0].status === 'fulfilled') setGuides(g);
+      if (results[1].status === 'fulfilled') setStrategies(s);
+      if (results[2].status === 'fulfilled') setStrategyCategories(sc);
+      if (results[3].status === 'fulfilled') {
+          setSpots(sp);
+          localStorage.setItem('cached_spots', JSON.stringify(sp));
+      }
+      if (results[4].status === 'fulfilled') setAds(a);
+      if (results[5].status === 'fulfilled') setContactInfo(c);
+      if (results[6].status === 'fulfilled') {
+          setCities(ci);
+          localStorage.setItem('cached_cities', JSON.stringify(ci));
+      }
+      if (results[7].status === 'fulfilled') {
+          setSpotCategories(spc);
+          localStorage.setItem('cached_spotCategories', JSON.stringify(spc));
+      }
+
     } catch (error) {
-      console.error("Failed to fetch data from API:", error);
+      console.error("Failed to fetch data from API (Critical):", error);
     }
   };
 
@@ -109,7 +141,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     refreshData();
-  }, []);
+  }, [isAdmin]);
 
   // Initialize Cloud (Keep existing logic if needed, but primarily use API now)
   useEffect(() => {
@@ -292,6 +324,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateCity = async (id: number, city: Partial<City>) => {
+    try {
+      const updatedCity = await cityService.update(id, city);
+      setCities(prev => prev.map(c => c.id === id ? updatedCity : c));
+    } catch (error) {
+      console.error("Failed to update city:", error);
+    }
+  };
+
   const deleteCity = async (id: number) => {
     try {
       await cityService.delete(id);
@@ -328,6 +369,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateSpotCategory = async (id: number, data: any) => {
+    try {
+      const updated = await spotCategoryService.update(id, data);
+      setSpotCategories(prev => prev.map(c => c.id === id ? updated : c));
+    } catch (error) {
+      console.error("Failed to update spot category:", error);
+    }
+  };
+
   const deleteSpotCategory = async (id: number) => {
     try {
       await spotCategoryService.delete(id);
@@ -355,10 +405,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       addStrategy,
       deleteStrategy,
       addStrategyCategory,
-      deleteStrategyCategory,
-      addSpotCategory,
-      deleteSpotCategory,
-      updateSpot,
+    deleteStrategyCategory,
+    addSpotCategory,
+    updateSpotCategory,
+    deleteSpotCategory,
+    updateSpot,
       addSpot,
       deleteSpot,
       updateAd,
@@ -366,6 +417,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       deleteAd,
       updateContactInfo,
       addCity,
+      updateCity,
       deleteCity,
       isCloudSyncing,
       enableCloud: () => false, // Disabled cloud sync in favor of API

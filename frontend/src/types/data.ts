@@ -10,6 +10,7 @@ export interface Guide {
   rank: number;
   content?: string;
   photos?: string[];
+  expiryDate?: string;
 }
 
 export interface Strategy {
@@ -24,6 +25,7 @@ export interface Strategy {
   rank: number;
   content?: string;
   photos?: string[];
+  expiryDate?: string;
 }
 
 export type SpotTag = 'spot' | 'dining' | 'accommodation' | 'transport' | 'shopping' | 'other' | string;
@@ -52,6 +54,7 @@ export interface Spot {
   content: string;
   tags: SpotTag[];
   reviews?: Review[];
+  expiryDate?: string;
 }
 
 export interface AdSlot {
@@ -61,6 +64,7 @@ export interface AdSlot {
   image: string;
   link?: string;
   layout?: 'standard' | 'full';
+  expiryDate?: string;
 }
 
 export interface ContactInfo {
@@ -75,6 +79,8 @@ export interface ContactInfo {
 export interface City {
   id?: number;
   name: string;
+  nameEn?: string;
+  nameKo?: string;
   lng: number;
   lat: number;
   zoom: number;

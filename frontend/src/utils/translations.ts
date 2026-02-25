@@ -15,9 +15,10 @@ export const TRANSLATIONS: any = {
       close: '关闭'
     },
     categories: {
-      attraction: '景点', hotel: '酒店', food: '美食', atm: 'ATM',
+      attraction: '景点', spot: '景点', hotel: '酒店', accommodation: '住宿', food: '美食', dining: '美食', atm: 'ATM',
       shopping: '购物', pharmacy: '药店', museum: '博物馆', transport: '交通',
-      ticket: '票务', guide: '导游', more: '更多'
+      ticket: '票务', guide: '导游', more: '更多',
+      airport: '机场', high_speed_rail: '高铁', train: '火车'
     },
     tabs: {
       city: '城市', strategy: '攻略', guide: '导游', me: '我的'
@@ -102,14 +103,46 @@ export const TRANSLATIONS: any = {
       moreCategories: '更多分类', demo: '功能演示',
       demoText: '此功能正在开发中，敬请期待！'
     },
+    city: {
+      select: '选择城市',
+      loading: '正在加载城市...',
+    },
+    guide: {
+      title: '找导游',
+      subtitle: '定制您的专属向导',
+      filter: '筛选条件',
+      intro: '个人简介',
+      details: '详细介绍',
+      hasCar: '带车向导'
+    },
+    strategy: {
+      title: '精选攻略',
+      subtitle: '发现最适合你的路线',
+      days: '游玩天数',
+      spots: '打卡景点',
+      route: '路线详情'
+    },
     cityDrawer: {
       selectCity: '选择城市',
+      city: { select: '选择城市' },
       shoppingDeals: '购物优惠',
       dutyFree: '免税店限定特价',
       discount: '海外大牌低至3折',
       ad: '广告',
       viewNow: '立即查看',
-      noPlaces: '暂无相关地点'
+      noPlaces: '暂无相关地点',
+      loadingError: '数据加载失败',
+      retry: '重试',
+      loading: '加载中...',
+      searchPlaceholder: {
+        attraction: '搜索当前城市的景点...',
+        hotel: '搜索当前城市的酒店...',
+        shopping: '搜索当前城市的购物场所...',
+        food: '搜索当前城市的美食...',
+        default: '搜索...'
+      },
+      noAddress: '暂无地址信息',
+      place: '地点'
     },
     booking: {
       title: '预订酒店', checkIn: '入住日期', guests: '入住人数',
@@ -239,6 +272,25 @@ export const TRANSLATIONS: any = {
       moreCategories: 'More Categories', demo: 'Feature Demo',
       demoText: 'This feature is under development. Stay tuned!'
     },
+    city: {
+      select: 'Select City',
+      loading: 'Loading cities...',
+    },
+    guide: {
+      title: 'Find a Guide',
+      subtitle: 'Customize your exclusive guide',
+      filter: 'Filters',
+      intro: 'Introduction',
+      details: 'Details',
+      hasCar: 'Has Car'
+    },
+    strategy: {
+      title: 'Featured Trips',
+      subtitle: 'Discover the best routes for you',
+      days: 'Days',
+      spots: 'Spots',
+      route: 'Route Details'
+    },
     cityDrawer: {
       selectCity: 'Select City',
       shoppingDeals: 'Shopping Deals',
@@ -246,7 +298,19 @@ export const TRANSLATIONS: any = {
       discount: 'Up to 70% Off Luxury Brands',
       ad: 'Ad',
       viewNow: 'View Now',
-      noPlaces: 'No places found'
+      noPlaces: 'No places found',
+      loadingError: 'Data loading failed',
+      retry: 'Retry',
+      loading: 'Loading...',
+      searchPlaceholder: {
+        attraction: 'Search attractions...',
+        hotel: 'Search hotels...',
+        shopping: 'Search shopping...',
+        food: 'Search food...',
+        default: 'Search...'
+      },
+      noAddress: 'No address info',
+      place: 'Place'
     },
     booking: {
       title: 'Book Hotel', checkIn: 'Check-in Date', guests: 'Guests',
@@ -287,9 +351,10 @@ export const TRANSLATIONS: any = {
       close: '닫기'
     },
     categories: {
-      food: '맛집', hotel: '호텔', attraction: '명소', shopping: '쇼핑',
+      food: '맛집', dining: '맛집', hotel: '호텔', accommodation: '호텔', attraction: '명소', spot: '명소', shopping: '쇼핑',
       pharmacy: '약국', atm: 'ATM', museum: '박물관', transport: '교통',
-      ticket: '티켓', guide: '가이드', more: '더보기'
+      ticket: '티켓', guide: '가이드', more: '더보기',
+      airport: '공항', high_speed_rail: '고속철도', train: '기차'
     },
     tabs: {
       city: '도시', strategy: '공략', guide: '가이드', me: '내 정보'
@@ -379,6 +444,10 @@ export const TRANSLATIONS: any = {
       moreCategories: '더 많은 카테고리', demo: '기능 데모',
       demoText: '이 기능은 개발 중입니다. 기대해 주세요!'
     },
+    city: {
+      select: '도시 선택',
+      loading: '도시 목록 로딩 중...',
+    },
     cityDrawer: {
       selectCity: '도시 선택',
       shoppingDeals: '쇼핑 혜택',
@@ -386,7 +455,19 @@ export const TRANSLATIONS: any = {
       discount: '해외 명품 최대 70% 할인',
       ad: '광고',
       viewNow: '지금 확인',
-      noPlaces: '관련 장소 없음'
+      noPlaces: '관련 장소 없음',
+      loadingError: '데이터 로드 실패',
+      retry: '재시도',
+      loading: '로딩 중...',
+      searchPlaceholder: {
+        attraction: '명소 검색...',
+        hotel: '호텔 검색...',
+        shopping: '쇼핑 장소 검색...',
+        food: '맛집 검색...',
+        default: '검색...'
+      },
+      noAddress: '주소 정보 없음',
+      place: '장소'
     },
     booking: {
       title: '호텔 예약', checkIn: '체크인 날짜', guests: '인원',

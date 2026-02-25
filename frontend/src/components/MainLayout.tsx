@@ -24,6 +24,7 @@ export default function MainLayout() {
   const [mapInstance, setMapInstance] = useState<any>(null);
   const [aMap, setAMap] = useState<any>(null);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [mapMarkers, setMapMarkers] = useState<any[]>([]);
   const [selectedPoi, setSelectedPoi] = useState<any>(null);
   
   // UI State
@@ -67,6 +68,7 @@ export default function MainLayout() {
         photos: (s.photos || []).map(url => ({ url }))
     }));
     setSearchResults(allSpots);
+    setMapMarkers(allSpots);
   };
 
   // Initialize with all spots when data is loaded and keep updated
@@ -184,6 +186,7 @@ export default function MainLayout() {
         }));
         
         setSearchResults(mappedSpots);
+        setMapMarkers(mappedSpots);
         if (mappedSpots.length > 0 && shouldOpenDrawer) {
             setIsSearchListOpen(true);
         }
@@ -193,6 +196,7 @@ export default function MainLayout() {
     // If no local matches, strictly return empty to disable external search
     console.log('[MainLayout] No local matches found for:', keyword, '- External search disabled.');
     setSearchResults([]);
+    setMapMarkers([]);
   };
 
   const handleMarkerClick = (poi: any) => {
@@ -201,27 +205,15 @@ export default function MainLayout() {
     
     // Center map on marker with offset to show above bottom sheet (peek mode covers bottom ~35%)
     if (mapInstance && poi.location) {
-        // 1. Zoom and center first
-        // User Request: Adjust zoom to be slightly further out (15 instead of 16)
-        // User Request Update: "进入详情页的时候，此时地图上不需要变更地图尺寸"
-        // Interpretation: Do not change zoom, and maybe not even center? 
-        // "不需要变更地图尺寸" -> "No need to change map size" usually means zoom level.
-        // Let's keep centering but remove zoom change. 
-        // Or remove both if they want to keep context? 
-        // "地图上点击图标时能进入详情页" -> existing logic.
-        // "此时地图上不需要变更地图尺寸" -> Do not setZoom.
+        // MapContainer handles the primary Zoom & Center logic via useEffect on selectedPoi change.
+        // We can add a slight offset here if needed, but for now let's let MapContainer handle the view.
+        // mapInstance.panTo([poi.location.lng, poi.location.lat]);
         
-        // mapInstance.setZoomAndCenter(15, [poi.location.lng, poi.location.lat]);
-        // Just pan to center? Or do nothing?
-        // If we don't center, the bottom sheet might cover the marker.
-        // Let's just pan to center, but keep current zoom.
-        mapInstance.panTo([poi.location.lng, poi.location.lat]);
-        
-        // 2. Pan map up slightly (move content up) so marker appears higher in viewport
+        // Optional: Pan map up slightly (move content up) so marker appears higher in viewport
         // We want marker at ~35% from top (center of visible area), so we pan map UP.
-        setTimeout(() => {
-             mapInstance.panBy(0, -120); 
-        }, 300);
+        // setTimeout(() => {
+        //      mapInstance.panBy(0, -120); 
+        // }, 300);
     }
   };
 
@@ -230,31 +222,74 @@ export default function MainLayout() {
     // We will now treat ALL categories as local search only.
     console.log('[MainLayout] Category selected:', category, '- using local search only.');
     
-    const citySpots = spots.filter(s => {
-        // 1. Check City
-        const isCityMatch = s.city && activeCity && s.city.includes(activeCity);
-        if (!isCityMatch) return false;
-        
-        // 2. Check Category Tag
-        if (!s.tags || !Array.isArray(s.tags)) return false;
+    // User Request: "Whatever menu option I click, all content markers on the map must appear, do not hide."
+    // So we basically ignore filtering for the MAP (searchResults), but we might want to scroll list?
+    // Wait, if we show ALL markers, how does the user know which ones are "Spots"?
+    // The user said: "Currently clicked Spot menu, map only shows Spot menu items. I want all markers to appear."
+    // So: Even if I'm in "Spot" mode in the drawer (list view), the MAP should show EVERYTHING.
+    
+    // 1. Ensure MAP shows ALL spots
+    showAllSpots(); 
 
-        // Special logic for 'transport' (Rail + Airport + Transport)
+    // 2. Filter list for the DRAWER only
+    // We need to pass the filtered list to the CityDrawer, but keep searchResults (Map Markers) full.
+    // However, CityDrawer currently uses `searchResults` prop for its list.
+    // We need to decouple Map Markers from Drawer List.
+    // Let's modify the state structure.
+    // For now, let's implement the user's specific request: "Map shows all".
+    // If CityDrawer relies on searchResults, the list will also show all?
+    // User: "Click Spot menu... map shows all".
+    // If list shows all, that's wrong for "Spot Menu".
+    // We need a separate `filteredListResults` state for the drawer.
+    
+    // Let's calculate the filtered list for the drawer logic (which we'll need to pass down if we separate)
+    // But wait, CityDrawer takes `searchResults`.
+    // If I change searchResults to ALL, the Drawer will list ALL.
+    // I need to change how CityDrawer receives data.
+    // Or... maybe the user implies they want to see other markers as context?
+    
+    // Let's try to keep searchResults as the "Active Filtered List" for the drawer,
+    // but pass a separate "mapMarkers" prop to MapContainer?
+    // Currently MapContainer takes `markers={searchResults}`.
+    // I should create a new state `mapMarkers` that defaults to all spots,
+    // and `searchResults` will be just for the list.
+    
+    // Refactoring plan:
+    // 1. Create `mapMarkers` state. Initialize with all spots.
+    // 2. `handleCategorySelect` updates `searchResults` (for list) but resets `mapMarkers` to all spots (or keeps it all).
+    // 3. Pass `mapMarkers` to MapContainer instead of `searchResults`.
+    
+    // Let's do the calculation for the List (Drawer)
+    const isCategoryMatch = (s: any) => {
+        if (!s.tags || !Array.isArray(s.tags)) return false;
+        
         if (category === 'transport') {
             return s.tags.includes('rail') || s.tags.includes('airport') || s.tags.includes('transport');
         }
         
-        // Special logic for 'spot' key (attraction) to include untagged or excluded others
         if (category === 'spot') {
             const otherCategories = spotCategories.filter(c => c.key !== 'spot').map(c => c.key);
-            const hasOtherTag = s.tags.some(tag => otherCategories.includes(tag));
+            const hasOtherTag = s.tags.some((tag: string) => otherCategories.includes(tag));
             return s.tags.includes('spot') || !hasOtherTag;
         }
         
         return s.tags.includes(category);
-    });
+    };
     
-    // Map to format expected by CityDrawer/MapContainer
-    const mappedSpots = citySpots.map(s => ({
+    let citySpots = spots.filter(s => {
+        const isCityMatch = (!s.city) || (activeCity && s.city.includes(activeCity));
+        if (!isCityMatch) return false;
+        return isCategoryMatch(s);
+    });
+
+    if (citySpots.length === 0) {
+        const allCategorySpots = spots.filter(isCategoryMatch);
+        if (allCategorySpots.length > 0) {
+             citySpots = allCategorySpots;
+        }
+    }
+    
+    const listSpots = citySpots.map(s => ({
         ...s,
         type: s.tags.join(';'),
         address: s.address || '',
@@ -262,10 +297,8 @@ export default function MainLayout() {
         photos: (s.photos || []).map(url => ({ url }))
     }));
 
-    console.log('[MainLayout] Local search results for', category, ':', mappedSpots.length);
-    setSearchResults(mappedSpots);
-    // If no results, we just show empty list (as requested "only show created spots")
-    // We do NOT fall back to external search.
+    setSearchResults(listSpots); // Update Drawer List
+    // Map Markers are handled by `mapMarkers` state (see below)
   };
 
   const handleCityScopedSearch = (keyword: string, category?: string) => {
@@ -273,11 +306,13 @@ export default function MainLayout() {
     // User requested to disable external search for ALL categories in city menu
     
     // Filter local spots by active city AND keyword
-    const citySpots = spots.filter(s => 
-        s.city && activeCity && s.city.includes(activeCity) &&
-        (s.name.toLowerCase().includes(keyword.toLowerCase()) || 
-         (s.tags && s.tags.some(t => t.toLowerCase().includes(keyword.toLowerCase()))))
-    );
+    const citySpots = spots.filter(s => {
+        const isCityMatch = (!s.city) || (activeCity && s.city.includes(activeCity));
+        if (!isCityMatch) return false;
+
+        return (s.name.toLowerCase().includes(keyword.toLowerCase()) || 
+         (s.tags && s.tags.some(t => t.toLowerCase().includes(keyword.toLowerCase()))));
+    });
     
     const mappedSpots = citySpots.map(s => ({
         ...s,
@@ -288,6 +323,7 @@ export default function MainLayout() {
     }));
 
     setSearchResults(mappedSpots);
+    setMapMarkers(mappedSpots);
     return;
   };
 
@@ -329,9 +365,11 @@ export default function MainLayout() {
                         biz_ext: { rating: 0 }
                     }));
                     setSearchResults(mappedPois);
+                    setMapMarkers(mappedPois);
                 } else {
                     console.warn('ATM Search failed or no results:', status, result);
                     setSearchResults([]); // Ensure empty if failed
+                    setMapMarkers([]);
                 }
             });
         }
@@ -396,10 +434,11 @@ export default function MainLayout() {
       <div className="absolute inset-0 z-0">
         <MapContainer 
           onMapReady={handleMapReady}
-          markers={searchResults}
+          markers={mapMarkers}
           selectedPoi={selectedPoi}
           onMarkerClick={handleMarkerClick}
           onMapClick={handleMapClick}
+          disableFitView={isAtmActive || (activeTab === 'city' && searchResults.length > 0)}
         />
       </div>
 

@@ -3,8 +3,8 @@ import { Guide, Strategy, StrategyCategory, Spot, AdSlot, ContactInfo, City, Spo
 
 // Determine API URL based on environment
 // For local development, it's usually http://localhost:3000
-// For production, it should be the deployed backend URL
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// For production (or when running on the server), use '/api' to leverage Nginx proxy
+const API_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:3000');
 
 const api = axios.create({
   baseURL: API_URL,
@@ -35,8 +35,8 @@ api.interceptors.response.use(
 );
 
 export const guideService = {
-  getAll: async () => {
-    const response = await api.get<Guide[]>('/guides');
+  getAll: async (params?: any) => {
+    const response = await api.get<Guide[]>('/guides', { params });
     return response.data;
   },
   create: async (data: Omit<Guide, 'id'>) => {
@@ -53,8 +53,8 @@ export const guideService = {
 };
 
 export const strategyService = {
-  getAll: async () => {
-    const response = await api.get<Strategy[]>('/strategies');
+  getAll: async (params?: any) => {
+    const response = await api.get<Strategy[]>('/strategies', { params });
     return response.data;
   },
   create: async (data: Omit<Strategy, 'id'>) => {
@@ -85,8 +85,8 @@ export const strategyCategoryService = {
 };
 
 export const spotService = {
-  getAll: async () => {
-    const response = await api.get<Spot[]>('/spots');
+  getAll: async (params?: any) => {
+    const response = await api.get<Spot[]>('/spots', { params });
     return response.data;
   },
   create: async (data: Omit<Spot, 'id'>) => {
@@ -103,8 +103,8 @@ export const spotService = {
 };
 
 export const adService = {
-  getAll: async () => {
-    const response = await api.get<AdSlot[]>('/ads');
+  getAll: async (params?: any) => {
+    const response = await api.get<AdSlot[]>('/ads', { params });
     return response.data;
   },
   create: async (data: Omit<AdSlot, 'id'>) => {
@@ -167,6 +167,10 @@ export const spotCategoryService = {
   },
   create: async (data: any) => {
     const response = await api.post<SpotCategory>('/spot-categories', data);
+    return response.data;
+  },
+  update: async (id: number, data: any) => {
+    const response = await api.patch<SpotCategory>(`/spot-categories/${id}`, data);
     return response.data;
   },
   delete: async (id: number) => {

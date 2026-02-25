@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, Query } from '@nestjs/common';
 import { SpotsService } from './spots.service';
 
 @Controller('spots')
@@ -6,8 +6,8 @@ export class SpotsController {
   constructor(private readonly spotsService: SpotsService) {}
 
   @Get()
-  findAll() {
-    return this.spotsService.findAll();
+  findAll(@Query('includeExpired') includeExpired: string) {
+    return this.spotsService.findAll(includeExpired === 'true');
   }
 
   @Get(':id')

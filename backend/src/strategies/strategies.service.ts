@@ -5,15 +5,15 @@ import { PrismaService } from '../prisma.service';
 export class StrategiesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    const strategies = await this.prisma.strategy.findMany();
-    return strategies.map(s => ({
-      ...s,
-      spots: JSON.parse(s.spots),
-      tags: JSON.parse(s.tags),
-      photos: s.photos ? JSON.parse(s.photos) : [],
-      videos: s.videos ? JSON.parse(s.videos) : []
-    }));
+  async findAll(includeExpired: boolean = false) {
+    const where = includeExpired ? {} : {
+      OR: [
+        { expiryDate: null },
+        { expiryDate: { gt: new Date() } }
+      ]
+    };
+    const strategies = await this.prisma.strategy.findMany({ where });
+    return strategies.map(s => this.transform(s));
   }
 
   async findOne(id: number) {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, Query } from '@nestjs/common';
 import { AdsService } from './ads.service';
 
 @Controller('ads')
@@ -6,8 +6,8 @@ export class AdsController {
   constructor(private readonly adsService: AdsService) {}
 
   @Get()
-  findAll() {
-    return this.adsService.findAll();
+  findAll(@Query('includeExpired') includeExpired: string) {
+    return this.adsService.findAll(includeExpired === 'true');
   }
 
   @Get(':id')

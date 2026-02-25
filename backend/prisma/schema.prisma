@@ -100,6 +100,7 @@ model Guide {
   rank      Int      @default(99)
   content   String?
   photos    String?  // JSON string
+  expiryDate DateTime? // Expiration date for auto-removal
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   reviews   Review[]
@@ -108,6 +109,8 @@ model Guide {
 model City {
   id        Int      @id @default(autoincrement())
   name      String   @unique
+  nameEn    String?
+  nameKo    String?
   lng       Float
   lat       Float
   zoom      Int      @default(10)
@@ -128,6 +131,7 @@ model Spot {
   intro     String?
   content   String?
   tags      String   // JSON string
+  expiryDate DateTime? // Expiration date for auto-removal
   reviews   Review[] // Relation to Review table
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -146,6 +150,7 @@ model Strategy {
   content   String?
   photos    String?  // JSON string - Additional photos
   videos    String?  // JSON string
+  expiryDate DateTime? // Expiration date for auto-removal
   reviews   Review[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -164,6 +169,7 @@ model Ad {
   image       String
   link        String?
   layout      String?  // 'standard' | 'full'
+  expiryDate  DateTime? // Expiration date for auto-removal
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

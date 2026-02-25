@@ -5,8 +5,14 @@ import { PrismaService } from '../prisma.service';
 export class SpotsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    const spots = await this.prisma.spot.findMany();
+  async findAll(includeExpired: boolean = false) {
+    const where = includeExpired ? {} : {
+      OR: [
+        { expiryDate: null },
+        { expiryDate: { gt: new Date() } }
+      ]
+    };
+    const spots = await this.prisma.spot.findMany({ where });
     return spots.map(s => this.transform(s));
   }
 

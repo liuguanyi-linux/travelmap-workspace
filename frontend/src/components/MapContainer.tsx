@@ -47,35 +47,60 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         return { icon: Banknote, color: '#7C3AED', shape: 'rounded-lg', isDiamond: false, size: 20, isAtm: true };
     }
 
+    // Transport - Hardcoded support for merged categories
+    if (t.includes('rail') || t.includes('高铁')) {
+        return { icon: LucideIcons.Train, color: '#8B5CF6', shape: 'rounded-lg', isDiamond: false, size: 20 };
+    }
+    if (t.includes('airport') || t.includes('机场')) {
+        return { icon: LucideIcons.Plane, color: '#3B82F6', shape: 'rounded-lg', isDiamond: false, size: 20 };
+    }
+
     // Dynamic Categories
     const matchedCategory = spotCategories?.find(cat => t.includes(cat.key) || t.includes(cat.name.toLowerCase()));
     
     if (matchedCategory) {
-        const Icon = (LucideIcons as any)[matchedCategory.icon] || LucideIcons.MapPin;
+        let Icon: any = LucideIcons.MapPin;
+        const isUrl = matchedCategory.icon && (matchedCategory.icon.startsWith('http') || matchedCategory.icon.startsWith('/') || matchedCategory.icon.startsWith('data:'));
+
+        if (isUrl) {
+            Icon = ({ size, className }: any) => (
+                <img 
+                    src={matchedCategory.icon} 
+                    alt={matchedCategory.name} 
+                    style={{ width: size, height: size, objectFit: 'contain' }}
+                    className={className}
+                />
+            );
+        } else {
+            Icon = (LucideIcons as any)[matchedCategory.icon] || LucideIcons.MapPin;
+        }
+
         let color = stringToColor(matchedCategory.key);
         let shape = 'rounded-full';
         let isDiamond = false;
 
         // Keep explicit styling for core categories
         if (matchedCategory.key === 'spot') {
-             color = '#10B981';
-             shape = 'rotate-45 rounded-md';
-             isDiamond = true;
+             // User Request: "Red Pin + Floating Icon" style.
+             // We return specific flags for the renderer
+             return { icon: Icon, color: '#10B981', shape: 'rounded-lg', isDiamond: false, showPin: true };
         } else if (matchedCategory.key === 'dining') {
              color = '#F59E0B';
+             return { icon: Icon, color, shape: 'rounded-lg', isDiamond: false, showPin: true }; // Apply pin style to all
         } else if (matchedCategory.key === 'accommodation') {
              color = '#3B82F6';
-             shape = 'rounded-xl';
+             return { icon: Icon, color, shape: 'rounded-xl', isDiamond: false, showPin: true }; // Apply pin style to all
         } else if (matchedCategory.key === 'shopping') {
-             color = '#EF4444';
-             shape = 'rounded-lg';
+             color = '#EC4899'; // Pink-500
+             return { icon: Icon, color, shape: 'rounded-lg', isDiamond: false, showPin: true }; // Apply pin style to all
         }
 
-        return { icon: Icon, color, shape, isDiamond };
+        // For other dynamic categories, also use pin style if desired, or default
+        return { icon: Icon, color, shape, isDiamond, showPin: true };
     }
 
-    // Default
-    return { icon: LucideIcons.MapPin, color: theme === 'dark' ? '#1e293b' : '#0f172a', shape: 'rounded-full', borderColor: '#06b6d4', isDiamond: false };
+    // Default - Also apply pin style for consistency
+    return { icon: LucideIcons.MapPin, color: theme === 'dark' ? '#1e293b' : '#0f172a', shape: 'rounded-full', borderColor: '#06b6d4', isDiamond: false, showPin: true };
   };
 
   // Init Map
@@ -89,16 +114,10 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       version: "2.0",
       plugins: [
         'AMap.PlaceSearch', // Re-enabled for ATM/Bank search
-        'AMap.Driving', 
-        'AMap.Transfer',
-        'AMap.Walking',
-        'AMap.Riding',
         'AMap.Geolocation', 
         'AMap.Marker', 
         'AMap.ToolBar', 
         'AMap.Scale', 
-        'AMap.ControlBar',
-        'AMap.CitySearch'
       ],
     })
       .then((AMap) => {
@@ -106,7 +125,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         if (!mapRef.current) return;
 
         const map = new AMap.Map(mapRef.current, {
-          viewMode: "3D",
+          viewMode: "2D",
           zoom: DEFAULT_CITY.zoom,
           center: DEFAULT_CITY.center, // Use configured default
           lang: language === 'zh-CN' ? 'zh_cn' : 'en',
@@ -114,8 +133,13 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         });
 
         // Add controls
-        // Moved up to avoid overlapping with Ads/ATM widgets at bottom right
-        map.addControl(new AMap.ToolBar({ position: 'RB', offset: [20, 240] }));
+        // Custom Zoom Control to support centering on selected marker
+        // We'll add our own zoom buttons instead of AMap.ToolBar if possible, or try to override.
+        // Since standard ToolBar is hard to hook, let's create a custom control div.
+        
+        // Remove standard ToolBar
+        // map.addControl(new AMap.ToolBar({ position: 'RB', offset: [20, 240] }));
+        
         map.addControl(new AMap.Scale());
         // map.addControl(new AMap.ControlBar({ position: 'RT' })); // Disabled compass/control bar by user request
         
@@ -184,10 +208,10 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
     rootsRef.current = [];
 
     // Add new markers
-    // If a POI is selected, only show that specific marker (User Request: hide others)
-    const displayMarkers = selectedPoi ? [selectedPoi] : markers;
+    // User Request: Always show all markers, do not hide others when one is selected
+    const displayMarkers = markers;
     
-    displayMarkers.forEach((poi) => {
+    displayMarkers.forEach((poi, index) => {
       if (!poi.location) return;
       
       const isSelected = selectedPoi && selectedPoi.id === poi.id;
@@ -199,17 +223,10 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       const baseClass = `flex items-center justify-center w-10 h-10 transition-all duration-300 shadow-lg border-[2.5px] box-border ${config.shape}`;
       
       // State classes
-      // User Request: Make markers "obvious" and "highlighted"
-      // Removed opacity-90 to make them solid and popped.
+      // User Request: Make markers "obvious" and "highlighted" - Increased brightness and pulse
       const stateClass = isSelected 
-        ? 'z-50 scale-125 marker-flash shadow-[0_0_25px_rgba(255,255,255,0.8)] ring-2 ring-offset-2 ring-blue-500' 
+        ? 'z-50 scale-125 marker-flash shadow-[0_0_30px_rgba(255,255,255,0.95)] ring-4 ring-offset-2 ring-blue-400 border-white bg-opacity-100' 
         : 'opacity-100 hover:scale-110 hover:shadow-xl hover:z-40';
-      
-      markerContent.className = `${baseClass} ${stateClass}`;
-      
-      // Apply colors via inline style for precision
-      markerContent.style.backgroundColor = config.color;
-      markerContent.style.borderColor = isSelected ? '#ffffff' : (config.borderColor || '#ffffff');
       
       // Icon rendering
       const IconComponent = config.icon;
@@ -220,15 +237,97 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       iconContainer.style.cssText = `${innerStyle} display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;`;
       
       const root = createRoot(iconContainer);
-      root.render(
-        <IconComponent 
-            size={config.size || 18} 
-            color={config.color === '#0f172a' || config.color === '#1e293b' ? '#22d3ee' : '#ffffff'} 
-            strokeWidth={2.5} 
-        />
-      );
+      
+      if (config.showPin) {
+          // Complex "Red Pin + Floating Icon" layout
+          // Pin Tip at (0,0) of this container.
+          // Container needs to be positioned such that (0,0) is at map coordinate.
+          // AMap offset will be set to (0,0) for this case.
+          // We render the whole structure here.
+          
+          // However, AMap marker content is the container.
+          // We need to override the container styles completely for this mode.
+          // IMPORTANT: AMap might override styles if we just set them once.
+          // Instead of setting styles on markerContent (which is passed to AMap),
+          // we should ensure the root div we render handles the layout relative to (0,0).
+          // And we set AMap offset to handle the anchor.
+          
+          // AMap Marker Content:
+          markerContent.className = ''; 
+          markerContent.style.backgroundColor = 'transparent';
+          markerContent.style.border = 'none';
+          markerContent.style.boxShadow = 'none'; // Remove any default shadow
+          // We must ensure the container has no size so the absolute children position correctly relative to the anchor
+          markerContent.style.width = '0px';
+          markerContent.style.height = '0px';
+          markerContent.style.overflow = 'visible';
+
+          root.render(
+            <div className={`relative ${isSelected ? 'z-50 scale-110' : 'z-40'} transition-transform duration-300`}>
+               {/* The Red Pin (Anchor) - Realistic Apple Maps Style */}
+               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none transform translate-y-[4px]">
+                  {/* Pin Head (Glossy Red Sphere) */}
+                  <div className="w-8 h-8 rounded-full bg-[radial-gradient(circle_at_30%_30%,_#ff4d4d,_#cc0000_50%,_#8b0000)] shadow-[inset_-2px_-2px_6px_rgba(0,0,0,0.3),_0_2px_4px_rgba(0,0,0,0.4)] z-20 relative">
+                     {/* Specular Highlight (Stronger) */}
+                     <div className="absolute top-[15%] left-[15%] w-[35%] h-[25%] bg-gradient-to-br from-white/90 to-transparent rounded-full blur-[1px]"></div>
+                     {/* Rim Light */}
+                     <div className="absolute bottom-[10%] right-[10%] w-[40%] h-[40%] bg-gradient-to-tl from-red-400/30 to-transparent rounded-full blur-[2px]"></div>
+                  </div>
+                  
+                  {/* Pin Collar (Connection Ring) */}
+                  <div className="w-[8px] h-[2px] bg-gray-400 rounded-full z-10 -mt-[1px]"></div>
+
+                  {/* Pin Stick (Realistic Silver Cylinder) */}
+                  <div className="w-[5px] h-[32px] bg-[linear-gradient(90deg,_#6b7280,_#f3f4f6_40%,_#f3f4f6_60%,_#6b7280)] z-10 -mt-[1px] shadow-[0_2px_4px_rgba(0,0,0,0.2)]"></div>
+                  
+                  {/* Pin Tip (Pointed Bottom) */}
+                  <div className="w-[5px] h-[4px] bg-gray-600 z-10" style={{clipPath: 'polygon(0 0, 100% 0, 50% 100%)'}}></div>
+
+                  {/* Cast Shadow (Perspective) */}
+                  <div className="absolute bottom-[-2px] w-5 h-2.5 bg-black/50 blur-[1.5px] rounded-[100%] transform skew-x-[40deg] rotate-[10deg] translate-x-[6px] opacity-60 z-0"></div>
+               </div>
+
+               {/* Connector Line - Adjusted for new height */}
+               <svg className="absolute bottom-[32px] left-[6px] w-[32px] h-[32px] pointer-events-none overflow-visible z-0">
+                   <line x1="0" y1="32" x2="24" y2="10" stroke="#94a3b8" strokeWidth="2" strokeDasharray="3 2" />
+               </svg>
+
+               {/* The Floating Icon Box - Significantly Enlarged & High Visibility */}
+               <div 
+                  className={`absolute bottom-[52px] left-[20px] flex items-center justify-center w-12 h-12 shadow-[0_8px_20px_rgba(0,0,0,0.25)] border-[3px] border-white box-border rounded-xl z-20 
+                    ${isSelected 
+                        ? 'ring-4 ring-offset-2 ring-yellow-400 shadow-[0_0_35px_rgba(255,215,0,0.9)] scale-110 brightness-110' 
+                        : 'hover:scale-110 hover:shadow-[0_0_20px_rgba(255,255,255,0.8)] brightness-105'
+                    }`}
+                  style={{ backgroundColor: config.color }}
+               >
+                    <IconComponent 
+                        size={26} 
+                        color="#ffffff" 
+                        strokeWidth={2.5} 
+                    />
+               </div>
+            </div>
+          );
+      } else {
+          // Standard Marker Layout
+          markerContent.className = `${baseClass} ${stateClass}`;
+          // Apply colors via inline style for precision
+          markerContent.style.backgroundColor = config.color;
+          markerContent.style.borderColor = isSelected ? '#ffffff' : (config.borderColor || '#ffffff');
+          
+          root.render(
+            <IconComponent 
+                size={config.size || 18} 
+                color={config.color === '#0f172a' || config.color === '#1e293b' ? '#22d3ee' : '#ffffff'} 
+                strokeWidth={2.5} 
+            />
+          );
+      }
+      
       rootsRef.current.push(root);
       
+      // CRITICAL FIX: Always append the React container to the AMap marker element
       markerContent.appendChild(iconContainer);
 
       // Custom Touch/Click Handling for better Mobile responsiveness
@@ -271,9 +370,12 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       const marker = new AMap.Marker({
         position: [poi.location.lng, poi.location.lat],
         content: markerContent,
-        offset: new AMap.Pixel(-18, -18),
-        zIndex: isSelected ? 100 : 10,
+        offset: config.showPin ? new AMap.Pixel(0, 0) : new AMap.Pixel(-18, -18),
+        zIndex: isSelected ? 999 : (100 + index), // Increased base z-index and ensure selected is always top. Using index to stabilize stacking.
         extData: poi,
+        clickable: true, // Explicitly enable click
+        topWhenClick: true, // Bring to top on click
+        bubble: false, // Prevent event bubbling issues
         label: {
             content: `<div style="
               display: flex; 
@@ -285,10 +387,12 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
               font-weight: 700; 
               backdrop-filter: blur(8px); 
               white-space: nowrap; 
-              margin-bottom: 14px;
+              margin-bottom: ${config.showPin ? '90px' : '14px'};
+              margin-left: ${config.showPin ? '40px' : '0'};
               letter-spacing: 0.01em;
               transition: all 0.3s ease;
               ${labelStyle}
+              pointer-events: auto; /* Ensure label is also clickable if needed, or doesn't block */
             ">${poi.name}</div>`,
             direction: 'top',
             offset: new AMap.Pixel(0, 0),
@@ -317,19 +421,62 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
   }, [markers, selectedPoi, theme, isMapReady]); // Added isMapReady dependency
 
   // Handle Selection Focus
-    useEffect(() => {
+  useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !selectedPoi || !selectedPoi.location) return;
 
-    // User Request: Adjust zoom to be slightly further out (15 instead of 16)
-    // Update: User said "Do not change map size" (zoom level).
-    // map.setZoomAndCenter(15, [selectedPoi.location.lng, selectedPoi.location.lat]);
-    // We handle pan in MainLayout.tsx now. 
-    // map.panTo([selectedPoi.location.lng, selectedPoi.location.lat]);
-    }, [selectedPoi]);
+    // User Request: When a spot is selected, zoom in and center the map on it.
+    // We use setZoomAndCenter (level 16) to ensure the spot is clearly visible.
+    map.setZoomAndCenter(16, [selectedPoi.location.lng, selectedPoi.location.lat]);
+    
+    // Note: MainLayout might apply a pan offset for the bottom sheet.
+    // We leave that responsibility to the layout controller or handle it here if needed.
+    // For now, centering is the primary request.
+  }, [selectedPoi]);
 
     return (
         <div className="w-full h-full relative bg-white dark:bg-gray-900 transition-colors duration-300">
+            {/* Custom Zoom Controls */}
+            {/* User Request: Move +/- buttons ABOVE the pattern (which is likely the POI detail sheet or user location button). */}
+            {/* Mobile: Keep at vertical center (bottom-[50%]) to avoid bottom sheet. */}
+            {/* Desktop: User said "place above blue globe". The globe is usually part of standard controls or custom geolocation. */}
+            {/* Assuming the blue globe is the Geolocation control at bottom-right. */}
+            {/* We'll position this significantly higher on desktop. */}
+            <div className="absolute right-5 bottom-[50%] md:bottom-[180px] flex flex-col gap-2 z-[70]">
+                <button 
+                    className="w-10 h-10 bg-white dark:bg-gray-800 rounded-lg shadow-md flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-transform"
+                    onClick={() => {
+                        const map = mapInstanceRef.current;
+                        if (!map) return;
+                        if (selectedPoi && selectedPoi.location) {
+                            // If a POI is selected, zoom towards it!
+                            // First pan to it (centering it), then zoom
+                            map.setCenter([selectedPoi.location.lng, selectedPoi.location.lat]);
+                            map.zoomIn();
+                        } else {
+                            map.zoomIn();
+                        }
+                    }}
+                >
+                    <LucideIcons.Plus size={24} />
+                </button>
+                <button 
+                    className="w-10 h-10 bg-white dark:bg-gray-800 rounded-lg shadow-md flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-transform"
+                    onClick={() => {
+                        const map = mapInstanceRef.current;
+                        if (!map) return;
+                        if (selectedPoi && selectedPoi.location) {
+                            map.setCenter([selectedPoi.location.lng, selectedPoi.location.lat]);
+                            map.zoomOut();
+                        } else {
+                            map.zoomOut();
+                        }
+                    }}
+                >
+                    <LucideIcons.Minus size={24} />
+                </button>
+            </div>
+
             <style>{`
                 .amap-marker-label {
                     border: none !important;

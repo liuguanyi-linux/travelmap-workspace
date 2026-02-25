@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Guide, Strategy, Spot, AdSlot, ContactInfo } from '../../types/data';
-import { Trash2, Plus, Edit2, LogOut, X, Save, Settings, Phone, ShoppingBag, Menu, Users, Map, Compass, BookOpen, Megaphone, Utensils, BedDouble, MapPin, Loader2, Train, Plane, Minus } from 'lucide-react';
+import { Trash2, Plus, Edit2, LogOut, X, Save, Settings, Phone, Menu, Users, Map, Compass, BookOpen, Megaphone, MapPin, Loader2, Minus } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SystemSettings from './components/SystemSettings';
 import UserList from './components/UserList';
@@ -13,11 +14,75 @@ import ImageUploader from '../../components/admin/ImageUploader';
 import RichTextEditor from '../../components/admin/RichTextEditor';
 import { ReviewManager } from '../../components/admin/ReviewManager';
 
+// Helper component for expiration date selection
+const ExpirationSelector = ({ value, onChange }: { value?: string | null, onChange: (val: string | null) => void }) => {
+  return (
+    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
+      <label className="block text-sm font-medium text-gray-900 mb-3">有效期设置 (到期自动下架)</label>
+      <div className="flex flex-wrap gap-6 mb-3">
+        <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors">
+            <input 
+                type="radio" 
+                name="expiry_type"
+                checked={!value} 
+                onChange={() => onChange(null)} 
+                className="w-4 h-4 text-blue-600"
+            />
+            <span className="font-medium">永久有效</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors">
+            <input 
+                type="radio" 
+                name="expiry_type"
+                checked={!!value && Math.abs(new Date(value).getTime() - (new Date().setFullYear(new Date().getFullYear() + 1))) < 86400000} 
+                onChange={() => {
+                    const d = new Date();
+                    d.setFullYear(d.getFullYear() + 1);
+                    onChange(d.toISOString());
+                }} 
+                className="w-4 h-4 text-blue-600"
+            />
+            <span className="font-medium">一年有效期</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors">
+            <input 
+                type="radio" 
+                name="expiry_type"
+                checked={!!value && Math.abs(new Date(value).getTime() - (new Date().setFullYear(new Date().getFullYear() + 1))) >= 86400000} 
+                onChange={() => {
+                   if (!value) {
+                       const d = new Date();
+                       d.setMonth(d.getMonth() + 1);
+                       onChange(d.toISOString());
+                   }
+                }} 
+                className="w-4 h-4 text-blue-600"
+            />
+            <span className="font-medium">自定义时间</span>
+        </label>
+      </div>
+      {value && (
+          <div className="mt-2 bg-white p-2 rounded border border-gray-100">
+            <input 
+                type="datetime-local" 
+                value={new Date(value).toISOString().slice(0, 16)}
+                onChange={(e) => onChange(new Date(e.target.value).toISOString())}
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+                将在 {new Date(value).toLocaleString()} 自动下架
+            </p>
+          </div>
+      )}
+    </div>
+  );
+};
+
 export default function AdminDashboard() {
   const { 
     guides = [], addGuide, updateGuide, deleteGuide,
     strategies = [], addStrategy, updateStrategy, deleteStrategy,
-    spotCategories = [], addSpotCategory, deleteSpotCategory,
+    spotCategories = [],
     spots = [], addSpot, updateSpot, deleteSpot,
     ads = [], addAd, updateAd, deleteAd,
     contactInfo, updateContactInfo,
@@ -117,7 +182,7 @@ export default function AdminDashboard() {
         } else {
           addAd({ ...formData, id: Date.now() });
         }
-      } else if (spotCategories.some(cat => cat.key === activeTab)) {
+      } else if (spotCategories.some(cat => cat.key === activeTab) || activeTab === 'transport') {
         console.log('Matching spot category:', activeTab);
         if (editingItem) {
           await updateSpot({ ...editingItem, ...formData });
@@ -170,19 +235,34 @@ export default function AdminDashboard() {
           </TabButton>
           
           {spotCategories
-            .filter(cat => ['spot', 'dining', 'accommodation', 'shopping', 'rail', 'airport'].includes(cat.key))
+            .filter(cat => ['spot', 'dining', 'accommodation', 'shopping'].includes(cat.key))
             .sort((a, b) => {
-              const order = { spot: 1, dining: 2, accommodation: 3, shopping: 4, rail: 5, airport: 6 };
+              const order = { spot: 1, dining: 2, accommodation: 3, shopping: 4 };
               return (order[a.key as keyof typeof order] || 99) - (order[b.key as keyof typeof order] || 99);
             })
-            .map(cat => (
+            .map(cat => {
+              const getIcon = () => {
+                 if (cat.icon && (cat.icon.startsWith('http') || cat.icon.startsWith('/') || cat.icon.startsWith('data:'))) {
+                     return <img src={cat.icon} alt={cat.name} className="w-[18px] h-[18px] object-contain" />;
+                 }
+                 const Icon = (LucideIcons as any)[cat.icon] || Minus;
+                 return <Icon size={18} />;
+              };
+
+              return (
               <TabButton key={cat.key} active={activeTab === cat.key} onClick={() => setActiveTab(cat.key)}>
                 <div className="flex items-center gap-3">
-                  <Minus size={18} />
-                  <span>{cat.name}管理</span>
+                  <span>- {cat.name}管理</span>
                 </div>
               </TabButton>
-          ))}
+            )})}
+          
+          {/* Merged Transport Category */}
+          <TabButton active={activeTab === 'transport'} onClick={() => setActiveTab('transport')}>
+            <div className="flex items-center gap-3">
+              <span>- 高铁/机场管理</span>
+            </div>
+          </TabButton>
 
           {/* 内容运营组 */}
           <TabButton active={activeTab === 'guides'} onClick={() => setActiveTab('guides')}>
@@ -274,13 +354,14 @@ export default function AdminDashboard() {
             {activeTab === 'cities' && '城市管理'}
             {activeTab === 'menu_categories' && '菜单分类管理'}
             {spotCategories.map(cat => activeTab === cat.key && `${cat.name}列表`)}
+            {activeTab === 'transport' && '高铁/机场列表'}
             {activeTab === 'ads' && '广告位列表'}
             {activeTab === 'users' && '用户列表'}
             {activeTab === 'contact' && '联系方式设置'}
             {activeTab === 'system' && '系统设置'}
           </h2>
           </div>
-          {activeTab !== 'system' && activeTab !== 'contact' && activeTab !== 'users' && activeTab !== 'cities' && (
+          {activeTab !== 'system' && activeTab !== 'contact' && activeTab !== 'users' && activeTab !== 'cities' && activeTab !== 'menu_categories' && (
           <div className="flex gap-2">
             {activeTab === 'strategies' && (
               <button 
@@ -325,6 +406,13 @@ export default function AdminDashboard() {
               />
             )
           ))}
+          {activeTab === 'transport' && (
+              <SpotsList 
+                data={spots.filter(s => s.tags.includes('rail') || s.tags.includes('airport'))} 
+                onDelete={deleteSpot} 
+                onEdit={handleEdit} 
+              />
+          )}
             {activeTab === 'ads' && <AdsList data={ads} onDelete={deleteAd} onEdit={handleEdit} />}
             {activeTab === 'users' && <UserList />}
             {activeTab === 'contact' && <ContactSettings info={contactInfo} onSave={updateContactInfo} />}
@@ -349,6 +437,7 @@ export default function AdminDashboard() {
               {activeTab === 'guides' && <GuideForm initialData={editingItem} onSave={handleSave} isSaving={isSaving} />}
               {activeTab === 'strategies' && <StrategyForm initialData={editingItem} onSave={handleSave} isSaving={isSaving} />}
               {spotCategories.some(c => c.key === activeTab) && <SpotForm key={activeTab} initialData={editingItem} defaultTag={activeTab} onSave={handleSave} isSaving={isSaving} />}
+              {activeTab === 'transport' && <SpotForm key="transport" initialData={editingItem} defaultTag="transport" onSave={handleSave} isSaving={isSaving} />}
               {activeTab === 'ads' && <AdForm initialData={editingItem} onSave={handleSave} />}
             </div>
           </div>
@@ -441,10 +530,51 @@ function TabButton({ children, active, onClick }: { children: React.ReactNode, a
 }
 
 function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: number) => void, onEdit: (item: Guide) => void }) {
+  const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('active');
+  const [sort, setSort] = useState<'newest' | 'expiry'>('newest');
+
+  const filteredData = data.filter(item => {
+    const isExpired = item.expiryDate && new Date(item.expiryDate) < new Date();
+    if (filter === 'active') return !isExpired;
+    if (filter === 'expired') return isExpired;
+    return true;
+  }).sort((a, b) => {
+    if (sort === 'expiry') {
+        const dateA = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
+        const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
+        return dateA - dateB;
+    }
+    return b.id - a.id;
+  });
+
   return (
     <div className="space-y-4">
-      {data.map(guide => (
-        <div key={guide.id} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+      <div className="flex flex-wrap gap-4 justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+        <div className="flex bg-gray-100 rounded-lg p-1">
+            <button onClick={() => setFilter('active')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'active' ? 'bg-white shadow text-blue-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>展示中</button>
+            <button onClick={() => setFilter('expired')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'expired' ? 'bg-white shadow text-red-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>已下架</button>
+            <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'all' ? 'bg-white shadow text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>全部</button>
+        </div>
+        <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">排序:</span>
+            <select value={sort} onChange={e => setSort(e.target.value as any)} className="text-sm border-none bg-gray-50 rounded-lg px-3 py-1.5 focus:ring-0 cursor-pointer">
+                <option value="newest">最新发布</option>
+                <option value="expiry">即将过期</option>
+            </select>
+        </div>
+      </div>
+
+      {filteredData.length === 0 ? (
+        <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            暂无相关内容
+        </div>
+      ) : filteredData.map(guide => (
+        <div key={guide.id} className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 relative overflow-hidden ${guide.expiryDate && new Date(guide.expiryDate) < new Date() ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+          {guide.expiryDate && new Date(guide.expiryDate) < new Date() && (
+              <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-3 py-1 rounded-bl-lg font-bold z-10">
+                  已下架
+              </div>
+          )}
           <img src={guide.avatar} alt={guide.name} className="w-16 h-16 rounded-full object-cover" />
           <div className="flex-1 w-full">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
@@ -458,7 +588,15 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
                 </span>
               )}
             </div>
-            <p className="text-gray-500 text-sm mb-2">{guide.intro}</p>
+            {guide.expiryDate && (
+                <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                    <span className={new Date(guide.expiryDate) < new Date() ? 'text-red-500 font-medium' : 'text-green-600'}>
+                        {new Date(guide.expiryDate) < new Date() ? '已过期: ' : '有效期至: '}
+                        {new Date(guide.expiryDate).toLocaleDateString()}
+                    </span>
+                </div>
+            )}
+            <div className="text-gray-500 text-sm mb-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: guide.intro || '' }} />
           </div>
           <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
             <button onClick={() => onEdit(guide)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
@@ -475,10 +613,51 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
 }
 
 function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete: (id: number) => void, onEdit: (item: Strategy) => void }) {
+  const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('active');
+  const [sort, setSort] = useState<'newest' | 'expiry'>('newest');
+
+  const filteredData = data.filter(item => {
+    const isExpired = item.expiryDate && new Date(item.expiryDate) < new Date();
+    if (filter === 'active') return !isExpired;
+    if (filter === 'expired') return isExpired;
+    return true;
+  }).sort((a, b) => {
+    if (sort === 'expiry') {
+        const dateA = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
+        const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
+        return dateA - dateB;
+    }
+    return b.id - a.id;
+  });
+
   return (
     <div className="space-y-4">
-      {data.map(item => (
-        <div key={item.id} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+      <div className="flex flex-wrap gap-4 justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+        <div className="flex bg-gray-100 rounded-lg p-1">
+            <button onClick={() => setFilter('active')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'active' ? 'bg-white shadow text-blue-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>展示中</button>
+            <button onClick={() => setFilter('expired')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'expired' ? 'bg-white shadow text-red-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>已下架</button>
+            <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'all' ? 'bg-white shadow text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>全部</button>
+        </div>
+        <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">排序:</span>
+            <select value={sort} onChange={e => setSort(e.target.value as any)} className="text-sm border-none bg-gray-50 rounded-lg px-3 py-1.5 focus:ring-0 cursor-pointer">
+                <option value="newest">最新发布</option>
+                <option value="expiry">即将过期</option>
+            </select>
+        </div>
+      </div>
+
+      {filteredData.length === 0 ? (
+        <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            暂无相关内容
+        </div>
+      ) : filteredData.map(item => (
+        <div key={item.id} className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 relative overflow-hidden ${item.expiryDate && new Date(item.expiryDate) < new Date() ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+          {item.expiryDate && new Date(item.expiryDate) < new Date() && (
+              <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-3 py-1 rounded-bl-lg font-bold z-10">
+                  已下架
+              </div>
+          )}
           <img src={item.image} alt={item.title} className="w-full sm:w-24 h-48 sm:h-24 rounded-lg object-cover" />
           <div className="flex-1 w-full">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
@@ -492,6 +671,14 @@ function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete
                 </span>
               )}
             </div>
+            {item.expiryDate && (
+                <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                    <span className={new Date(item.expiryDate) < new Date() ? 'text-red-500 font-medium' : 'text-green-600'}>
+                        {new Date(item.expiryDate) < new Date() ? '已过期: ' : '有效期至: '}
+                        {new Date(item.expiryDate).toLocaleDateString()}
+                    </span>
+                </div>
+            )}
             <div className="flex flex-wrap gap-2 mb-3">
               {item.spots.map(s => (
                  <span key={s} className="text-xs border border-gray-200 px-2 py-1 rounded text-gray-600">{s}</span>
@@ -543,6 +730,12 @@ function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onS
           required
         />
       </div>
+      
+      <ExpirationSelector 
+        value={(formData as any).expiryDate} 
+        onChange={(val) => setFormData({...formData, expiryDate: val} as any)} 
+      />
+
       <div className="grid grid-cols-2 gap-4">
         <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">性别</label>
@@ -608,22 +801,18 @@ function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onS
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">简介 (首页显示部分)</label>
-        <textarea
-          value={formData.intro}
-          onChange={e => setFormData({...formData, intro: e.target.value})}
-          className="w-full px-3 py-2 border rounded-lg"
-          rows={3}
-          required
+        <RichTextEditor
+          value={formData.intro || ''}
+          onChange={val => setFormData({...formData, intro: val})}
+          placeholder="请输入简短介绍..."
         />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">详细介绍 (支持HTML, 点击后显示)</label>
-        <textarea
+        <RichTextEditor
           value={formData.content || ''}
-          onChange={e => setFormData({...formData, content: e.target.value})}
-          className="w-full px-3 py-2 border rounded-lg font-mono text-sm"
-          rows={6}
-          placeholder="<p>这里可以输入详细的导游介绍...</p>"
+          onChange={val => setFormData({...formData, content: val})}
+          placeholder="这里可以输入详细的导游介绍..."
         />
       </div>
       <ReviewManager targetId={formData.id} targetType="guide" />
@@ -773,6 +962,12 @@ function StrategyForm({ initialData, onSave, isSaving }: { initialData?: Strateg
           required
         />
       </div>
+
+      <ExpirationSelector 
+        value={(formData as any).expiryDate} 
+        onChange={(val) => setFormData({...formData, expiryDate: val} as any)} 
+      />
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">所属城市</label>
         <select
@@ -931,10 +1126,51 @@ function StrategyForm({ initialData, onSave, isSaving }: { initialData?: Strateg
 }
 
 function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: number) => void, onEdit: (item: Spot) => void }) {
+  const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('active');
+  const [sort, setSort] = useState<'newest' | 'expiry'>('newest');
+
+  const filteredData = data.filter(item => {
+    const isExpired = item.expiryDate && new Date(item.expiryDate) < new Date();
+    if (filter === 'active') return !isExpired;
+    if (filter === 'expired') return isExpired;
+    return true;
+  }).sort((a, b) => {
+    if (sort === 'expiry') {
+        const dateA = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
+        const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
+        return dateA - dateB;
+    }
+    return b.id - a.id;
+  });
+
   return (
     <div className="space-y-4">
-      {data.map(item => (
-        <div key={item.id} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+      <div className="flex flex-wrap gap-4 justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+        <div className="flex bg-gray-100 rounded-lg p-1">
+            <button onClick={() => setFilter('active')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'active' ? 'bg-white shadow text-blue-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>展示中</button>
+            <button onClick={() => setFilter('expired')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'expired' ? 'bg-white shadow text-red-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>已下架</button>
+            <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'all' ? 'bg-white shadow text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>全部</button>
+        </div>
+        <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">排序:</span>
+            <select value={sort} onChange={e => setSort(e.target.value as any)} className="text-sm border-none bg-gray-50 rounded-lg px-3 py-1.5 focus:ring-0 cursor-pointer">
+                <option value="newest">最新发布</option>
+                <option value="expiry">即将过期</option>
+            </select>
+        </div>
+      </div>
+
+      {filteredData.length === 0 ? (
+        <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            暂无相关内容
+        </div>
+      ) : filteredData.map(item => (
+        <div key={item.id} className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 relative overflow-hidden ${item.expiryDate && new Date(item.expiryDate) < new Date() ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+          {item.expiryDate && new Date(item.expiryDate) < new Date() && (
+              <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-3 py-1 rounded-bl-lg font-bold z-10">
+                  已下架
+              </div>
+          )}
           <div className="w-full sm:w-24 h-48 sm:h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
              {item.photos?.[0] ? (
                 <img src={item.photos[0]} alt={item.name} className="w-full h-full object-cover" />
@@ -960,7 +1196,15 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
                 ))}
               </div>
             </div>
-            <p className="text-gray-500 text-sm mb-2 line-clamp-2">{item.content}</p>
+            {item.expiryDate && (
+                <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                    <span className={new Date(item.expiryDate) < new Date() ? 'text-red-500 font-medium' : 'text-green-600'}>
+                        {new Date(item.expiryDate) < new Date() ? '已过期: ' : '有效期至: '}
+                        {new Date(item.expiryDate).toLocaleDateString()}
+                    </span>
+                </div>
+            )}
+            <div className="text-gray-500 text-sm mb-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: item.intro || item.content || item.address || '暂无介绍' }} />
           </div>
           <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
             <button onClick={() => onEdit(item)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
@@ -978,11 +1222,14 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
 
 function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { initialData?: Spot, defaultTag?: string, onSave: (data: any) => void, isSaving?: boolean }) {
   const { cities = [] } = useData();
+  const isTransport = defaultTag === 'transport';
+  const effectiveDefaultTag = isTransport ? 'rail' : defaultTag;
+
   const [formData, setFormData] = useState<Partial<Spot>>(initialData ? {
     ...initialData,
     // Ensure arrays are initialized correctly to prevent nulls
     photos: initialData.photos || [],
-    tags: initialData.tags || [defaultTag],
+    tags: initialData.tags || [effectiveDefaultTag],
     reviews: initialData.reviews || []
   } : {
     name: '',
@@ -991,9 +1238,15 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
     location: { lng: 120.38, lat: 36.06 },
     photos: [],
     content: '',
-    tags: [defaultTag || 'spot'],
+    tags: [effectiveDefaultTag],
     reviews: []
   });
+
+  useEffect(() => {
+     if (isTransport && !initialData) {
+         setFormData(prev => ({ ...prev, tags: ['rail'] }));
+     }
+  }, [isTransport, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1017,12 +1270,18 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
           required
         />
       </div>
+
+      <ExpirationSelector 
+        value={(formData as any).expiryDate} 
+        onChange={(val) => setFormData({...formData, expiryDate: val} as any)} 
+      />
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">中文名称 (详情页显示)</label>
         <input
           type="text"
-          value={formData.cnName || ''}
-          onChange={e => setFormData({...formData, cnName: e.target.value})}
+          value={formData.name || ''}
+          onChange={e => setFormData({...formData, name: e.target.value})}
           className="w-full px-3 py-2 border rounded-lg"
           placeholder="例如：汉拿山"
         />
@@ -1088,21 +1347,31 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">分类 (已锁定)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">分类 {isTransport ? '(可选)' : '(已锁定)'}</label>
         <select
-          value={formData.tags?.[0] || 'spot'}
+          value={formData.tags?.[0] || effectiveDefaultTag}
           onChange={e => setFormData({...formData, tags: [e.target.value as any]})}
-          className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-          disabled={true}
+          className={`w-full px-3 py-2 border rounded-lg ${isTransport ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'}`}
+          disabled={!isTransport}
         >
-          <option value="spot">景点</option>
-          <option value="dining">美食</option>
-          <option value="accommodation">酒店</option>
-          <option value="shopping">购物</option>
-          <option value="rail">高铁</option>
-          <option value="airport">机场</option>
-          <option value="transport">交通</option>
-          <option value="other">其他</option>
+          {!isTransport && (
+            <>
+                <option value="spot">景点</option>
+                <option value="dining">美食</option>
+                <option value="accommodation">酒店</option>
+                <option value="shopping">购物</option>
+                <option value="rail">高铁</option>
+                <option value="airport">机场</option>
+                <option value="transport">交通</option>
+                <option value="other">其他</option>
+            </>
+          )}
+          {isTransport && (
+              <>
+                <option value="rail">高铁</option>
+                <option value="airport">机场</option>
+              </>
+          )}
         </select>
       </div>
       <div>
@@ -1118,11 +1387,9 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">简介 (用于卡片显示)</label>
-        <textarea
+        <RichTextEditor
           value={formData.intro || ''}
-          onChange={e => setFormData({...formData, intro: e.target.value})}
-          className="w-full px-3 py-2 border rounded-lg"
-          rows={2}
+          onChange={val => setFormData({...formData, intro: val})}
           placeholder="简短介绍，将显示在左侧列表卡片上"
         />
       </div>
@@ -1154,14 +1421,63 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
 }
 
 function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: number) => void, onEdit: (item: AdSlot) => void }) {
+  const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('active');
+  const [sort, setSort] = useState<'newest' | 'expiry'>('newest');
+
+  const filteredData = data.filter(item => {
+    const isExpired = item.expiryDate && new Date(item.expiryDate) < new Date();
+    if (filter === 'active') return !isExpired;
+    if (filter === 'expired') return isExpired;
+    return true;
+  }).sort((a, b) => {
+    if (sort === 'expiry') {
+        const dateA = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
+        const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
+        return dateA - dateB;
+    }
+    return b.id - a.id;
+  });
+
   return (
     <div className="space-y-4">
-      {data.map(item => (
-        <div key={item.id} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+      <div className="flex flex-wrap gap-4 justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+        <div className="flex bg-gray-100 rounded-lg p-1">
+            <button onClick={() => setFilter('active')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'active' ? 'bg-white shadow text-blue-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>展示中</button>
+            <button onClick={() => setFilter('expired')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'expired' ? 'bg-white shadow text-red-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>已下架</button>
+            <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'all' ? 'bg-white shadow text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>全部</button>
+        </div>
+        <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">排序:</span>
+            <select value={sort} onChange={e => setSort(e.target.value as any)} className="text-sm border-none bg-gray-50 rounded-lg px-3 py-1.5 focus:ring-0 cursor-pointer">
+                <option value="newest">最新发布</option>
+                <option value="expiry">即将过期</option>
+            </select>
+        </div>
+      </div>
+
+      {filteredData.length === 0 ? (
+        <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            暂无相关内容
+        </div>
+      ) : filteredData.map(item => (
+        <div key={item.id} className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 relative overflow-hidden ${item.expiryDate && new Date(item.expiryDate) < new Date() ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+          {item.expiryDate && new Date(item.expiryDate) < new Date() && (
+              <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-3 py-1 rounded-bl-lg font-bold z-10">
+                  已下架
+              </div>
+          )}
           <img src={item.image} alt={item.title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
           <div className="flex-1 w-full">
             <h3 className="text-lg font-bold mb-1">{item.title}</h3>
             {item.description && <p className="text-gray-500 text-sm mb-2">{item.description}</p>}
+            {item.expiryDate && (
+                <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                    <span className={new Date(item.expiryDate) < new Date() ? 'text-red-500 font-medium' : 'text-green-600'}>
+                        {new Date(item.expiryDate) < new Date() ? '已过期: ' : '有效期至: '}
+                        {new Date(item.expiryDate).toLocaleDateString()}
+                    </span>
+                </div>
+            )}
             <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm hover:underline block truncate">
                 {item.link}
             </a>
@@ -1206,6 +1522,12 @@ function AdForm({ initialData, onSave }: { initialData?: AdSlot, onSave: (data: 
           required
         />
       </div>
+
+      <ExpirationSelector 
+        value={(formData as any).expiryDate} 
+        onChange={(val) => setFormData({...formData, expiryDate: val} as any)} 
+      />
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">描述</label>
         <input

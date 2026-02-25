@@ -1,6 +1,7 @@
 import React from 'react';
 import { Compass, Map, Calendar, ChevronRight, X, ArrowLeft, Share2, Heart } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useData } from '../../contexts/DataContext';
 import { Strategy } from '../../types/data';
 
@@ -10,6 +11,7 @@ interface StrategyViewProps {
 }
 
 export default function StrategyView({ isVisible, onClose }: StrategyViewProps) {
+  const { t } = useLanguage();
   const controls = useAnimation();
   const dragControls = useDragControls();
   const [selectedCategory, setSelectedCategory] = React.useState('全部');
@@ -26,7 +28,7 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
     }
   }, [isVisible, controls]);
 
-  const handleDragEnd = (event: any, info: PanInfo) => {
+  const handleDragEnd = (_event: any, info: PanInfo) => {
     const { offset, velocity } = info;
     if (offset.y > 100 || (velocity.y > 500 && offset.y > 0)) {
        onClose();
@@ -143,23 +145,6 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
                       </div>
                   </div>
 
-                  {/* Videos Section */}
-                  {selectedStrategy.videos && selectedStrategy.videos.length > 0 && (
-                      <div className="mt-2 mb-8">
-                          <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
-                              {selectedStrategy.videos.map((video: string, index: number) => (
-                                  <div key={`video-${index}`} className="w-64 h-32 shrink-0 rounded-3xl overflow-hidden bg-black snap-center shadow-md relative">
-                                      <video 
-                                        src={video} 
-                                        controls 
-                                        className="w-full h-full object-cover"
-                                      />
-                                  </div>
-                              ))}
-                          </div>
-                      </div>
-                  )}
-
                   {/* Detailed Info */}
                   <div className="px-6 space-y-6">
                     {/* Info Bar */}
@@ -169,7 +154,7 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
                           <Calendar size={20} />
                         </div>
                         <div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">游玩天数</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{t('strategy.days')}</div>
                           <div className="font-bold text-gray-900 dark:text-white">{selectedStrategy.days}</div>
                         </div>
                       </div>
@@ -179,7 +164,7 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
                           <Map size={20} />
                         </div>
                         <div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">打卡景点</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{t('strategy.spots')}</div>
                           <div className="font-bold text-gray-900 dark:text-white">{selectedStrategy.spots.length}个</div>
                         </div>
                       </div>
@@ -187,7 +172,7 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
 
                     {/* Route Details */}
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">路线详情</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{t('strategy.route')}</h3>
                       <div className="relative pl-4 border-l-2 border-blue-100 dark:border-blue-900 space-y-6">
                         {selectedStrategy.spots.map((spot, index) => (
                           <div key={index} className="relative">

@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../../../contexts/DataContext';
-import { Trash2, Plus, MapPin, Navigation, Search, Loader2, Map as MapIcon, Crosshair } from 'lucide-react';
+import { Trash2, Plus, MapPin, Navigation, Search, Loader2, Map as MapIcon, Crosshair, Edit2 } from 'lucide-react';
 import { City } from '../../../types/data';
 import AMapLoader from '@amap/amap-jsapi-loader';
 
 export default function CityManager() {
-  const { cities, addCity, deleteCity } = useData();
+  const { cities, addCity, updateCity, deleteCity } = useData();
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationMode, setLocationMode] = useState<'auto' | 'manual'>('auto');
   const [formData, setFormData] = useState<Partial<City>>({
     name: '',
+    nameEn: '',
+    nameKo: '',
     lng: 120.38,
     lat: 36.06,
     zoom: 12
@@ -144,6 +147,9 @@ export default function CityManager() {
                 mapInstance.setZoomAndCenter(12, [city.center.lng, city.center.lat]);
                 if (markerInstance) markerInstance.setPosition([city.center.lng, city.center.lat]);
             }
+            if (mapContainerRef.current) {
+                mapContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
           } else {
             alert('获取城市坐标失败，请手动输入');
           }
@@ -161,9 +167,17 @@ export default function CityManager() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.name && formData.lng && formData.lat && formData.zoom) {
-      addCity(formData as City);
+      if (editingId) {
+        updateCity(editingId, formData);
+        setEditingId(null);
+      } else {
+        addCity(formData as City);
+      }
+      
       setFormData({
         name: '',
+        nameEn: '',
+        nameKo: '',
         lng: 120.38,
         lat: 36.06,
         zoom: 12
@@ -176,12 +190,36 @@ export default function CityManager() {
     }
   };
 
+  const handleEdit = (city: City) => {
+    setFormData({
+        name: city.name,
+        nameEn: city.nameEn,
+        nameKo: city.nameKo,
+        lng: city.lng,
+        lat: city.lat,
+        zoom: city.zoom
+    });
+    setEditingId(city.id);
+    setIsAdding(true);
+    // Wait for modal to open then init map (effect will handle it)
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-bold text-gray-800">城市列表 (v2.1) ({cities.length})</h3>
         <button
-          onClick={() => setIsAdding(!isAdding)}
+          onClick={() => {
+            if (isAdding) {
+                setIsAdding(false);
+                setEditingId(null);
+                setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12 });
+            } else {
+                setIsAdding(true);
+                setEditingId(null);
+                setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12 });
+            }
+          }}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
         >
           {isAdding ? '取消' : '添加城市'}
@@ -191,7 +229,7 @@ export default function CityManager() {
       {isAdding && (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-blue-100 shadow-sm animate-fade-in">
           <div className="flex justify-between items-center mb-4">
-             <h4 className="font-bold text-gray-700">添加新城市</h4>
+             <h4 className="font-bold text-gray-700">{editingId ? '编辑城市' : '添加新城市'}</h4>
              <div className="flex bg-gray-100 rounded-lg p-1">
                  <button
                     type="button"
@@ -202,7 +240,12 @@ export default function CityManager() {
                  </button>
                  <button
                     type="button"
-                    onClick={() => setLocationMode('manual')}
+                    onClick={() => {
+                        setLocationMode('manual');
+                        if (mapContainerRef.current) {
+                            mapContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }}
                     className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${locationMode === 'manual' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
                  >
                     地图选点
@@ -213,14 +256,14 @@ export default function CityManager() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
                 <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">城市名称</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">城市名称 (中文)</label>
                 <div className="flex gap-2">
                     <input
                     type="text"
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                     className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例如：青岛 / Seoul"
+                    placeholder="例如：青岛"
                     required
                     />
                     <button
@@ -239,6 +282,29 @@ export default function CityManager() {
                         * 手动模式下，请输入任意名称并在地图上点击选择位置。
                     </p>
                 )}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">英文名称</label>
+                        <input
+                            type="text"
+                            value={formData.nameEn || ''}
+                            onChange={e => setFormData({ ...formData, nameEn: e.target.value })}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="例如：Qingdao"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">韩文名称</label>
+                        <input
+                            type="text"
+                            value={formData.nameKo || ''}
+                            onChange={e => setFormData({ ...formData, nameKo: e.target.value })}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="例如：칭다오"
+                        />
+                    </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -293,18 +359,18 @@ export default function CityManager() {
                 </div>
 
                 <div className="pt-4">
-                    <button
-                    type="submit"
-                    className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-bold shadow-lg shadow-blue-200"
-                    >
-                    <Plus size={20} />
-                    确认添加城市
-                    </button>
-                </div>
+            <button
+            type="submit"
+            className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-bold shadow-lg shadow-blue-200"
+            >
+            {editingId ? <Edit2 size={20} /> : <Plus size={20} />}
+            {editingId ? '保存城市修改' : '确认添加城市'}
+            </button>
+          </div>
             </div>
 
             {/* Map Preview */}
-            <div className="h-[400px] bg-gray-100 rounded-xl overflow-hidden relative border border-gray-200">
+            <div className="h-[300px] md:h-[400px] lg:h-[500px] w-full bg-gray-100 rounded-xl overflow-hidden relative border border-gray-200">
                 <div ref={mapContainerRef} className="w-full h-full" />
                 {!mapInstance && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-400">
@@ -330,16 +396,29 @@ export default function CityManager() {
                 </div>
                 <div>
                   <h4 className="font-bold text-lg text-gray-800">{city.name}</h4>
-                  <div className="text-xs text-gray-500">ID: {city.id}</div>
+                  <div className="flex flex-col gap-0.5 mt-1">
+                    {city.nameEn && <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded w-fit">En: {city.nameEn}</span>}
+                    {city.nameKo && <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded w-fit">Ko: {city.nameKo}</span>}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">ID: {city.id}</div>
                 </div>
               </div>
-              <button
-                onClick={() => city.id && deleteCity(city.id)}
-                className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                title="删除城市"
-              >
-                <Trash2 size={18} />
-              </button>
+              <div className="flex gap-1">
+                <button
+                    onClick={() => city.id && handleEdit(city)}
+                    className="text-gray-400 hover:text-blue-500 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                    title="编辑城市"
+                >
+                    <Edit2 size={18} />
+                </button>
+                <button
+                    onClick={() => city.id && deleteCity(city.id)}
+                    className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                    title="删除城市"
+                >
+                    <Trash2 size={18} />
+                </button>
+              </div>
             </div>
             
             <div className="space-y-2 mt-3 text-sm text-gray-600">
