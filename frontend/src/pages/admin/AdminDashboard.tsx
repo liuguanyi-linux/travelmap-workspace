@@ -14,8 +14,24 @@ import ImageUploader from '../../components/admin/ImageUploader';
 import RichTextEditor from '../../components/admin/RichTextEditor';
 import { ReviewManager } from '../../components/admin/ReviewManager';
 
+// Helper to safely parse dates across browsers (fixes Safari issues)
+const safeDate = (val: string | number | Date | null | undefined): Date | null => {
+    if (!val) return null;
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) return d;
+    // Fallback for Safari 'YYYY-MM-DD HH:mm:ss' format
+    if (typeof val === 'string') {
+        const fixed = val.replace(' ', 'T');
+        const d2 = new Date(fixed);
+        return isNaN(d2.getTime()) ? null : d2;
+    }
+    return null;
+};
+
 // Helper component for expiration date selection
 const ExpirationSelector = ({ value, onChange }: { value?: string | null, onChange: (val: string | null) => void }) => {
+  const dateObj = safeDate(value);
+  
   return (
     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
       <label className="block text-sm font-medium text-gray-900 mb-3">有效期设置 (到期自动下架)</label>
@@ -34,7 +50,7 @@ const ExpirationSelector = ({ value, onChange }: { value?: string | null, onChan
             <input 
                 type="radio" 
                 name="expiry_type"
-                checked={!!value && Math.abs(new Date(value).getTime() - (new Date().setFullYear(new Date().getFullYear() + 1))) < 86400000} 
+                checked={!!dateObj && Math.abs(dateObj.getTime() - (new Date().setFullYear(new Date().getFullYear() + 1))) < 86400000} 
                 onChange={() => {
                     const d = new Date();
                     d.setFullYear(d.getFullYear() + 1);
@@ -48,7 +64,7 @@ const ExpirationSelector = ({ value, onChange }: { value?: string | null, onChan
             <input 
                 type="radio" 
                 name="expiry_type"
-                checked={!!value && Math.abs(new Date(value).getTime() - (new Date().setFullYear(new Date().getFullYear() + 1))) >= 86400000} 
+                checked={!!dateObj && Math.abs(dateObj.getTime() - (new Date().setFullYear(new Date().getFullYear() + 1))) >= 86400000} 
                 onChange={() => {
                    if (!value) {
                        const d = new Date();
@@ -61,16 +77,16 @@ const ExpirationSelector = ({ value, onChange }: { value?: string | null, onChan
             <span className="font-medium">自定义时间</span>
         </label>
       </div>
-      {value && (
+      {dateObj && (
           <div className="mt-2 bg-white p-2 rounded border border-gray-100">
             <input 
                 type="datetime-local" 
-                value={new Date(value).toISOString().slice(0, 16)}
+                value={dateObj.toISOString().slice(0, 16)}
                 onChange={(e) => onChange(new Date(e.target.value).toISOString())}
                 className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
             <p className="mt-1 text-xs text-gray-500">
-                将在 {new Date(value).toLocaleString()} 自动下架
+                将在 {dateObj.toLocaleString()} 自动下架
             </p>
           </div>
       )}

@@ -25,6 +25,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
   const aMapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const rootsRef = useRef<any[]>([]);
+  const prevMarkersRef = useRef<any[]>([]); // Track previous markers to prevent auto-fit on selection change
   const { language } = useLanguage();
   const { theme } = useTheme();
   const { spotCategories } = useData();
@@ -83,7 +84,8 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         if (matchedCategory.key === 'spot') {
              // User Request: "Red Pin + Floating Icon" style.
              // We return specific flags for the renderer
-             return { icon: Icon, color: '#10B981', shape: 'rounded-lg', isDiamond: false, showPin: true };
+             // Changing 'spot' category default icon background color from Green to Red (#EF4444)
+             return { icon: Icon, color: '#EF4444', shape: 'rounded-lg', isDiamond: false, showPin: true };
         } else if (matchedCategory.key === 'dining') {
              color = '#F59E0B';
              return { icon: Icon, color, shape: 'rounded-lg', isDiamond: false, showPin: true }; // Apply pin style to all
@@ -225,7 +227,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       // State classes
       // User Request: Make markers "obvious" and "highlighted" - Increased brightness and pulse
       const stateClass = isSelected 
-        ? 'z-50 scale-125 marker-flash shadow-[0_0_30px_rgba(255,255,255,0.95)] ring-4 ring-offset-2 ring-blue-400 border-white bg-opacity-100' 
+        ? 'z-50 scale-125 marker-flash shadow-[0_0_30px_rgba(255,255,255,0.95)] ring-4 ring-offset-2 ring-blue-500 border-white bg-opacity-100' 
         : 'opacity-100 hover:scale-110 hover:shadow-xl hover:z-40';
       
       // Icon rendering
@@ -266,8 +268,8 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
             <div className={`relative ${isSelected ? 'z-50 scale-110' : 'z-40'} transition-transform duration-300`}>
                {/* The Red Pin (Anchor) - Realistic Apple Maps Style */}
                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none transform translate-y-[4px]">
-                  {/* Pin Head (Glossy Red Sphere) */}
-                  <div className="w-8 h-8 rounded-full bg-[radial-gradient(circle_at_30%_30%,_#ff4d4d,_#cc0000_50%,_#8b0000)] shadow-[inset_-2px_-2px_6px_rgba(0,0,0,0.3),_0_2px_4px_rgba(0,0,0,0.4)] z-20 relative">
+                  {/* Pin Head (Glossy Red Sphere) - Added border and stronger shadow */}
+                  <div className="w-8 h-8 rounded-full bg-[radial-gradient(circle_at_30%_30%,_#ff4d4d,_#cc0000_50%,_#8b0000)] shadow-[inset_-2px_-2px_6px_rgba(0,0,0,0.3),_0_0_0_1.5px_#ffffff,_0_2px_4px_rgba(0,0,0,0.4)] z-20 relative">
                      {/* Specular Highlight (Stronger) */}
                      <div className="absolute top-[15%] left-[15%] w-[35%] h-[25%] bg-gradient-to-br from-white/90 to-transparent rounded-full blur-[1px]"></div>
                      {/* Rim Light */}
@@ -294,10 +296,10 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
 
                {/* The Floating Icon Box - Significantly Enlarged & High Visibility */}
                <div 
-                  className={`absolute bottom-[52px] left-[20px] flex items-center justify-center w-12 h-12 shadow-[0_8px_20px_rgba(0,0,0,0.25)] border-[3px] border-white box-border rounded-xl z-20 
+                  className={`absolute bottom-[52px] left-[20px] flex items-center justify-center w-12 h-12 shadow-[0_8px_20px_rgba(0,0,0,0.25),0_0_0_1px_rgba(0,0,0,0.1)] border-[3px] border-white box-border rounded-xl z-20 
                     ${isSelected 
-                        ? 'ring-4 ring-offset-2 ring-yellow-400 shadow-[0_0_35px_rgba(255,215,0,0.9)] scale-110 brightness-110' 
-                        : 'hover:scale-110 hover:shadow-[0_0_20px_rgba(255,255,255,0.8)] brightness-105'
+                        ? 'ring-4 ring-offset-2 ring-blue-500 shadow-[0_0_35px_rgba(59,130,246,0.5)] scale-110 brightness-110' 
+                        : 'hover:scale-110 hover:shadow-[0_0_20px_rgba(255,255,255,0.8),0_0_0_2px_rgba(0,0,0,0.2)] brightness-105 shadow-[0_8px_20px_rgba(0,0,0,0.25),0_0_0_2px_#ef4444]'
                     }`}
                   style={{ backgroundColor: config.color }}
                >
@@ -306,6 +308,18 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
                         color="#ffffff" 
                         strokeWidth={2.5} 
                     />
+               </div>
+
+               {/* Marker Label - Rendered INSIDE the marker to ensure Z-Index Control */}
+               {/* Positioned ABOVE the icon box and pin assembly */}
+               {/* Pin top is roughly -100px from anchor. We place label at -130px to be safe above it. */}
+               <div 
+                   className="absolute left-1/2 -translate-x-1/2 -top-[130px] whitespace-nowrap z-[9999] pointer-events-none"
+                   style={{ zIndex: 9999 }} // Force inline z-index
+               >
+                    <div className="px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-white/50 dark:border-white/10 shadow-lg text-[13px] font-bold text-slate-800 dark:text-white transition-opacity duration-300">
+                        {poi.name}
+                    </div>
                </div>
             </div>
           );
@@ -376,7 +390,10 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         clickable: true, // Explicitly enable click
         topWhenClick: true, // Bring to top on click
         bubble: false, // Prevent event bubbling issues
-        label: {
+        // Label is now rendered INSIDE the markerContent for 'showPin' style
+        // We only need AMap label for standard markers, or we can use it for both if we want duplication?
+        // No, duplication is bad.
+        label: !config.showPin ? {
             content: `<div style="
               display: flex; 
               align-items: center; 
@@ -387,16 +404,15 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
               font-weight: 700; 
               backdrop-filter: blur(8px); 
               white-space: nowrap; 
-              margin-bottom: ${config.showPin ? '90px' : '14px'};
-              margin-left: ${config.showPin ? '40px' : '0'};
+              margin-bottom: 14px;
               letter-spacing: 0.01em;
               transition: all 0.3s ease;
               ${labelStyle}
-              pointer-events: auto; /* Ensure label is also clickable if needed, or doesn't block */
+              pointer-events: none;
             ">${poi.name}</div>`,
             direction: 'top',
             offset: new AMap.Pixel(0, 0),
-        }
+        } : undefined
       });
 
       marker.on('click', () => {
@@ -408,8 +424,21 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       markersRef.current.push(marker);
     });
 
-    // Fit view if we have multiple markers and no specific selection
-    if (markers.length > 0 && !selectedPoi && !disableFitView) {
+    // Fit view logic: Only auto-fit when markers change, NOT when selectedPoi changes (e.g. closing detail view)
+    // We check if markers reference has changed. MainLayout state ensures markers stay same reference if only selection changes.
+    // User Update: Also disable auto-fit when closing drawers (markers count might change from filtered to all, but user wants to keep view)
+    // To solve this robustly: We DISABLE auto-fit here completely for updates.
+    // The "Controller" (MainLayout) is responsible for setting the view explicitly when:
+    // 1. Searching (zoom to results)
+    // 2. Changing City (zoom to city)
+    // 3. Selecting a POI (zoom to POI)
+    // 4. Initial Load (zoom to city)
+    
+    // So we comment out the reactive auto-fit.
+    /*
+    const markersChanged = markers !== prevMarkersRef.current;
+    
+    if ((markersChanged) && markers.length > 0 && !selectedPoi && !disableFitView) {
       // Use a small timeout to ensure map is ready and avoid conflicts with other movements
           setTimeout(() => {
               // User Request: Zoom out slightly (maxZoom: 10) and use larger padding for UI elements
@@ -417,6 +446,9 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
               map.setFitView(markersRef.current, false, [150, 60, 300, 60], 10); 
           }, 100);
       }
+    */
+      
+    prevMarkersRef.current = markers;
 
   }, [markers, selectedPoi, theme, isMapReady]); // Added isMapReady dependency
 
@@ -437,12 +469,17 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
     return (
         <div className="w-full h-full relative bg-white dark:bg-gray-900 transition-colors duration-300">
             {/* Custom Zoom Controls */}
-            {/* User Request: Move +/- buttons ABOVE the pattern (which is likely the POI detail sheet or user location button). */}
-            {/* Mobile: Keep at vertical center (bottom-[50%]) to avoid bottom sheet. */}
-            {/* Desktop: User said "place above blue globe". The globe is usually part of standard controls or custom geolocation. */}
-            {/* Assuming the blue globe is the Geolocation control at bottom-right. */}
-            {/* We'll position this significantly higher on desktop. */}
-            <div className="absolute right-5 bottom-[50%] md:bottom-[180px] flex flex-col gap-2 z-[70]">
+            {/* User Request: Move +/- buttons to Top Right, below AdsWidget. */}
+            {/* AdsWidget is at top-28 (112px). Height ~80px. Ends ~192px. */}
+            {/* Let's place Zoom Controls directly below AdsWidget at top-[200px]. */}
+            {/* Global View and ATM will follow. */}
+            {/* BUT User wants: Ads -> Zoom -> Global -> ATM (implied by "move all up below Ads") */}
+            {/* Let's adjust based on layout. */}
+            {/* MainLayout places Ads at top-28. */}
+            {/* Zoom Controls (Here): top-[200px] */}
+            {/* Global View (MainLayout): top-[300px] */}
+            {/* ATM (MainLayout): top-[360px] */}
+            <div className="absolute right-5 top-[200px] flex flex-col gap-2 z-[70]">
                 <button 
                     className="w-10 h-10 bg-white dark:bg-gray-800 rounded-lg shadow-md flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-transform"
                     onClick={() => {

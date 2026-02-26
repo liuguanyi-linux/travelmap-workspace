@@ -317,28 +317,49 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const addCity = async (city: City) => {
     try {
+      // Optimistic update
+      const tempId = Date.now();
+      const tempCity = { ...city, id: tempId };
+      setCities(prev => [...prev, tempCity]);
+
       const newCity = await cityService.create(city);
-      setCities(prev => [...prev, newCity]);
+      
+      // Replace temp with real
+      setCities(prev => prev.map(c => c.id === tempId ? newCity : c));
     } catch (error) {
       console.error("Failed to add city:", error);
+      if (isAdmin) alert("添加城市失败，请检查网络或重试");
+      // Revert optimistic update
+      refreshData();
     }
   };
 
   const updateCity = async (id: number, city: Partial<City>) => {
     try {
+      // Optimistic update
+      setCities(prev => prev.map(c => c.id === id ? { ...c, ...city } : c));
+      
       const updatedCity = await cityService.update(id, city);
+      
+      // Confirm with server data
       setCities(prev => prev.map(c => c.id === id ? updatedCity : c));
     } catch (error) {
       console.error("Failed to update city:", error);
+      if (isAdmin) alert("更新城市失败");
+      refreshData();
     }
   };
 
   const deleteCity = async (id: number) => {
     try {
-      await cityService.delete(id);
+      // Optimistic update
       setCities(prev => prev.filter(c => c.id !== id));
+      
+      await cityService.delete(id);
     } catch (error) {
       console.error("Failed to delete city:", error);
+      if (isAdmin) alert("删除城市失败，可能是服务器同步问题");
+      refreshData();
     }
   };
 

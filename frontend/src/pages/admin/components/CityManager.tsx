@@ -412,7 +412,13 @@ export default function CityManager() {
                     <Edit2 size={18} />
                 </button>
                 <button
-                    onClick={() => city.id && deleteCity(city.id)}
+                    onClick={() => {
+                      if (city.id) {
+                        if (window.confirm(`确定要删除城市 "${city.name}" 吗？`)) {
+                          deleteCity(city.id);
+                        }
+                      }
+                    }}
                     className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors"
                     title="删除城市"
                 >

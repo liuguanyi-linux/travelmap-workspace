@@ -190,6 +190,17 @@ export default function MainLayout() {
         if (mappedSpots.length > 0 && shouldOpenDrawer) {
             setIsSearchListOpen(true);
         }
+        
+        // Auto-fit to search results
+        if (mapInstance && mappedSpots.length > 0) {
+             // Create AMap Markers for bounds calculation
+             const tempMarkers = mappedSpots.map(p => new aMap.Marker({
+                 position: [p.location.lng, p.location.lat]
+             }));
+             // Fit view with padding
+             mapInstance.setFitView(tempMarkers, false, [150, 60, 300, 60], 10);
+        }
+
         return; 
     }
 
@@ -324,6 +335,15 @@ export default function MainLayout() {
 
     setSearchResults(mappedSpots);
     setMapMarkers(mappedSpots);
+
+    // Auto-fit to filtered results
+    if (mapInstance && mappedSpots.length > 0 && aMap) {
+         const tempMarkers = mappedSpots.map(p => new aMap.Marker({
+             position: [p.location.lng, p.location.lat]
+         }));
+         mapInstance.setFitView(tempMarkers, false, [150, 60, 300, 60], 10);
+    }
+
     return;
   };
 
@@ -442,8 +462,8 @@ export default function MainLayout() {
         />
       </div>
 
-      {/* Global View Button - Positioned at Bottom Right above Zoom Controls (approx 340px up) */}
-      <div className="absolute bottom-[340px] right-4 z-30">
+      {/* Global View Button - Moved to Top Right below Zoom Controls (ends ~290px) */}
+      <div className="absolute top-[310px] right-4 z-30">
         <GlobalViewButton onClick={handleGlobalView} />
       </div>
 
@@ -463,8 +483,8 @@ export default function MainLayout() {
             </div>
           </div>
           
-          {/* ATM Widget - Bottom Right (Base Anchor) */}
-          <div className="fixed bottom-28 right-4 z-50 pointer-events-none">
+          {/* ATM Widget - Moved to Top Right (Below Global View) */}
+          <div className="fixed top-[370px] right-4 z-50 pointer-events-none">
             <div className="pointer-events-auto">
               <AtmWidget onSelect={handleAtmToggle} isActive={isAtmActive} />
             </div>

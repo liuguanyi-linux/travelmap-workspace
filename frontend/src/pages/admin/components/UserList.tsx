@@ -34,7 +34,12 @@ export default function UserList() {
     
     // CSV Rows
     const rows = users.map(user => {
-      const date = new Date(user.createdAt).toLocaleString();
+      let date = '';
+      try {
+        date = new Date(user.createdAt).toLocaleString();
+      } catch (e) {
+        date = String(user.createdAt);
+      }
       // Escape fields just in case
       return `${user.id},"${user.email}","${user.nickname || ''}","${date}"`;
     });

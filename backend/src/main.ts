@@ -12,6 +12,14 @@ async function bootstrap() {
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));
   
+  // Disable caching for all API routes
+  app.use((req, res, next) => {
+    res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    res.header('Expires', '-1');
+    res.header('Pragma', 'no-cache');
+    next();
+  });
+
   // Serve uploaded files statically
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',
