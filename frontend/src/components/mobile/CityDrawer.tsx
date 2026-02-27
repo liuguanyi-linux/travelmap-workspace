@@ -13,6 +13,7 @@ interface CityDrawerProps {
   onPoiClick: (poi: any) => void;
   onClose?: () => void;
   onSearch?: (keyword: string, category?: string) => void;
+  activeCityName?: string;
 }
 
 // Level 1: Cities
@@ -38,7 +39,7 @@ const CategoryIcon = React.memo(({ icon, name, size = 22, className = "" }: { ic
   return <IconComponent size={size} className={className} />;
 });
 
-export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, searchResults, onPoiClick, onClose, onSearch }: CityDrawerProps) {
+export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, searchResults, onPoiClick, onClose, onSearch, activeCityName }: CityDrawerProps) {
   const [level, setLevel] = useState<ViewLevel>('cities');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -151,7 +152,6 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
       setSelectedCity(city.name);
       setLevel('categories');
       
-      // Defer map movement to prevent UI blocking
       requestAnimationFrame(() => {
           try {
             onSelectCity({ name: city.name, center: [city.lng || 0, city.lat || 0], zoom: city.zoom || 12 });
@@ -164,26 +164,38 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
   };
 
   const handleCategoryClick = (category: string) => {
+    // Toggle off if clicking the same category
+    if (selectedCategory === category) {
+        setSelectedCategory('');
+        setSearchKeyword('');
+        onSelectCategory(''); // Clear filter
+        return;
+    }
+    
     setSelectedCategory(category);
     setSearchKeyword('');
     
-    setTimeout(() => {
-        onSelectCategory(category);
-    }, 50);
+    // Notify parent to filter data
+    onSelectCategory(category);
     
-    setLevel('list');
+    // Ensure drawer is open/expanded
     controls.start({ y: 0 });
   };
 
   const handleBack = () => {
     if (level === 'list') {
+        // Fallback for any legacy state
         setLevel('categories');
         setSelectedCategory('');
         onSelectCategory('');
         controls.start({ y: 0 });
     } else if (level === 'categories') {
+        // If we have a selected category, should back clear it or go to cities?
+        // User wants "integration", so "Back" likely means "Leave City View".
         setLevel('cities');
         setSelectedCity('');
+        setSelectedCategory(''); // Also clear category
+        onSelectCategory('');
         controls.start({ y: 0 });
     }
   };
@@ -194,35 +206,34 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
     const isFast = Math.abs(velocity.y) > 500;
 
     if (isDraggingDown) {
-      if (level === 'list') {
-         // If dragging down in list view, minimize to initial height first, then close/back
-         // But user wants to minimize to see map. 
-         // Let's say if we are at full height, drag down goes to initial height.
-         // If at initial height, drag down goes back to categories.
-         
-         // Current logic:
-         if (offset.y > 100 || isFast) {
-             handleBack();
-         } else {
-             controls.start({ y: 0 });
-         }
+      if (level === 'categories' || level === 'cities') {
+          if (drawerMode === 'full') {
+              // If at full height, drag down goes to initial (peek) height
+              if (offset.y > 100 || isFast) {
+                  setDrawerMode('initial');
+              } else {
+                  controls.start({ y: 0 });
+              }
+          } else {
+              // If at initial height, drag down closes drawer (or goes back)
+              if (offset.y > 50 || isFast) {
+                  if (level === 'categories') {
+                      handleBack(); // Go back to cities
+                  } else {
+                      if (onClose) onClose(); // Close drawer
+                      else controls.start({ y: '100%' });
+                  }
+              } else {
+                  // Snap back to peek position
+                  // Framer motion variants will handle this based on state
+              }
+          }
       } else {
-         // In compact menu mode, drag down closes the drawer
-         if (offset.y > 50 || isFast) {
-            if (onClose) onClose();
-            else controls.start({ y: '100%' });
-         } else {
-             controls.start({ y: 0 });
-         }
+         // Other levels?
+         controls.start({ y: 0 });
       }
     } else {
       // Dragging up
-      // If in list view and at initial height, expand to full height
-      if (level === 'list') {
-          // Logic handled by Framer Motion constraints mostly, 
-          // but we can snap to full height here if needed.
-          // For now, let's keep simple snap back to 0 (which will be defined by style height)
-      }
       controls.start({ y: 0 });
     }
   };
@@ -234,24 +245,23 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
   
   const [drawerMode, setDrawerMode] = useState<'initial' | 'full'>('initial');
   
-  // Reset height when entering list view
+  // Reset height when entering levels
   useEffect(() => {
-      if (level === 'list') {
+      if (level === 'categories' || level === 'cities') {
+          // Both levels start at initial (low) height
           setDrawerMode('initial');
       } else {
-          setDrawerMode('full'); // Cities and Categories always full/auto
+          setDrawerMode('full');
       }
   }, [level]);
 
   // Calculate y-offset based on mode
   // full: 0
-  // initial (list only): leave VERY little visible. Just enough for one row.
+  // initial (categories/cities): Push down to show only header + icons (~180px visible)
   const drawerVariants: any = {
       hidden: { y: '100%' },
       visible: { 
-          // Use calc to ensure consistent "peek" height regardless of screen size
-          // 130px covers header + search bar or header + top of list
-          y: level === 'list' && drawerMode === 'initial' ? 'calc(100% - 130px)' : 0,
+          y: (level === 'categories' || level === 'cities') && drawerMode === 'initial' ? 'calc(100% - 180px)' : 0,
           transition: { type: 'spring', damping: 25, stiffness: 200 }
       }
   };
@@ -273,12 +283,14 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
           dragElastic={0.2}
           onDragEnd={(event, info) => {
               const { offset, velocity } = info;
-              if (level === 'list') {
+              if (level === 'categories' || level === 'cities') {
                   if (drawerMode === 'initial') {
+                      // Drag UP to expand
                       if (offset.y < -50 || velocity.y < -300) {
                           setDrawerMode('full');
                       }
                   } else {
+                      // Drag DOWN to collapse
                       if (offset.y > 50 || velocity.y > 300) {
                           setDrawerMode('initial');
                       }
@@ -289,20 +301,44 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
           }}
           className="fixed bottom-0 left-0 right-0 z-[60] bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col will-change-transform"
           style={{ 
-              height: level === 'list' ? '85vh' : 'auto',
-              maxHeight: '85vh' 
+              height: '85vh', // Fixed max height for consistency
+              maxHeight: '85vh'
           }}
         >
-            {/* Transparent Drag Overlay - Crucial for initial mode drag interaction */}
-            {level === 'list' && drawerMode === 'initial' && (
+            {/* Transparent Drag Overlay for initial mode - WITH pointer-events-none for content */}
+            {(level === 'categories' || level === 'cities') && drawerMode === 'initial' && (
                 <div 
                     className="absolute inset-0 z-[100]" 
-                    style={{ touchAction: 'none' }}
-                    onPointerDown={(e) => {
-                        // Directly capture pointer down for drag
-                        dragControls.start(e);
-                    }}
-                />
+                    style={{ touchAction: 'none', pointerEvents: 'none' }} 
+                >
+                     {/* 
+                        We need a way to allow clicks on buttons but drag on empty space.
+                        Actually, if we put a full overlay, it blocks clicks.
+                        If we remove it, dragging on buttons might trigger click.
+                        
+                        Solution:
+                        1. Remove this overlay.
+                        2. Use dragControls on a specific handle area (already done).
+                        3. But user wants to drag from anywhere?
+                        
+                        If user wants to click buttons when collapsed, we MUST allow pointer events.
+                        If we allow pointer events, dragging on a button will trigger click unless we distinguish.
+                        
+                        Framer Motion's `dragListener={false}` on the parent div + `dragControls` 
+                        means drag only starts when controls.start(e) is called.
+                        
+                        Currently, we call controls.start(e) on:
+                        - Drag Handle
+                        - Header
+                        - Content Area (onPointerDown)
+                        
+                        If we want buttons to be clickable, we should STOP propagation on buttons.
+                        I already added `e.stopPropagation()` on buttons like Close and Back.
+                        
+                        The issue is the "Transparent Drag Overlay" above was blocking EVERYTHING.
+                        I will remove it completely and rely on the Content Area's onPointerDown logic.
+                     */}
+                </div>
             )}
 
           {/* Drag Handle */}
@@ -349,19 +385,13 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
           
           {/* Content Area */}
           <div 
-            className={`flex-1 overflow-y-auto overflow-x-hidden px-4 ${level === 'list' ? 'pb-24' : 'pb-12'}`}
+            className={`flex-1 overflow-y-auto overflow-x-hidden px-4 ${level === 'categories' || level === 'cities' ? 'pb-24' : 'pb-12'}`}
             style={{ 
                 overscrollBehavior: 'contain', 
-                touchAction: level === 'list' && drawerMode === 'initial' ? 'none' : 'pan-y',
+                touchAction: 'pan-y',
             }}
             onPointerDown={(e) => {
-                // If in initial mode, we want the PARENT's onPointerDown to handle drag (which calls dragControls.start)
-                // So we do NOT stop propagation here if mode is initial.
-                if (level === 'list' && drawerMode === 'initial') {
-                    // Do nothing, let it bubble to parent
-                } else {
-                    e.stopPropagation(); // Stop propagation
-                }
+                e.stopPropagation(); // Stop propagation to prevent accidental drag
             }} 
           >
             
@@ -406,128 +436,140 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                 </div>
             )}
 
-            {/* Level 2: Categories */}
+            {/* Level 2: Categories + Inline List */}
             {level === 'categories' && (
-                <div className="space-y-4 pt-3 pb-2"> {/* Added pb-2 to ensure tightness */}
+                <div className="space-y-4 pt-3 pb-2">
+                    {/* Category Grid */}
                     <div className="flex overflow-x-auto gap-3 px-2 pb-2 snap-x snap-mandatory scrollbar-hide -mx-2">
-                        {finalCategories.map((cat) => (
-                        <button
-                            key={cat.id}
-                            onClick={() => handleCategoryClick(cat.id)}
-                            className="flex-none w-24 flex flex-col items-center justify-center p-2 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform h-24 snap-center"
-                        >
-                            <div className={`p-2.5 rounded-xl ${cat.color} dark:bg-opacity-20 mb-1.5 flex items-center justify-center`}>
-                                <CategoryIcon icon={cat.iconName} name={cat.label} size={22} />
-                            </div>
-                            <span className="font-bold text-gray-800 dark:text-white text-[10px] z-10 text-center leading-tight w-full truncate">{cat.label}</span>
-                        </button>
-                        ))}
+                        {finalCategories.map((cat) => {
+                            const isSelected = selectedCategory === cat.id;
+                            return (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => handleCategoryClick(cat.id)}
+                                    className={`flex-none w-16 flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 h-16 snap-center ${
+                                        isSelected 
+                                            ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-500 shadow-md scale-105' 
+                                            : 'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95'
+                                    }`}
+                                >
+                                    <div className={`p-1.5 rounded-xl ${cat.color} dark:bg-opacity-20 mb-1 flex items-center justify-center`}>
+                                        <CategoryIcon icon={cat.iconName} name={cat.label} size={18} />
+                                    </div>
+                                    <span className={`font-bold text-[10px] z-10 text-center leading-tight w-full truncate ${
+                                        isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-white'
+                                    }`}>
+                                        {cat.label}
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </div>
+
+                    {/* Inline List (Only if a category is selected) */}
+                    {selectedCategory && (
+                        <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            {/* Search Bar - Always visible for any selected category */}
+                            <div className="relative mb-2">
+                                <input
+                                    type="text"
+                                    value={searchKeyword}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setSearchKeyword(val);
+                                        if (onSearch && val.trim()) {
+                                            onSearch(val, selectedCategory);
+                                        } else if (onSearch && val === '') {
+                                            onSelectCategory(selectedCategory);
+                                        }
+                                    }}
+                                    placeholder={
+                                        selectedCategory === 'attraction' ? t('cityDrawer.searchPlaceholder.attraction') :
+                                        selectedCategory === 'hotel' ? t('cityDrawer.searchPlaceholder.hotel') :
+                                        selectedCategory === 'shopping' ? t('cityDrawer.searchPlaceholder.shopping') :
+                                        selectedCategory === 'transport' ? '搜索高铁站/机场...' :
+                                        t('cityDrawer.searchPlaceholder.food')
+                                    }
+                                    className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                />
+                                <Search className="absolute left-3 top-3.5 text-gray-400" size={18} />
+                            </div>
+
+                            {/* List Content */}
+                            {(() => {
+                                const filteredResults = (searchResults || []).filter(item => {
+                                    if (!item) return false;
+                                    
+                                    const hasTag = (tag: string) => {
+                                        if (item.tags && Array.isArray(item.tags)) {
+                                            return item.tags.includes(tag);
+                                        }
+                                        if (item.type && typeof item.type === 'string') {
+                                            return item.type.includes(tag);
+                                        }
+                                        return false;
+                                    };
+
+                                    if (selectedCategory === 'transport') {
+                                        return hasTag('transport') || hasTag('high_speed_rail') || hasTag('airport') || hasTag('train') || hasTag('station');
+                                    }
+                                    
+                                    if (selectedCategory === 'spot') {
+                                        return hasTag('spot') || hasTag('attraction');
+                                    }
+
+                                    if (selectedCategory === 'attraction') {
+                                        return hasTag('spot') || hasTag('attraction');
+                                    }
+
+                                    return hasTag(selectedCategory);
+                                });
+
+                                return filteredResults.length > 0 ? (
+                                    filteredResults.map((item, index) => (
+                                        <div 
+                                            key={item.id || index} 
+                                            onClick={() => onPoiClick(item)}
+                                            className="flex gap-4 p-4 bg-white dark:bg-gray-800 rounded-[1.5rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] active:scale-95 transition-transform cursor-pointer mb-3 border border-gray-100 dark:border-gray-700"
+                                        >
+                                            <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-2xl shrink-0 overflow-hidden shadow-inner">
+                                                {item.photos && item.photos[0] ? (
+                                                    <img src={item.photos[0].url} alt={item.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-500">
+                                                        <MapPin size={24} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 flex flex-col justify-between py-1">
+                                                <div>
+                                                    <h3 className="font-bold text-gray-800 dark:text-white line-clamp-1">{index + 1}、{item.name}</h3>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">{item.address || t('cityDrawer.noAddress')}</p>
+                                                </div>
+                                                <div className="flex items-center gap-1 text-xs text-orange-500 font-medium">
+                                                    <span>★ {item.biz_ext?.rating || '4.5'}</span>
+                                                    <span className="text-gray-300 dark:text-gray-600">|</span>
+                                                    <span className="text-gray-400 dark:text-gray-500">{item.type || t('cityDrawer.place')}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                                        <SearchIcon />
+                                        <p className="mt-2 text-sm">{t('cityDrawer.noPlaces')}</p>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    )}
                 </div>
             )}
 
-            {/* Level 3: List */}
+            {/* Level 3: List (Legacy - Removed/Hidden) */}
             {level === 'list' && (
-                <div className="space-y-4 pt-2">
-                    {['attraction', 'hotel', 'food', 'shopping', 'transport'].includes(selectedCategory) && (
-                        <div className="relative mb-2">
-                            <input
-                                type="text"
-                                value={searchKeyword}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setSearchKeyword(val);
-                                    if (onSearch && val.trim()) {
-                                        onSearch(val, selectedCategory);
-                                    } else if (onSearch && val === '') {
-                                        // If empty, maybe reset to category search?
-                                        onSelectCategory(selectedCategory);
-                                    }
-                                }}
-                                placeholder={
-                                    selectedCategory === 'attraction' ? t('cityDrawer.searchPlaceholder.attraction') :
-                                    selectedCategory === 'hotel' ? t('cityDrawer.searchPlaceholder.hotel') :
-                                    selectedCategory === 'shopping' ? t('cityDrawer.searchPlaceholder.shopping') :
-                                    selectedCategory === 'transport' ? '搜索高铁站/机场...' :
-                                    t('cityDrawer.searchPlaceholder.food')
-                                }
-                                className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                            />
-                            <Search className="absolute left-3 top-3.5 text-gray-400" size={18} />
-                        </div>
-                    )}
-
-                    {(() => {
-                        // Strict client-side filtering to prevent content mix-up
-                        // We must check 'tags' array or 'type' string as 'category' field does not exist on Spot type
-                        const filteredResults = (searchResults || []).filter(item => {
-                            if (!item) return false;
-                            
-                            const hasTag = (tag: string) => {
-                                if (item.tags && Array.isArray(item.tags)) {
-                                    return item.tags.includes(tag);
-                                }
-                                if (item.type && typeof item.type === 'string') {
-                                    return item.type.includes(tag);
-                                }
-                                return false;
-                            };
-
-                            // If selectedCategory is 'transport', allow transport/train/etc.
-                            if (selectedCategory === 'transport') {
-                                return hasTag('transport') || hasTag('high_speed_rail') || hasTag('airport') || hasTag('train') || hasTag('station');
-                            }
-                            
-                            // If selectedCategory is 'spot', allow 'spot' or 'attraction'
-                            if (selectedCategory === 'spot') {
-                                return hasTag('spot') || hasTag('attraction');
-                            }
-
-                            // If selectedCategory is 'attraction', allow 'spot' or 'attraction'
-                            if (selectedCategory === 'attraction') {
-                                return hasTag('spot') || hasTag('attraction');
-                            }
-
-                            // Otherwise strict match
-                            return hasTag(selectedCategory);
-                        });
-
-                        return filteredResults.length > 0 ? (
-                            filteredResults.map((item, index) => (
-                                <div 
-                                    key={item.id || index} 
-                                    onClick={() => onPoiClick(item)}
-                                    className="flex gap-4 p-4 bg-white rounded-[1.5rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] active:scale-95 transition-transform cursor-pointer mb-3"
-                                >
-                                    <div className="w-24 h-24 bg-gray-100 rounded-2xl shrink-0 overflow-hidden shadow-inner">
-                                        {item.photos && item.photos[0] ? (
-                                            <img src={item.photos[0].url} alt={item.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                                <MapPin size={24} />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 flex flex-col justify-between py-1">
-                                        <div>
-                                            <h3 className="font-bold text-gray-800 line-clamp-1">{index + 1}、{item.name}</h3>
-                                            <p className="text-sm text-gray-500 line-clamp-2 mt-1">{item.address || t('cityDrawer.noAddress')}</p>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-xs text-orange-500 font-medium">
-                                            <span>★ {item.biz_ext?.rating || '4.5'}</span>
-                                            <span className="text-gray-300">|</span>
-                                            <span className="text-gray-400">{item.type || t('cityDrawer.place')}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                                <SearchIcon />
-                                <p className="mt-2 text-sm">{t('cityDrawer.noPlaces')}</p>
-                            </div>
-                        );
-                    })()}
+                <div className="hidden">
+                    {/* Kept empty div to satisfy React conditions if state somehow gets here, though it shouldn't */}
                 </div>
             )}
             

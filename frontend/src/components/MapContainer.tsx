@@ -458,8 +458,9 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
     if (!map || !selectedPoi || !selectedPoi.location) return;
 
     // User Request: When a spot is selected, zoom in and center the map on it.
-    // We use setZoomAndCenter (level 16) to ensure the spot is clearly visible.
-    map.setZoomAndCenter(16, [selectedPoi.location.lng, selectedPoi.location.lat]);
+    // We use setZoomAndCenter (level 15) to ensure the spot is clearly visible but not too close.
+    // Previously set to 16, user requested "like this size" which appears to be slightly wider context.
+    map.setZoomAndCenter(15, [selectedPoi.location.lng, selectedPoi.location.lat]);
     
     // Note: MainLayout might apply a pan offset for the bottom sheet.
     // We leave that responsibility to the layout controller or handle it here if needed.

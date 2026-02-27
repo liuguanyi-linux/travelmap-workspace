@@ -501,6 +501,7 @@ export default function MainLayout() {
         onPoiClick={handleMarkerClick}
         onClose={() => setActiveTab('')}
         onSearch={handleCityScopedSearch}
+        activeCityName={activeCity}
       />
 
       {/* Strategy View */}
