@@ -7,8 +7,18 @@ export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Post()
-  async create(@Body() data: Prisma.ReviewUncheckedCreateInput) {
+  async create(@Body() data: Prisma.ReviewUncheckedCreateInput & { isAdmin?: boolean, customNickname?: string }) {
     return this.reviewsService.create(data);
+  }
+
+  @Post('batch-generate')
+  async batchGenerate(@Body() data: { targetType: string, targetId: number | string }) {
+    return this.reviewsService.batchGenerate(data.targetType, data.targetId);
+  }
+
+  @Delete('batch-clear')
+  async batchClear(@Body() data: { targetType: string, targetId: number | string }) {
+    return this.reviewsService.batchClear(data.targetType, data.targetId);
   }
 
   @Post('amap')

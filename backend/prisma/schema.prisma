@@ -42,10 +42,13 @@ model Review {
   content   String?
   images    String?
   
+  type      String   @default("REAL") // REAL, ADMIN_MOCK, SYSTEM_MOCK
+  customNickname String?
+
   userId    Int?
   user      User?    @relation(fields: [userId], references: [id])
   
-  nickname  String?  // For bot/guest reviews
+  nickname  String?  // Legacy field, keeping for safety but we will use customNickname
   avatar    String?  // For bot/guest reviews
 
   poiId     Int?

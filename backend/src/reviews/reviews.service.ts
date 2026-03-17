@@ -6,23 +6,67 @@ import { Prisma } from '@prisma/client';
 export class ReviewsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(data: Prisma.ReviewUncheckedCreateInput) {
+  async create(data: Prisma.ReviewUncheckedCreateInput & { isAdmin?: boolean, customNickname?: string }) {
+    const { isAdmin, customNickname, ...rest } = data;
+    const reviewData = rest as any;
+    
     // Ensure at least one target is present
-    if (!data.poiId && !data.spotId && !data.guideId && !data.strategyId) {
+    if (!reviewData.poiId && !reviewData.spotId && !reviewData.guideId && !reviewData.strategyId) {
         throw new Error('Review must be associated with a target (POI, Spot, Guide, or Strategy)');
     }
 
     // Handle Admin/Custom Reviews without real users
-    // If userId is provided, use it. If not, and we have a nickname, we might need to link to a dummy user OR make userId optional?
-    // In schema, userId is Int (not optional?). Let's check schema.
-    // Assuming userId is required. If data.userId is missing, default to Admin (ID 1).
-    if (!data.userId) {
-        data.userId = 1; // Default to Admin
+    if (isAdmin || customNickname) {
+        reviewData.type = 'ADMIN_MOCK';
+        reviewData.customNickname = customNickname;
+        if (!reviewData.userId) {
+            reviewData.userId = 1; // Default to Admin
+        }
+    } else {
+        reviewData.type = 'REAL';
     }
 
     return this.prisma.review.create({
-      data,
+      data: reviewData,
       include: { user: true }
+    });
+  }
+
+  async batchGenerate(targetType: string, targetId: number | string) {
+    const numericId = Number(targetId);
+    if (isNaN(numericId)) throw new Error('Invalid target ID');
+
+    const mockNames = ['여행매니아', '맛집탐험가', '가족여행객', '힐링원해', '현지인추천'];
+    const count = Math.floor(Math.random() * 3) + 3; // 3 to 5 reviews
+
+    const reviews: any[] = [];
+    for (let i = 0; i < count; i++) {
+      const data: any = {
+        rating: Math.floor(Math.random() * 2) + 4, // 4 or 5 stars
+        content: '정말 좋았어요! 강력 추천합니다.', // generic good review
+        type: 'SYSTEM_MOCK',
+        customNickname: mockNames[i % mockNames.length],
+        userId: 1, // bind to admin
+      };
+      data[`${targetType}Id`] = numericId;
+
+      const review = await this.prisma.review.create({ data });
+      reviews.push(review);
+    }
+    return reviews;
+  }
+
+  async batchClear(targetType: string, targetId: number | string) {
+    const numericId = Number(targetId);
+    if (isNaN(numericId)) throw new Error('Invalid target ID');
+
+    const where: any = {
+      type: 'SYSTEM_MOCK'
+    };
+    where[`${targetType}Id`] = numericId;
+
+    return this.prisma.review.deleteMany({
+      where
     });
   }
 
