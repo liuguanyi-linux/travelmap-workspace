@@ -29,7 +29,9 @@ export class ReviewsController {
     poiType: string, 
     poiAddress?: string,
     rating: number, 
-    content: string 
+    content: string,
+    isAdmin?: boolean,
+    customNickname?: string
   }) {
     return this.reviewsService.createForAmap(data);
   }

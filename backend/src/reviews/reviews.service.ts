@@ -131,7 +131,9 @@ export class ReviewsService {
     poiType: string, 
     poiAddress?: string,
     rating: number, 
-    content: string 
+    content: string,
+    isAdmin?: boolean,
+    customNickname?: string
   }) {
     // 1. Find or create POI
     let poi = await this.prisma.poi.findUnique({
@@ -150,13 +152,22 @@ export class ReviewsService {
     }
 
     // 2. Create review
+    const reviewData: any = {
+      userId: data.userId,
+      poiId: poi.id,
+      rating: data.rating,
+      content: data.content,
+      type: 'REAL'
+    };
+
+    if (data.isAdmin || data.customNickname) {
+        reviewData.type = 'ADMIN_MOCK';
+        reviewData.customNickname = data.customNickname;
+        if (!reviewData.userId) reviewData.userId = 1;
+    }
+
     return this.prisma.review.create({
-      data: {
-        userId: data.userId,
-        poiId: poi.id,
-        rating: data.rating,
-        content: data.content,
-      },
+      data: reviewData,
       include: { user: true }
     });
   }

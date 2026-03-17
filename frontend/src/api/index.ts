@@ -174,12 +174,15 @@ export const createReview = async (userId: number | string, poiId: number | stri
   } else {
       // It's an AMAP POI
       const body = {
-          userId: Number(userId),
+          userId: Number(userId) || 1, // Fallback to 1 if NaN to avoid 500
           amapId: String(poiId),
-          poiName: 'Unknown', // We might need to pass this down
+          poiName: userInfo?.nickname ? 'Unknown' : 'Unknown', // Need to pass real POI info if possible
           poiType: 'Unknown',
           rating,
-          content
+          content,
+          // Support admin mock creation via amap
+          customNickname: userInfo?.nickname,
+          isAdmin: !!userInfo?.nickname
       };
        const res = await fetch('/api/reviews/amap', {
           method: 'POST',

@@ -99,27 +99,26 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
       controls.start('peek');
       if (poi) {
           setNewRating(5); // Reset rating
-          if (typeof poi.id === 'number') {
-              fetchReviewsInternal(poi.id);
-          } else if (poi.amapId || (typeof poi.id === 'string' && poi.id.length > 10)) {
-              // It's likely an AMAP POI
-              fetchReviewsInternal(poi.id as any); // The API handles string IDs now
+          const targetId = poi.id || poi.amapId;
+          if (targetId) {
+              fetchReviewsInternal(targetId);
           }
       }
     } else {
       setViewState('hidden');
       controls.start('hidden');
     }
-  }, [isOpen, controls, poi]);
+  }, [isOpen, poi]);
 
   // Fetch reviews for internal numeric ID
   const fetchReviewsInternal = async (id: number | string) => {
     try {
         const data = await getReviews(id);
         console.log("前端接收到的真实评论数据 (Internal):", data); // DEBUG LOG
-        setReviews(data);
+        setReviews(data || []); // Ensure we always set an array
     } catch (error) {
         console.error('Failed to fetch reviews:', error);
+        setReviews([]);
     }
   };
 
