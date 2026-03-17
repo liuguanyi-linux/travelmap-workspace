@@ -23,9 +23,10 @@ interface Review {
   type?: string;
   customNickname?: string;
   nickname?: string;
-  user: {
-    nickname: string | null;
-    email: string;
+  user?: {
+    nickname?: string | null;
+    name?: string | null;
+    email?: string;
   };
   createdAt: string;
 }
@@ -96,8 +97,14 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
     if (isOpen) {
       setViewState('peek');
       controls.start('peek');
-      if (poi && poi.id) {
-          fetchReviews(poi.id);
+      if (poi) {
+          setNewRating(5); // Reset rating
+          if (typeof poi.id === 'number') {
+              fetchReviewsInternal(poi.id);
+          } else if (poi.amapId || (typeof poi.id === 'string' && poi.id.length > 10)) {
+              // It's likely an AMAP POI
+              fetchReviewsInternal(poi.id as any); // The API handles string IDs now
+          }
       }
     } else {
       setViewState('hidden');
@@ -105,24 +112,15 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
     }
   }, [isOpen, controls, poi]);
 
-  const fetchReviews = async (amapId: string) => {
-      try {
-          const data = await getReviews(amapId);
-          // Map to expected format
-          const formattedReviews = data.map((r: any) => ({
-              id: r.id,
-              rating: r.rating,
-              content: r.content,
-              user: {
-                  nickname: r.username || 'User',
-                  email: 'user@example.com' 
-              },
-              createdAt: r.created_at || r.createdAt
-          }));
-          setReviews(formattedReviews);
-      } catch (error) {
-          console.error('Failed to fetch reviews:', error);
-      }
+  // Fetch reviews for internal numeric ID
+  const fetchReviewsInternal = async (id: number) => {
+    try {
+        const data = await getReviews(id);
+        console.log("前端接收到的真实评论数据 (Internal):", data); // DEBUG LOG
+        setReviews(data);
+    } catch (error) {
+        console.error('Failed to fetch reviews:', error);
+    }
   };
 
   const handlePublishComment = async () => {
@@ -608,11 +606,10 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                                           <div className="flex justify-between items-center mb-1">
                                               <span className="font-bold text-gray-900 dark:text-white text-xs">
                                                   {review.customNickname || 
-                                                   (review.user?.nickname && review.user.nickname !== '游客' && review.user.nickname !== 'User' 
-                                                      ? review.user.nickname 
-                                                      : (review.user?.email 
-                                                          ? review.user.email.split('@')[0] 
-                                                          : t('detail.visitor')))}
+                                                   review.user?.nickname || 
+                                                   review.user?.name || 
+                                                   review.user?.email || 
+                                                   '방문자'}
                                               </span>
                                               <div className="flex items-center gap-3">
                                               <div className="flex text-yellow-400 scale-90 origin-right">

@@ -179,50 +179,50 @@ export const getReviews = async (poiId: number | string) => {
 };
 
 export const getUserReviews = async (userId: number) => {
-  await delay(300);
-  const reviews = getDb(DB_KEYS.REVIEWS);
-  return reviews.filter((r: any) => r.user_id === userId);
+  try {
+    const res = await fetch(`/api/reviews/user/${userId}`);
+    if (res.ok) return await res.json();
+  } catch (e) { console.error(e); }
+  return [];
 };
 
 export const createReview = async (userId: number | string, poiId: number | string, rating: number, content: string, userInfo?: { nickname: string, avatar?: string }) => {
-  await delay(400);
+  const isNumericId = !isNaN(Number(poiId));
   
-  const newReview = {
-    id: Date.now().toString(),
-    userId: userId, // Store consistent field name
-    user_id: userId, // For compatibility
-    username: userInfo?.nickname || '游客',
-    avatar: userInfo?.avatar,
-    poiId,
-    rating,
-    content,
-    created_at: new Date().toISOString(),
-    source: 'Local'
-  };
-
-  // Try to save to Managed Spots first
-  try {
-    const spots = JSON.parse(localStorage.getItem('travelmap_spots') || '[]');
-    const spotIndex = spots.findIndex((s: any) => String(s.id) === String(poiId));
-    
-    if (spotIndex >= 0) {
-      if (!spots[spotIndex].reviews) {
-        spots[spotIndex].reviews = [];
-      }
-      spots[spotIndex].reviews.unshift(newReview);
-      localStorage.setItem('travelmap_spots', JSON.stringify(spots));
-      return newReview;
-    }
-  } catch (e) {
-    console.error('Failed to save to managed spots', e);
+  if (isNumericId) {
+      // It's a Spot or internal POI
+      const body = {
+          userId: Number(userId),
+          spotId: Number(poiId), // Defaulting to spot, might need adjustment if we distinguish types strictly
+          rating,
+          content,
+          // If we want to support nickname overriding from frontend:
+          // customNickname: userInfo?.nickname 
+      };
+      
+      const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+      });
+      return await res.json();
+  } else {
+      // It's an AMAP POI
+      const body = {
+          userId: Number(userId),
+          amapId: String(poiId),
+          poiName: 'Unknown', // We might need to pass this down
+          poiType: 'Unknown',
+          rating,
+          content
+      };
+       const res = await fetch('/api/reviews/amap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+      });
+      return await res.json();
   }
-
-  // Fallback to separate DB for unmanaged spots
-  const reviews = getDb(DB_KEYS.REVIEWS);
-  reviews.push(newReview);
-  setDb(DB_KEYS.REVIEWS, reviews);
-  
-  return newReview;
 };
 
 export const deleteReview = async (reviewId: number | string) => {
