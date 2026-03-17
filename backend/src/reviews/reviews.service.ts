@@ -18,19 +18,17 @@ export class ReviewsService {
         throw new Error('Review must be associated with a target (POI, Spot, Guide, or Strategy)');
     }
 
+    const safeUserId = (typeof reviewData.userId === 'number' && reviewData.userId > 0 && reviewData.userId < 2147483647) 
+        ? reviewData.userId 
+        : 1;
+    reviewData.userId = safeUserId;
+
     // Handle Admin/Custom Reviews without real users
     if (isAdmin || customNickname) {
         reviewData.type = 'ADMIN_MOCK';
         reviewData.customNickname = customNickname;
-        if (!reviewData.userId) {
-            reviewData.userId = 1; // Default to Admin
-        }
     } else {
         reviewData.type = 'REAL';
-        // Fallback for real user if userId is missing/NaN
-        if (!reviewData.userId) {
-            reviewData.userId = 1; 
-        }
     }
 
     return this.prisma.review.create({
@@ -158,9 +156,13 @@ export class ReviewsService {
       });
     }
 
+    const safeUserId = (typeof data.userId === 'number' && data.userId > 0 && data.userId < 2147483647) 
+      ? data.userId 
+      : 1;
+
     // 2. Create review
     const reviewData: any = {
-      userId: data.userId,
+      userId: safeUserId,
       poiId: poi.id,
       rating: data.rating,
       content: data.content,
@@ -170,7 +172,6 @@ export class ReviewsService {
     if (data.isAdmin || data.customNickname) {
         reviewData.type = 'ADMIN_MOCK';
         reviewData.customNickname = data.customNickname;
-        if (!reviewData.userId) reviewData.userId = 1;
     }
 
     return this.prisma.review.create({
