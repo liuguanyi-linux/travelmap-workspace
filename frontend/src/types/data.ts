@@ -1,5 +1,5 @@
 export interface Guide {
-  id: number;
+  id: number | string;
   name: string;
   gender: 'male' | 'female';
   hasCar: boolean;
@@ -8,13 +8,16 @@ export interface Guide {
   intro: string;
   cities: string[];
   rank: number;
+  isTop?: boolean;
+  isGlobal?: boolean;
+  category?: 'guide' | 'car' | 'agency';
   content?: string;
   photos?: string[];
   expiryDate?: string;
 }
 
 export interface Strategy {
-  id: number;
+  id: number | string;
   title: string;
   city?: string;
   category: string; // '一日游' | '2日游' | '亲子游' | '其他'
@@ -41,8 +44,9 @@ export interface Review {
 }
 
 export interface Spot {
-  id: number;
+  id: number | string;
   name: string;
+  cnName?: string;
   city?: string;
   address?: string;
   location?: {
@@ -53,15 +57,20 @@ export interface Spot {
   intro?: string;
   content: string;
   tags: SpotTag[];
+  rank?: number;
+  isTop?: boolean;
   reviews?: Review[];
   expiryDate?: string;
 }
 
 export interface AdSlot {
-  id: number;
+  id: number | string;
   title: string;
   description?: string;
+  content?: string;
   image: string;
+  photos?: string[];
+  address?: string;
   link?: string;
   layout?: 'standard' | 'full';
   expiryDate?: string;
@@ -97,4 +106,16 @@ export interface SpotCategory {
   key: string;
   icon: string;
   sortOrder: number;
+}
+
+export interface UsageGuide {
+  id: number;
+  title: string;
+  titleEn?: string;
+  titleKo?: string;
+  content: string;
+  contentEn?: string;
+  contentKo?: string;
+  createdAt: string;
+  updatedAt: string;
 }

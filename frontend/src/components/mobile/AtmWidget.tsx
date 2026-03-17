@@ -1,26 +1,26 @@
 import React from 'react';
-import { Banknote } from 'lucide-react';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { CreditCard } from 'lucide-react';
 
 interface AtmWidgetProps {
   onSelect: () => void;
-  isActive?: boolean;
+  isActive: boolean;
 }
 
-export default function AtmWidget({ onSelect, isActive = false }: AtmWidgetProps) {
-  const { t } = useLanguage();
-
+export default function AtmWidget({ onSelect, isActive }: AtmWidgetProps) {
   return (
     <button
-      onClick={onSelect}
-      className={`${
+      onClick={(e) => {
+          e.stopPropagation();
+          onSelect();
+      }}
+      className={`w-12 h-12 rounded-full shadow-lg flex flex-col items-center justify-center gap-0.5 transition-all duration-300 pointer-events-auto active:scale-95 ${
         isActive 
-          ? 'bg-purple-600 text-white ring-2 ring-purple-300 ring-offset-2 dark:ring-offset-gray-900' 
-          : 'bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-white hover:scale-105'
-      } backdrop-blur-md w-14 h-14 rounded-full shadow-lg border border-white/20 dark:border-gray-700/30 flex flex-col items-center justify-center gap-0.5 cursor-pointer active:scale-95 transition-all animate-in fade-in slide-in-from-right-4 duration-500 delay-100`}
+          ? 'bg-blue-600 text-white rotate-0' 
+          : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-200 backdrop-blur-md'
+      }`}
     >
-      <Banknote size={20} />
-      <span className="text-[10px] font-bold leading-none">ATM</span>
+      <CreditCard size={20} />
+      <span className="text-[8px] font-bold">ATM</span>
     </button>
   );
 }

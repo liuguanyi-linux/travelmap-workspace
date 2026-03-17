@@ -95,6 +95,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const s = getVal(results[1], []);
       const sc = getVal(results[2], []);
       const sp = getVal(results[3], []);
+      // Sort spots by ID ascending (Earliest uploaded first)
+      if (Array.isArray(sp)) {
+        sp.sort((a: any, b: any) => a.id - b.id);
+      }
+
       const a = getVal(results[4], []);
       const c = getVal(results[5], INITIAL_CONTACT_INFO);
       const ci = getVal(results[6], []);

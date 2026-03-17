@@ -11,7 +11,7 @@ async function main() {
     { name: '上海', nameEn: 'Shanghai', nameKo: '상하이', lng: 121.4737, lat: 31.2304, zoom: 12 },
     { name: '广州', nameEn: 'Guangzhou', nameKo: '광저우', lng: 113.2644, lat: 23.1291, zoom: 12 },
     { name: '深圳', nameEn: 'Shenzhen', nameKo: '선전', lng: 114.0579, lat: 22.5431, zoom: 12 },
-    { name: '青岛', nameEn: 'Qingdao', nameKo: '칭다오', lng: 120.3826, lat: 36.0671, zoom: 12 },
+    { name: '青岛', nameEn: 'Qingdao', nameKo: '칭다오', lng: 120.316, lat: 36.10, zoom: 11.2 },
   ];
 
   // Optional: Remove cities that are not in the list (Be careful with this in production!)

@@ -12,13 +12,15 @@ export const TRANSLATIONS: any = {
       savedPlaces: '已保存的地点', book: '预订', navigate: '导航',
       download: '下载应用',
       back: '返回',
-      close: '关闭'
+      close: '关闭',
+      noInfo: '暂无信息'
     },
     categories: {
       attraction: '景点', spot: '景点', hotel: '酒店', accommodation: '住宿', food: '美食', dining: '美食', atm: 'ATM',
       shopping: '购物', pharmacy: '药店', museum: '博物馆', transport: '交通',
       ticket: '票务', guide: '导游', more: '更多',
-      airport: '机场', high_speed_rail: '高铁', train: '火车'
+      airport: '机场', high_speed_rail: '高铁', train: '火车',
+      car: '租车', agency: '旅行社', ad: '广告'
     },
     tabs: {
       city: '城市', strategy: '攻略', guide: '导游', me: '我的'
@@ -79,19 +81,21 @@ export const TRANSLATIONS: any = {
       footprint: '您的足迹'
     },
     detail: {
-      overview: '概览', reviews: '评价', photos: '照片',
+      overview: '概览', reviews: '评价', photos: '图片',
       save: '收藏', saved: '已收藏', share: '分享', sendToPhone: '发送到手机',
       bookNow: '立即预订', route: '路线', openTime: '营业时间',
       contact: '联系方式', ticketBooking: '门票预订',
       yourRating: '您的评分', shareExperience: '分享您的体验...',
-      publishReview: '发布评价', noReviews: '暂无评价，快来抢沙发吧！',
-      morePhotosComing: '更多照片功能即将上线',
-      pricePerPerson: '人', moderatePrice: '价格适中',
+      publishReview: '发布', noReviews: '快来抢沙发吧！',
+      morePhotosComing: '更多图片敬请期待',
+      pricePerPerson: '人均', moderatePrice: '适中',
       bookable: '可预订', noContact: '暂无联系方式',
-      intro: '简介', visitorReviews: '游客评价', viewAll: '查看全部',
+      intro: '介绍', visitorReviews: '游客评价', viewAll: '查看全部',
       operating: '营业中', phone: '电话', clickToCall: '点击拨打',
-      introDesc: '{name}是当地非常受欢迎的地点。这里不仅环境优美，设施齐全，更能让您体验到最地道的本地风情。',
-      visitor: '游客'
+      introDesc: '{name}是当地非常受欢迎的场所，环境优美，设施齐全。',
+      visitor: '游客',
+      reviewsCount: '条',
+      loginToReview: '登录后即可发表评论'
     },
     home: {
       explore: '探索世界',
@@ -107,6 +111,11 @@ export const TRANSLATIONS: any = {
       select: '选择城市',
       loading: '正在加载城市...',
     },
+    usageGuide: {
+      title: '使用介绍',
+      empty: '暂无介绍',
+      loading: '加载中...'
+    },
     guide: {
       title: '找导游',
       subtitle: '定制您的专属向导',
@@ -120,7 +129,16 @@ export const TRANSLATIONS: any = {
       subtitle: '发现最适合你的路线',
       days: '游玩天数',
       spots: '打卡景点',
-      route: '路线详情'
+      route: '路线详情',
+      all: '全部',
+      oneDay: '一日游',
+      twoDays: '2日游',
+      family: '亲子游',
+      other: '其他',
+      mustVisit: '必玩路线',
+      local: '当地人推荐',
+      localExp: '当地体验',
+      practical: '实用攻略'
     },
     cityDrawer: {
       selectCity: '选择城市',
@@ -159,6 +177,12 @@ export const TRANSLATIONS: any = {
       failed: '定位失败',
       failedMessage: '请检查您的浏览器权限并重试。'
     },
+    mapToggle: {
+      all: '查看全部',
+      favorites: '只看收藏',
+      noFavorites: '您还没有收藏任何景点'
+    },
+    clickToToggle: '点击展开',
     toast: {
       saved: '已保存地点', removed: '已从保存列表中移除',
       failed: '操作失败，请重试', reviewPublished: '评价已发布',
@@ -174,8 +198,8 @@ export const TRANSLATIONS: any = {
       loading: 'Loading...',
       foundResults: 'Found {count} results',
       noResults: 'No results found',
-      collapse: 'Collapse Sidebar',
-      unknownPlace: 'Unknown Place',
+      collapse: 'Collapse sidebar',
+      unknownPlace: 'Unknown place',
       noSaved: 'No saved places',
       savedPlaces: 'Saved Places', book: 'Book', navigate: 'Navigate',
       download: 'Download App',
@@ -183,9 +207,11 @@ export const TRANSLATIONS: any = {
       close: 'Close'
     },
     categories: {
-      food: 'Food', hotel: 'Hotels', attraction: 'Attractions', shopping: 'Shopping',
-      pharmacy: 'Pharmacy', atm: 'ATM', museum: 'Museum', transport: 'Transit',
-      ticket: 'Tickets', guide: 'Guides', more: 'More'
+      attraction: 'Attraction', spot: 'Spot', hotel: 'Hotel', accommodation: 'Accommodation', food: 'Food', dining: 'Dining', atm: 'ATM',
+      shopping: 'Shopping', pharmacy: 'Pharmacy', museum: 'Museum', transport: 'Transport',
+      ticket: 'Tickets', guide: 'Guide', more: 'More',
+      airport: 'Airport', high_speed_rail: 'High Speed Rail', train: 'Train',
+      car: 'Car Rental', agency: 'Travel Agency', ad: 'Ads'
     },
     tabs: {
       city: 'City', strategy: 'Trips', guide: 'Guide', me: 'Me'
@@ -259,8 +285,10 @@ export const TRANSLATIONS: any = {
       bookable: 'Bookable', noContact: 'No contact info',
       intro: 'Introduction', visitorReviews: 'Reviews', viewAll: 'View All',
       operating: 'Open', phone: 'Phone', clickToCall: 'Call',
-      introDesc: '{name} is a very popular place locally. It offers great environment and facilities.',
-      visitor: 'Visitor'
+      introDesc: '{name} is a very popular place locally, offering great environment and facilities.',
+      visitor: 'Visitor',
+      reviewsCount: 'reviews',
+      loginToReview: 'Login to leave a review'
     },
     home: {
       explore: 'Explore the World',
@@ -276,20 +304,36 @@ export const TRANSLATIONS: any = {
       select: 'Select City',
       loading: 'Loading cities...',
     },
+    usageGuide: {
+      title: 'Usage Guide',
+      empty: 'No guides available',
+      loading: 'Loading...'
+    },
     guide: {
       title: 'Find a Guide',
       subtitle: 'Customize your exclusive guide',
       filter: 'Filters',
       intro: 'Introduction',
       details: 'Details',
-      hasCar: 'Has Car'
+      hasCar: 'Has Car',
+      currentCity: 'Current City: ',
+      noIntro: 'No introduction'
     },
     strategy: {
       title: 'Featured Trips',
       subtitle: 'Discover the best routes for you',
       days: 'Days',
       spots: 'Spots',
-      route: 'Route Details'
+      route: 'Route Details',
+      all: 'All',
+      oneDay: '1 Day Trip',
+      twoDays: '2 Days Trip',
+      family: 'Family Trip',
+      other: 'Other',
+      mustVisit: 'Must Visit',
+      local: 'Local Choice',
+      localExp: 'Local Exp',
+      practical: 'Practical'
     },
     cityDrawer: {
       selectCity: 'Select City',
@@ -327,6 +371,12 @@ export const TRANSLATIONS: any = {
       failed: 'Location failed',
       failedMessage: 'Please check your browser permissions and try again.'
     },
+    mapToggle: {
+      all: 'Show All',
+      favorites: 'Favorites Only',
+      noFavorites: 'You have no favorite places yet'
+    },
+    clickToToggle: 'Click to toggle',
     toast: {
       saved: 'Place saved', removed: 'Removed from saved list',
       failed: 'Operation failed, please try again', reviewPublished: 'Review posted',
@@ -348,21 +398,23 @@ export const TRANSLATIONS: any = {
       savedPlaces: '저장된 장소', book: '예약', navigate: '길찾기',
       download: '앱 다운로드',
       back: '뒤로',
-      close: '닫기'
+      close: '닫기',
+      noInfo: '정보 없음'
     },
     categories: {
       food: '맛집', dining: '맛집', hotel: '호텔', accommodation: '호텔', attraction: '명소', spot: '명소', shopping: '쇼핑',
       pharmacy: '약국', atm: 'ATM', museum: '박물관', transport: '교통',
       ticket: '티켓', guide: '가이드', more: '더보기',
-      airport: '공항', high_speed_rail: '고속철도', train: '기차'
+      airport: '공항', high_speed_rail: '고속철도', train: '기차',
+      car: '렌트카', agency: '여행사', ad: '광고'
     },
     tabs: {
-      city: '도시', strategy: '공략', guide: '가이드', me: '내 정보'
+      city: '도시', strategy: '가이드북', guide: '가이드', me: '내 정보'
     },
     user: {
       name: '사용자 8866',
       slogan: '탐험을 시작하세요',
-      favorites: '내 즐겨찾기',
+      favorites: '즐겨찾기',
       wallet: '내 지갑',
       notifications: '알림',
       settings: '설정',
@@ -372,7 +424,7 @@ export const TRANSLATIONS: any = {
       saved: '저장됨',
       loginRegister: '로그인 / 회원가입',
       loginDesc: '로그인하여 리뷰를 작성하고 프로필을 관리하세요',
-      contact: '연락처'
+      contact: '입주신청'
     },
     notifications: {
       title: '알림',
@@ -425,14 +477,16 @@ export const TRANSLATIONS: any = {
       bookNow: '지금 예약', route: '경로', openTime: '영업 시간',
       contact: '연락처', ticketBooking: '티켓 예약',
       yourRating: '내 평점', shareExperience: '경험 공유...',
-      publishReview: '리뷰 게시', noReviews: '아직 리뷰가 없습니다.',
-      morePhotosComing: '더 많은 사진이 곧 제공됩니다',
-      pricePerPerson: '인당', moderatePrice: '보통 가격',
-      bookable: '예약 가능', noContact: '연락처 없음',
-      intro: '소개', visitorReviews: '방문자 리뷰', viewAll: '모두 보기',
+      publishReview: '등록', noReviews: '첫 번째 리뷰를 작성해보세요!',
+      morePhotosComing: '더 많은 사진 준비 중',
+      pricePerPerson: '인당', moderatePrice: '보통',
+      bookable: '예약 가능', noContact: '연락처 정보 없음',
+      intro: '소개', visitorReviews: '방문자 리뷰', viewAll: '전체 보기',
       operating: '영업 중', phone: '전화', clickToCall: '통화하기',
       introDesc: '{name}은(는) 현지에서 매우 인기 있는 장소입니다. 훌륭한 환경과 시설을 제공합니다.',
-      visitor: '방문자'
+      visitor: '방문자',
+      reviewsCount: '건',
+      loginToReview: '로그인 후 리뷰를 작성할 수 있습니다'
     },
     home: {
       explore: '세계 탐험',
@@ -447,6 +501,37 @@ export const TRANSLATIONS: any = {
     city: {
       select: '도시 선택',
       loading: '도시 목록 로딩 중...',
+    },
+    usageGuide: {
+      title: '사용 가이드',
+      empty: '가이드 없음',
+      loading: '로딩 중...'
+    },
+    guide: {
+      title: '가이드 찾기',
+      subtitle: '나만의 전속 가이드',
+      filter: '필터',
+      intro: '소개',
+      details: '상세 정보',
+      hasCar: '차량 보유',
+      currentCity: '현재 도시',
+      noIntro: '소개 없음'
+    },
+    strategy: {
+      title: '추천 여행코스',
+      subtitle: '',
+      days: '일정',
+      spots: '명소',
+      route: '경로 상세',
+      all: '전체',
+      oneDay: '당일 여행',
+      twoDays: '1박 2일',
+      family: '가족 여행',
+      other: '기타',
+      mustVisit: '필수 코스',
+      local: '현지인 추천',
+      localExp: '현지 체험',
+      practical: '실용 정보'
     },
     cityDrawer: {
       selectCity: '도시 선택',
@@ -467,7 +552,10 @@ export const TRANSLATIONS: any = {
         default: '검색...'
       },
       noAddress: '주소 정보 없음',
-      place: '장소'
+      place: '지명',
+      address: '주소',
+      copyName: '복사하기',
+      copyAddress: '복사하기'
     },
     booking: {
       title: '호텔 예약', checkIn: '체크인 날짜', guests: '인원',
@@ -484,6 +572,12 @@ export const TRANSLATIONS: any = {
       failed: '위치 확인 실패',
       failedMessage: '브라우저 권한을 확인하고 다시 시도하세요.'
     },
+    mapToggle: {
+      all: '전체 보기',
+      favorites: '즐겨찾기만',
+      noFavorites: '즐겨찾기한 장소가 없습니다'
+    },
+    clickToToggle: '클릭 하세요',
     toast: {
       saved: '장소가 저장되었습니다', removed: '저장 목록에서 제거되었습니다',
       failed: '작업 실패, 다시 시도하세요', reviewPublished: '리뷰가 게시되었습니다',

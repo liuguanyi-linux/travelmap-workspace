@@ -12,19 +12,37 @@ export class AdsService {
         { expiryDate: { gt: new Date() } }
       ]
     };
-    return this.prisma.ad.findMany({ where });
+    const ads = await this.prisma.ad.findMany({ where });
+    return ads.map(ad => ({
+      ...ad,
+      photos: ad.photos ? JSON.parse(ad.photos) : []
+    }));
   }
 
   async findOne(id: number) {
-    return this.prisma.ad.findUnique({ where: { id } });
+    const ad = await this.prisma.ad.findUnique({ where: { id } });
+    if (!ad) return null;
+    return {
+      ...ad,
+      photos: ad.photos ? JSON.parse(ad.photos) : []
+    };
   }
 
   async create(data: any) {
-    return this.prisma.ad.create({ data });
+    const { photos, ...rest } = data;
+    return this.prisma.ad.create({
+      data: {
+        ...rest,
+        photos: JSON.stringify(photos || [])
+      }
+    });
   }
 
   async update(id: number, data: any) {
-    return this.prisma.ad.update({ where: { id }, data });
+    const { photos, ...rest } = data;
+    const updateData: any = { ...rest };
+    if (photos !== undefined) updateData.photos = JSON.stringify(photos);
+    return this.prisma.ad.update({ where: { id }, data: updateData });
   }
 
   async remove(id: number) {

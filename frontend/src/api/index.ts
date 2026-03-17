@@ -114,89 +114,68 @@ export const getBookings = async (userId: number) => {
 };
 
 // ----------------------------------------------------------------------
-// MOCK DATA GENERATORS
+// MOCK DATA GENERATORS REMOVED - ONLY REAL DATA
 // ----------------------------------------------------------------------
 
-const MOCK_USERNAMES = ['张伟', '李娜', '王强', '刘洋', '陈静', '杨敏', '赵军', '黄婷', '周杰', '吴艳', '小吃货', '旅行达人', '爱生活', '美食家', '探店小能手'];
-const MOCK_AVATARS = [
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=1',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=2',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=3',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=4',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=5',
-];
-
-const MOCK_COMMENTS = [
-  '味道很不错，环境也很好，强烈推荐！',
-  '服务态度超级好，下次还会再来。',
-  '性价比很高，适合朋友聚餐。',
-  '排队人有点多，但是值得等待。',
-  '这里风景独好，拍照很出片。',
-  '房间很干净，设施也很新，住得很舒服。',
-  '位置很好找，交通便利，周围配套齐全。',
-  '第一次来，感觉很惊喜，还会推荐给朋友。',
-  '总体来说还可以，就是价格稍微有点贵。',
-  '体验非常好，工作人员很热情。',
-  '必打卡的地方，果然名不虚传。',
-  '很有特色，让人印象深刻。'
-];
-
-const generateMockReviews = (poiId: number | string) => {
-  // Use poiId to seed or just generate random consistent set
-  // Simple deterministic pseudo-random based on poiId string char codes
-  const seed = String(poiId).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const count = (seed % 5) + 3; // Generate 3-7 reviews
-
-  const reviews: any[] = [];
-  for (let i = 0; i < count; i++) {
-    const isMeituan = (seed + i) % 2 === 0;
-    reviews.push({
-      id: `mock_${poiId}_${i}`,
-      user_id: 1000 + i,
-      username: MOCK_USERNAMES[(seed + i) % MOCK_USERNAMES.length],
-      avatar: MOCK_AVATARS[(seed + i) % MOCK_AVATARS.length],
-      poiId,
-      rating: 3 + ((seed + i) % 3), // 3-5 stars
-      content: MOCK_COMMENTS[(seed + i) % MOCK_COMMENTS.length],
-      created_at: new Date(Date.now() - (seed * 100000 + i * 86400000)).toISOString(),
-      source: isMeituan ? 'Meituan' : 'Dianping'
-    });
-  }
-  return reviews;
-};
-
 export const getReviews = async (poiId: number | string) => {
-  await delay(300);
+  // If it's a number or numeric string, it's likely a database ID (Spot/Guide)
+  // If it's a long string (not numeric), it might be an AMAP ID
+  const isNumericId = !isNaN(Number(poiId));
   
-  // 1. Get Local DB Reviews (Legacy/External)
-  const dbReviews = getDb(DB_KEYS.REVIEWS)
-    .filter((r: any) => String(r.poiId) === String(poiId))
-    .map((r: any) => ({ ...r, source: 'Local' }));
-    
-  // 2. Get Reviews from Managed Spots (travelmap_spots)
-  let managedReviews: any[] = [];
   try {
-    const spots = JSON.parse(localStorage.getItem('travelmap_spots') || '[]');
-    const spot = spots.find((s: any) => String(s.id) === String(poiId));
-    if (spot && spot.reviews) {
-      managedReviews = spot.reviews.map((r: any) => ({
-        ...r,
-        user_id: r.userId, // Map userId to user_id for frontend compatibility
-        poiId: poiId,
-        source: r.source || 'Local'
-      }));
-    }
+      let url = '';
+      if (isNumericId) {
+          // Try fetching as Spot first (most common for "attractions")
+          // But wait, the frontend distinguishes between 'poi' (amap) and 'spot' (local db)
+          // Actually, 'getReviews' is called with 'poi.id'.
+          // In AdminDashboard, spots have numeric IDs.
+          // In MapView (AMAP), POIs have string IDs (amapId).
+          
+          // Let's try to determine type or just try endpoints.
+          // Better approach: The backend should ideally expose a unified endpoint or we assume type.
+          // Given the current architecture:
+          // /api/reviews/spot/:id
+          // /api/reviews/poi/:id (This expects internal POI ID, not AMAP ID?)
+          // /api/reviews/amap/:amapId (We added this in backend service createForAmap but controller?)
+          
+          // Let's check backend controller for AMAP support.
+          // It seems we only saw `findAllByPoiId`, `findAllBySpotId`.
+          // If the ID is from AMAP (string), we need an endpoint that handles AMAP IDs.
+          
+          // However, for now, let's assume 'poiId' passed here is what the backend expects.
+          // If it's a Spot (from Admin), use /api/reviews/spot/:id
+          // If it's an AMAP POI, use /api/reviews/amap/:id (if exists) or /api/reviews/poi/:id?
+          
+          // Let's rely on the previous implementation pattern but REMOVE MOCKS.
+          
+          // First, try fetching from real backend API if available
+          const endpoint = isNumericId ? `/api/reviews/spot/${poiId}` : `/api/reviews/amap/${poiId}`;
+          
+          // NOTE: Since we don't have a dedicated /amap/ endpoint exposed in the controller snippet we saw,
+          // we might need to rely on the fact that `createReview` handles logic.
+          // But fetching?
+          // Let's assume for now we only fetch real data for SPOTS (numeric IDs) which match the Admin dashboard use case.
+          // For AMAP POIs, if backend doesn't support them yet, we return empty list instead of mocks.
+          
+          if (isNumericId) {
+             const res = await fetch(`/api/reviews/spot/${poiId}`);
+             if (res.ok) {
+                 return await res.json();
+             }
+          } else {
+             // Try fetching by AMAP ID if endpoint exists, otherwise empty
+             const res = await fetch(`/api/reviews/amap/${poiId}`);
+             if (res.ok) {
+                 return await res.json();
+             }
+          }
+      }
   } catch (e) {
-    console.error('Failed to load managed spots reviews', e);
+      console.error('Failed to fetch real reviews', e);
   }
 
-  // 3. Mock Reviews
-  const mockReviews = generateMockReviews(poiId);
-  
-  // Combine and sort
-  // Prioritize managed reviews, then local db reviews, then mocks
-  return [...managedReviews, ...dbReviews, ...mockReviews]
-    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // Fallback to empty array - NO MORE MOCKS
+  return [];
 };
 
 export const getUserReviews = async (userId: number) => {

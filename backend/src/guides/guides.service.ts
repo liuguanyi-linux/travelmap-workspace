@@ -12,7 +12,32 @@ export class GuidesService {
         { expiryDate: { gt: new Date() } }
       ]
     };
-    const guides = await this.prisma.guide.findMany({ where });
+    const guides = await this.prisma.guide.findMany({ 
+      where,
+      select: {
+        id: true,
+        name: true,
+        gender: true,
+        hasCar: true,
+        title: true,
+        avatar: true,
+        intro: true,
+        cities: true,
+        rank: true,
+        isTop: true,
+        isGlobal: true,
+        category: true,
+        photos: true,
+        expiryDate: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: [
+        { isTop: 'desc' }, // Top items first
+        { rank: 'asc' },   // Lower rank number = higher priority
+        { createdAt: 'desc' }
+      ]
+    });
     return guides.map(g => this.transform(g));
   }
 

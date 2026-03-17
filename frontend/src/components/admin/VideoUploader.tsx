@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Plus, X, Video, Loader2 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:3000');
 
 interface VideoUploaderProps {
   videos: string[];

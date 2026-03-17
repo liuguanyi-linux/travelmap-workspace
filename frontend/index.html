@@ -1,9 +1,37 @@
 <!doctype html>
 <html lang="en">
+  <!-- v2.0 Deployment Verified -->
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <script>
+      // 🚨 CRITICAL: Force Unregister Service Workers and Clear Caches
+      // This is a nuclear option to fix persistent caching issues
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log('Service Worker unregistered');
+          }
+        });
+        // Clear all caches
+        if ('caches' in window) {
+           caches.keys().then(function(names) {
+             for (let name of names) {
+               caches.delete(name);
+               console.log('Cache deleted: ' + name);
+             }
+           });
+        }
+      }
+    </script>
     <title>TravelMap</title>
   </head>
   <body>

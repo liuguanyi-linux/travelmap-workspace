@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, Map, Calendar, ChevronRight, X, ArrowLeft, Share2, Heart } from 'lucide-react';
+import { Compass, Map, Calendar, ChevronRight, X, ArrowLeft, Share2, Heart, ChevronUp, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useData } from '../../contexts/DataContext';
@@ -10,41 +10,79 @@ interface StrategyViewProps {
   onClose: () => void;
 }
 
+import { getFullImageUrl } from '../../utils/image';
+
 export default function StrategyView({ isVisible, onClose }: StrategyViewProps) {
   const { t } = useLanguage();
   const controls = useAnimation();
   const dragControls = useDragControls();
-  const [selectedCategory, setSelectedCategory] = React.useState('全部');
+  const [viewState, setViewState] = React.useState<'hidden' | 'peek' | 'full'>('hidden');
+  const [selectedCategory, setSelectedCategory] = React.useState('all');
   const [selectedStrategy, setSelectedStrategy] = React.useState<Strategy | null>(null);
   const [previewImage, setPreviewImage] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (isVisible) {
-      controls.start({ y: 0 });
+      setViewState('peek');
+      controls.start('peek');
     } else {
-      controls.start({ y: '100%' });
+      setViewState('hidden');
+      controls.start('hidden');
       // Reset selection when closing
       setTimeout(() => setSelectedStrategy(null), 300);
     }
   }, [isVisible, controls]);
 
-  const handleDragEnd = (_event: any, info: PanInfo) => {
+  const variants = {
+    hidden: { y: '100%' },
+    peek: { y: 'calc(100% - 300px)' }, 
+    full: { y: '0%' }   // Full 66vh
+  };
+
+  const handleDragEnd = (event: any, info: PanInfo) => {
     const { offset, velocity } = info;
-    if (offset.y > 100 || (velocity.y > 500 && offset.y > 0)) {
-       onClose();
+    const isDraggingDown = offset.y > 0;
+    const threshold = 100;
+
+    if (viewState === 'full') {
+       if (isDraggingDown && (offset.y > threshold || velocity.y > 500)) {
+           setViewState('peek');
+           controls.start('peek');
+       } else {
+           controls.start('full');
+       }
     } else {
-       controls.start({ y: 0 });
+       if (!isDraggingDown && (offset.y < -threshold || velocity.y < -500)) {
+           setViewState('full');
+           controls.start('full');
+       } else {
+           controls.start('peek');
+       }
     }
   };
 
   const { strategies, strategyCategories = [] } = useData();
 
   const allRoutes = strategies.sort((a, b) => (a.rank || 99) - (b.rank || 99));
-  const filteredRoutes = selectedCategory === '全部' 
+  const filteredRoutes = selectedCategory === 'all' 
     ? allRoutes 
     : allRoutes.filter(r => r.category === selectedCategory);
 
-  const categories = ['全部', ...strategyCategories.map(c => c.name)];
+  const categories = ['all', ...strategyCategories.map(c => c.name)];
+
+  // Helper function to translate category names
+  const getCategoryLabel = (cat: string) => {
+    if (cat === 'all') return t('strategy.all');
+    if (cat === '一日游') return t('strategy.oneDay');
+    if (cat === '2日游') return t('strategy.twoDays');
+    if (cat === '亲子游') return t('strategy.family');
+    if (cat === '其他') return t('strategy.other');
+    if (cat === '必玩路线') return t('strategy.mustVisit');
+    if (cat === '当地人推荐') return t('strategy.local');
+    if (cat === '当地体验') return t('strategy.localExp');
+    if (cat === '实用攻略') return t('strategy.practical');
+    return cat; // Fallback to original name
+  };
 
   return (
     <AnimatePresence>
@@ -71,25 +109,42 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
           )}
         
         <motion.div
-          initial={{ y: '100%' }}
+          initial="hidden"
           animate={controls}
-          exit={{ y: '100%' }}
+          variants={variants}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           drag="y"
           dragControls={dragControls}
           dragListener={false}
-          dragConstraints={{ top: 0 }}
-          dragElastic={0.1}
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 z-40 h-[85vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
+          className="fixed bottom-0 left-0 right-0 z-40 h-[75vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
         >
-          {/* Handle */}
+          {/* Handle (Click to Toggle) */}
           <div 
-            className="w-full flex justify-center pt-3 pb-3 cursor-grab active:cursor-grabbing shrink-0 z-10"
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer bg-transparent z-20 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
             onPointerDown={(e) => dragControls.start(e)}
+            onClick={() => {
+                if (viewState === 'peek') {
+                    setViewState('full');
+                    controls.start('full');
+                } else {
+                    setViewState('peek');
+                    controls.start('peek');
+                }
+            }}
           >
-            <div className="w-12 h-1.5 bg-gray-200/80 dark:bg-gray-700/80 rounded-full" />
+            {viewState === 'full' ? (
+                <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
+            ) : (
+                <ChevronUp className="text-gray-500 dark:text-gray-400" size={24} />
+            )}
+            <span className="text-xs text-gray-400 font-medium tracking-wide">{t('clickToToggle')}</span>
           </div>
+
+          {/* Spacer for Handle */}
+          <div className="h-8 shrink-0" />
 
           {/* Close Button */}
           <button 
@@ -133,10 +188,10 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
                               <div 
                                 key={index} 
                                 className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-700 snap-center shadow-md relative cursor-pointer"
-                                onClick={() => setPreviewImage(photo)}
+                                onClick={() => setPreviewImage(getFullImageUrl(photo))}
                               >
                                   <img 
-                                    src={photo} 
+                                    src={getFullImageUrl(photo)} 
                                     alt={selectedStrategy.title} 
                                     className="w-full h-full object-cover"
                                   />
@@ -188,103 +243,87 @@ export default function StrategyView({ isVisible, onClose }: StrategyViewProps) 
                     {/* Content */}
                     {selectedStrategy.content && (
                       <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">详细攻略</h3>
-                        <div 
-                          className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: selectedStrategy.content }} 
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Action Buttons */}
-                    <div className="flex gap-4 pt-4">
-                        <button className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 py-3 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                          <Share2 size={20} />
-                          <span className="font-bold">分享攻略</span>
-                        </button>
-                        <button className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
-                          <Heart size={20} />
-                          <span className="font-bold">收藏路线</span>
-                        </button>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('guide.details')}</h3>
+                      <div 
+                        className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: selectedStrategy.content }} 
+                      />
                     </div>
+                  )}
+                  
+                  {/* Action Buttons */}
+                  <div className="flex gap-4 pt-4">
+                      <button className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 py-3 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        <Share2 size={20} />
+                        <span className="font-bold">{t('detail.share')}</span>
+                      </button>
+                      <button className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                        <Heart size={20} />
+                        <span className="font-bold">{t('detail.save')}</span>
+                      </button>
+                  </div>
                   </div>
               </div>
             </div>
           ) : (
             <>
               {/* Header */}
-              <div className="px-6 pb-4 shrink-0">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">精选攻略</h1>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">发现最地道的本地玩法</p>
+              <div className="px-6 pb-2 shrink-0 pt-2">
+                <h1 className="text-lg font-bold text-gray-900 dark:text-white">{t('strategy.title')}</h1>
+                <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">{t('strategy.subtitle')}</p>
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto px-6 pb-24 space-y-6">
+              <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-2">
                 
-                {/* Featured Banner */}
-                <div className="relative h-48 rounded-2xl overflow-hidden shadow-md shrink-0">
-                  <img 
-                    src="https://picsum.photos/seed/beach/800/400" 
-                    alt="Summer Beach" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-6">
-                    <span className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-md w-fit mb-2">本月推荐</span>
-                    <h2 className="text-white text-xl font-bold">夏日海滨度假指南</h2>
-                    <p className="text-white/80 text-sm">避暑胜地，尽享清凉一夏</p>
-                  </div>
-                </div>
+                {/* Featured Banner REMOVED as requested */}
 
                 {/* Category Filter */}
-                <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
+                <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
                   {categories.map(cat => (
                     <button
                       key={cat}
                       onClick={() => setSelectedCategory(cat)}
-                      className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors flex-shrink-0 ${
+                      className={`px-3 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors flex-shrink-0 ${
                         selectedCategory === cat 
                           ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
                       }`}
                     >
-                      {cat}
+                      {getCategoryLabel(cat)}
                     </button>
                   ))}
                 </div>
 
                 {/* Route Lists */}
                 <div>
-                  <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-3 flex items-center gap-2">
-                    <Compass size={20} className="text-blue-600 dark:text-blue-400" />
-                    推荐路线
-                  </h3>
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {filteredRoutes.map(route => (
                       <div 
                         key={route.id} 
                         onClick={() => setSelectedStrategy(route)}
-                        className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-[1.8rem] p-5 shadow-sm border border-gray-100 dark:border-gray-700 active:scale-[0.98] transition-transform cursor-pointer hover:shadow-md"
+                        className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-[1rem] p-3 shadow-sm border border-gray-100 dark:border-gray-700 active:scale-[0.98] transition-transform cursor-pointer hover:shadow-md"
                       >
-                        <div className="flex gap-5">
-                          <div className="w-28 h-28 rounded-2xl overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 shadow-sm">
-                            <img src={route.image} alt={route.title} className="w-full h-full object-cover" />
+                        <div className="flex gap-3">
+                          <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 shadow-sm">
+                            <img src={getFullImageUrl(route.image)} alt={route.title} className="w-full h-full object-cover" />
                           </div>
-                          <div className="flex-1 flex flex-col justify-between py-1">
+                          <div className="flex-1 flex flex-col justify-between py-0.5">
                             <div>
-                              <h4 className="font-bold text-gray-900 dark:text-white text-lg line-clamp-1">{route.title}</h4>
-                              <div className="flex flex-wrap gap-2 mt-3">
-                                {route.tags.map(tag => (
-                                  <span key={tag} className="text-[10px] font-bold px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg">{tag}</span>
+                              <h4 className="font-bold text-gray-900 dark:text-white text-sm line-clamp-1">{route.title}</h4>
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {route.tags.slice(0, 3).map(tag => (
+                                  <span key={tag} className="text-[10px] font-bold px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md">{tag}</span>
                                 ))}
                               </div>
                             </div>
-                            <div className="flex justify-between items-end mt-2">
-                              <div className="flex items-center gap-4 text-xs font-medium text-gray-500 dark:text-gray-400">
-                                <span className="flex items-center gap-1.5"><Calendar size={14} className="text-blue-500" /> {route.days}</span>
-                                <span className="flex items-center gap-1.5"><Map size={14} className="text-green-500" /> {route.spots.length}个景点</span>
+                            <div className="flex justify-between items-end mt-1">
+                              <div className="flex items-center gap-3 text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                                <span className="flex items-center gap-1"><Calendar size={12} className="text-blue-500" /> {route.days}</span>
+                                <span className="flex items-center gap-1"><Map size={12} className="text-green-500" /> {route.spots.length}{t('strategy.spots')}</span>
                               </div>
-                              <button className="w-9 h-9 rounded-full bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-lg shadow-gray-200 dark:shadow-none">
-                                <ChevronRight size={20} />
+                              <button className="w-6 h-6 rounded-full bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-md shadow-gray-200 dark:shadow-none">
+                                <ChevronRight size={14} />
                               </button>
                             </div>
                           </div>

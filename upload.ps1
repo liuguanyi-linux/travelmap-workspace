@@ -25,8 +25,8 @@ Pop-Location
 Write-Host "Building Backend..."
 Push-Location backend
 try {
-    # Run Nest Build directly via node
-    node node_modules/@nestjs/cli/bin/nest.js build
+    # Run TSC Build directly via node
+    node node_modules/typescript/bin/tsc -p tsconfig.build.json
     if ($LASTEXITCODE -ne 0) { throw "Backend build failed" }
 } catch {
     Write-Error $_

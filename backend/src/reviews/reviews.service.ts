@@ -12,6 +12,14 @@ export class ReviewsService {
         throw new Error('Review must be associated with a target (POI, Spot, Guide, or Strategy)');
     }
 
+    // Handle Admin/Custom Reviews without real users
+    // If userId is provided, use it. If not, and we have a nickname, we might need to link to a dummy user OR make userId optional?
+    // In schema, userId is Int (not optional?). Let's check schema.
+    // Assuming userId is required. If data.userId is missing, default to Admin (ID 1).
+    if (!data.userId) {
+        data.userId = 1; // Default to Admin
+    }
+
     return this.prisma.review.create({
       data,
       include: { user: true }

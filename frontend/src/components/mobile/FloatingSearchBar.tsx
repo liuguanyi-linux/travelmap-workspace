@@ -5,9 +5,10 @@ import { useLanguage } from '../../contexts/LanguageContext';
 interface FloatingSearchBarProps {
   onSearch: (keyword: string) => void;
   onCategorySelect: (category: string) => void;
+  rightAction?: React.ReactNode;
 }
 
-export default function FloatingSearchBar({ onSearch, onCategorySelect }: FloatingSearchBarProps) {
+export default function FloatingSearchBar({ onSearch, onCategorySelect, rightAction }: FloatingSearchBarProps) {
   const { t } = useLanguage();
 
   // No changes to logic, just UI
@@ -30,6 +31,7 @@ export default function FloatingSearchBar({ onSearch, onCategorySelect }: Floati
             }}
           />
         </div>
+        {/* rightAction removed from here as it's moved to UserDrawer */}
       </div>
     </div>
   );

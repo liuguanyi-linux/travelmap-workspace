@@ -23,17 +23,44 @@ export default function CityManager() {
   const [mapInstance, setMapInstance] = useState<any>(null);
   const [markerInstance, setMarkerInstance] = useState<any>(null);
 
-  // Initialize Map when adding mode is active
-  useEffect(() => {
-    if (isAdding && !mapInstance) {
-      initMap();
-    }
-    return () => {
-      if (mapInstance) {
-        mapInstance.destroy();
+  const mapInstanceRef = useRef<any>(null);
+
+  // Cleanup function for map
+  const destroyMap = () => {
+    if (mapInstanceRef.current) {
+        try {
+            mapInstanceRef.current.destroy();
+        } catch (e) {
+            console.warn('Map destroy failed', e);
+        }
+        mapInstanceRef.current = null;
         setMapInstance(null);
         setMarkerInstance(null);
-      }
+    }
+  };
+
+  // Initialize Map when adding mode is active
+  useEffect(() => {
+    let timer: any;
+    
+    if (isAdding) {
+      // Ensure any previous instance is gone
+      destroyMap();
+      
+      // Use setTimeout to ensure DOM is ready
+      timer = setTimeout(() => {
+          if (mapContainerRef.current && !mapInstanceRef.current) {
+              initMap();
+          }
+      }, 100);
+    } else {
+        // Cleanup when isAdding becomes false
+        destroyMap();
+    }
+
+    return () => {
+        clearTimeout(timer);
+        destroyMap();
     };
   }, [isAdding]);
 
@@ -92,6 +119,8 @@ export default function CityManager() {
       });
 
       map.on('zoomend', () => {
+        // Check if map instance is still valid using ref
+        if (!mapInstanceRef.current) return;
         setFormData(prev => ({ ...prev, zoom: map.getZoom() }));
       });
 
@@ -100,7 +129,8 @@ export default function CityManager() {
         setFormData(prev => ({ ...prev, lng, lat }));
         setLocationMode('manual');
       });
-
+      
+      mapInstanceRef.current = map;
       setMapInstance(map);
       setMarkerInstance(marker);
 
@@ -167,6 +197,10 @@ export default function CityManager() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.name && formData.lng && formData.lat && formData.zoom) {
+      // First destroy map to prevent any rendering issues
+      destroyMap();
+      setIsAdding(false);
+
       if (editingId) {
         updateCity(editingId, formData);
         setEditingId(null);
@@ -174,6 +208,7 @@ export default function CityManager() {
         addCity(formData as City);
       }
       
+      // Reset form
       setFormData({
         name: '',
         nameEn: '',
@@ -182,26 +217,27 @@ export default function CityManager() {
         lat: 36.06,
         zoom: 12
       });
-      setIsAdding(false);
-      if (mapInstance) {
-        mapInstance.destroy();
-        setMapInstance(null);
-      }
     }
   };
 
   const handleEdit = (city: City) => {
-    setFormData({
-        name: city.name,
-        nameEn: city.nameEn,
-        nameKo: city.nameKo,
-        lng: city.lng,
-        lat: city.lat,
-        zoom: city.zoom
-    });
-    setEditingId(city.id);
-    setIsAdding(true);
-    // Wait for modal to open then init map (effect will handle it)
+    // Force cleanup first
+    destroyMap();
+    setIsAdding(false);
+    
+    // Use timeout to allow state to settle and DOM to clear
+    setTimeout(() => {
+        setFormData({
+            name: city.name,
+            nameEn: city.nameEn,
+            nameKo: city.nameKo,
+            lng: city.lng,
+            lat: city.lat,
+            zoom: city.zoom
+        });
+        setEditingId(city.id);
+        setIsAdding(true);
+    }, 100);
   };
 
   return (
@@ -210,14 +246,18 @@ export default function CityManager() {
         <h3 className="text-lg font-bold text-gray-800">城市列表 (v2.1) ({cities.length})</h3>
         <button
           onClick={() => {
+            // Always destroy map first
+            destroyMap();
+            
             if (isAdding) {
                 setIsAdding(false);
                 setEditingId(null);
                 setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12 });
             } else {
-                setIsAdding(true);
                 setEditingId(null);
                 setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12 });
+                // Small timeout to ensure clean state
+                setTimeout(() => setIsAdding(true), 50);
             }
           }}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"

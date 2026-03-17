@@ -19,6 +19,8 @@ interface MapContainerProps {
   onMapClick?: () => void;
 }
 
+import { getFullImageUrl } from '../utils/image';
+
 export default function MapContainer({ onMapReady, markers, selectedPoi, onMarkerClick, onMapClick, disableFitView }: MapContainerProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -50,10 +52,26 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
 
     // Transport - Hardcoded support for merged categories
     if (t.includes('rail') || t.includes('高铁')) {
-        return { icon: LucideIcons.Train, color: '#8B5CF6', shape: 'rounded-lg', isDiamond: false, size: 20 };
+        return { 
+            icon: LucideIcons.Train, 
+            color: '#8B5CF6', 
+            pinGradient: 'radial-gradient(circle at 30% 30%, #a78bfa, #8b5cf6 50%, #5b21b6)',
+            rimColor: 'from-violet-400/30',
+            shape: 'rounded-lg', 
+            isDiamond: false, 
+            showPin: true 
+        };
     }
     if (t.includes('airport') || t.includes('机场')) {
-        return { icon: LucideIcons.Plane, color: '#3B82F6', shape: 'rounded-lg', isDiamond: false, size: 20 };
+        return { 
+            icon: LucideIcons.Plane, 
+            color: '#3B82F6', 
+            pinGradient: 'radial-gradient(circle at 30% 30%, #60a5fa, #3b82f6 50%, #1e40af)',
+            rimColor: 'from-blue-400/30',
+            shape: 'rounded-lg', 
+            isDiamond: false, 
+            showPin: true 
+        };
     }
 
     // Dynamic Categories
@@ -66,7 +84,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         if (isUrl) {
             Icon = ({ size, className }: any) => (
                 <img 
-                    src={matchedCategory.icon} 
+                    src={getFullImageUrl(matchedCategory.icon)} 
                     alt={matchedCategory.name} 
                     style={{ width: size, height: size, objectFit: 'contain' }}
                     className={className}
@@ -85,24 +103,84 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
              // User Request: "Red Pin + Floating Icon" style.
              // We return specific flags for the renderer
              // Changing 'spot' category default icon background color from Green to Red (#EF4444)
-             return { icon: Icon, color: '#EF4444', shape: 'rounded-lg', isDiamond: false, showPin: true };
+             return { 
+                 icon: Icon, 
+                 color: '#EF4444', 
+                 pinGradient: 'radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000 50%, #8b0000)',
+                 rimColor: 'from-red-400/30',
+                 shape: 'rounded-lg', 
+                 isDiamond: false, 
+                 showPin: true 
+             };
         } else if (matchedCategory.key === 'dining') {
              color = '#F59E0B';
-             return { icon: Icon, color, shape: 'rounded-lg', isDiamond: false, showPin: true }; // Apply pin style to all
+             return { 
+                 icon: Icon, 
+                 color, 
+                 pinGradient: 'radial-gradient(circle at 30% 30%, #fcd34d, #f59e0b 50%, #b45309)',
+                 rimColor: 'from-amber-400/30',
+                 shape: 'rounded-lg', 
+                 isDiamond: false, 
+                 showPin: true 
+             }; // Apply pin style to all
         } else if (matchedCategory.key === 'accommodation') {
              color = '#3B82F6';
-             return { icon: Icon, color, shape: 'rounded-xl', isDiamond: false, showPin: true }; // Apply pin style to all
+             return { 
+                 icon: Icon, 
+                 color, 
+                 pinGradient: 'radial-gradient(circle at 30% 30%, #60a5fa, #3b82f6 50%, #1e40af)',
+                 rimColor: 'from-blue-400/30',
+                 shape: 'rounded-xl', 
+                 isDiamond: false, 
+                 showPin: true 
+             }; // Apply pin style to all
         } else if (matchedCategory.key === 'shopping') {
              color = '#EC4899'; // Pink-500
-             return { icon: Icon, color, shape: 'rounded-lg', isDiamond: false, showPin: true }; // Apply pin style to all
+             return { 
+                 icon: Icon, 
+                 color, 
+                 pinGradient: 'radial-gradient(circle at 30% 30%, #f472b6, #ec4899 50%, #be185d)',
+                 rimColor: 'from-pink-400/30',
+                 shape: 'rounded-lg', 
+                 isDiamond: false, 
+                 showPin: true 
+             }; // Apply pin style to all
+        } else if (matchedCategory.key === 'transport') {
+             color = '#10B981'; // Emerald-500
+             return { 
+                 icon: Icon, 
+                 color, 
+                 pinGradient: 'radial-gradient(circle at 30% 30%, #34d399, #10b981 50%, #047857)',
+                 rimColor: 'from-emerald-400/30',
+                 shape: 'rounded-lg', 
+                 isDiamond: false, 
+                 showPin: true 
+             };
         }
 
         // For other dynamic categories, also use pin style if desired, or default
-        return { icon: Icon, color, shape, isDiamond, showPin: true };
+        return { 
+            icon: Icon, 
+            color, 
+            pinGradient: 'radial-gradient(circle at 30% 30%, #94a3b8, #64748b 50%, #475569)', // Default Slate
+            rimColor: 'from-slate-400/30',
+            shape, 
+            isDiamond, 
+            showPin: true 
+        };
     }
 
     // Default - Also apply pin style for consistency
-    return { icon: LucideIcons.MapPin, color: theme === 'dark' ? '#1e293b' : '#0f172a', shape: 'rounded-full', borderColor: '#06b6d4', isDiamond: false, showPin: true };
+    return { 
+        icon: LucideIcons.MapPin, 
+        color: theme === 'dark' ? '#1e293b' : '#0f172a', 
+        pinGradient: 'radial-gradient(circle at 30% 30%, #94a3b8, #64748b 50%, #475569)',
+        rimColor: 'from-slate-400/30',
+        shape: 'rounded-full', 
+        borderColor: '#06b6d4', 
+        isDiamond: false, 
+        showPin: true 
+    };
   };
 
   // Init Map
@@ -134,16 +212,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
           mapStyle: theme === 'dark' ? 'amap://styles/dark' : 'amap://styles/normal',
         });
 
-        // Add controls
-        // Custom Zoom Control to support centering on selected marker
-        // We'll add our own zoom buttons instead of AMap.ToolBar if possible, or try to override.
-        // Since standard ToolBar is hard to hook, let's create a custom control div.
-        
-        // Remove standard ToolBar
-        // map.addControl(new AMap.ToolBar({ position: 'RB', offset: [20, 240] }));
-        
         map.addControl(new AMap.Scale());
-        // map.addControl(new AMap.ControlBar({ position: 'RT' })); // Disabled compass/control bar by user request
         
         const geolocation = new AMap.Geolocation({
             enableHighAccuracy: true,
@@ -151,6 +220,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
             position: 'RB',
             offset: [20, 180], // Adjust position above ToolBar
             zoomToAccuracy: true,
+            showButton: false, // Hide the button
         });
         map.addControl(geolocation);
         
@@ -168,8 +238,6 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         
         // Map Click Handler
         map.on('click', (e: any) => {
-            // Only trigger if clicking on map background (not markers)
-            // AMap event propagation usually handles this, but we can verify target if needed
             if (onMapClick) {
                 onMapClick();
             }
@@ -187,6 +255,12 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       mapInstanceRef.current?.destroy();
     };
   }, [language]); // Removed theme from dependency to prevent re-init, handled in separate effect
+
+  // Expose search method to parent via ref or context? 
+  // Actually, MainLayout doesn't have access to map instance directly easily unless we pass it up.
+  // We passed `onMapReady` so MainLayout has `mapInstance`.
+  // MainLayout should implement the search logic using `AMap.PlaceSearch`.
+
 
   // Update Map Style when theme changes
   useEffect(() => {
@@ -222,7 +296,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       const markerContent = document.createElement('div');
       
       // Base classes
-      const baseClass = `flex items-center justify-center w-10 h-10 transition-all duration-300 shadow-lg border-[2.5px] box-border ${config.shape}`;
+      const baseClass = `flex items-center justify-center w-10 h-10 transition-all duration-300 shadow-lg border-[2.5px] box-border ${config.shape} marker-pop-in`;
       
       // State classes
       // User Request: Make markers "obvious" and "highlighted" - Increased brightness and pulse
@@ -268,12 +342,15 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
             <div className={`relative ${isSelected ? 'z-50 scale-110' : 'z-40'} transition-transform duration-300`}>
                {/* The Red Pin (Anchor) - Realistic Apple Maps Style */}
                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none transform translate-y-[4px]">
-                  {/* Pin Head (Glossy Red Sphere) - Added border and stronger shadow */}
-                  <div className="w-8 h-8 rounded-full bg-[radial-gradient(circle_at_30%_30%,_#ff4d4d,_#cc0000_50%,_#8b0000)] shadow-[inset_-2px_-2px_6px_rgba(0,0,0,0.3),_0_0_0_1.5px_#ffffff,_0_2px_4px_rgba(0,0,0,0.4)] z-20 relative">
+                  {/* Pin Head (Glossy Sphere) - Dynamic Color */}
+                  <div 
+                    className="w-8 h-8 rounded-full shadow-[inset_-2px_-2px_6px_rgba(0,0,0,0.3),_0_0_0_1.5px_#ffffff,_0_2px_4px_rgba(0,0,0,0.4)] z-20 relative"
+                    style={{ background: config.pinGradient || 'radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000 50%, #8b0000)' }}
+                  >
                      {/* Specular Highlight (Stronger) */}
                      <div className="absolute top-[15%] left-[15%] w-[35%] h-[25%] bg-gradient-to-br from-white/90 to-transparent rounded-full blur-[1px]"></div>
                      {/* Rim Light */}
-                     <div className="absolute bottom-[10%] right-[10%] w-[40%] h-[40%] bg-gradient-to-tl from-red-400/30 to-transparent rounded-full blur-[2px]"></div>
+                     <div className={`absolute bottom-[10%] right-[10%] w-[40%] h-[40%] bg-gradient-to-tl ${config.rimColor || 'from-red-400/30'} to-transparent rounded-full blur-[2px]`}></div>
                   </div>
                   
                   {/* Pin Collar (Connection Ring) */}
@@ -317,7 +394,9 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
                    className="absolute left-1/2 -translate-x-1/2 -top-[130px] whitespace-nowrap z-[9999] pointer-events-none"
                    style={{ zIndex: 9999 }} // Force inline z-index
                >
-                    <div className="px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-white/50 dark:border-white/10 shadow-lg text-[13px] font-bold text-slate-800 dark:text-white transition-opacity duration-300">
+                    <div 
+                        className="px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 shadow-md text-[13px] font-bold text-slate-800 dark:text-white transition-opacity duration-300 border-[1.5px] border-blue-500"
+                    >
                         {poi.name}
                     </div>
                </div>
@@ -391,8 +470,10 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         topWhenClick: true, // Bring to top on click
         bubble: false, // Prevent event bubbling issues
         // Label is now rendered INSIDE the markerContent for 'showPin' style
-        // We only need AMap label for standard markers, or we can use it for both if we want duplication?
-        // No, duplication is bad.
+        // We only need AMap label for standard markers
+        // CRITICAL FIX: Explicitly set label to null object when showPin is true to prevent double rendering/ghosting
+        // Using undefined might not be enough if AMap defaults kick in or if reusing instances (though we new() here)
+        // We force it to be empty.
         label: !config.showPin ? {
             content: `<div style="
               display: flex; 
@@ -412,7 +493,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
             ">${poi.name}</div>`,
             direction: 'top',
             offset: new AMap.Pixel(0, 0),
-        } : undefined
+        } : { content: '', offset: new AMap.Pixel(0, 0) } // Explicit empty string content to overwrite any default
       });
 
       marker.on('click', () => {
@@ -435,18 +516,22 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
     // 4. Initial Load (zoom to city)
     
     // So we comment out the reactive auto-fit.
-    /*
-    const markersChanged = markers !== prevMarkersRef.current;
     
-    if ((markersChanged) && markers.length > 0 && !selectedPoi && !disableFitView) {
-      // Use a small timeout to ensure map is ready and avoid conflicts with other movements
-          setTimeout(() => {
-              // User Request: Zoom out slightly (maxZoom: 10) and use larger padding for UI elements
-              // Padding: [top, right, bottom, left] - larger bottom for panel, top for search
-              map.setFitView(markersRef.current, false, [150, 60, 300, 60], 10); 
-          }, 100);
-      }
-    */
+    // const markersChanged = markers !== prevMarkersRef.current;
+    
+    // if ((markersChanged) && markers.length > 0 && !selectedPoi && !disableFitView) {
+    //   // Use a small timeout to ensure map is ready and avoid conflicts with other movements
+    //       setTimeout(() => {
+    //           // User Request: Zoom out slightly (maxZoom: 10) and use larger padding for UI elements
+    //           // Padding: [top, right, bottom, left] - larger bottom for panel, top for search
+    //           // User Request: Ensure markers are not covered by bottom drawer (which is 66vh)
+    //           const bottomPadding = window.innerHeight * 0.67; // Slightly more than 66vh
+    //           if (mapInstanceRef.current) {
+    //               mapInstanceRef.current.setFitView(markersRef.current, false, [120, 50, bottomPadding, 50]); 
+    //           }
+    //       }, 300);
+    //   }
+    
       
     prevMarkersRef.current = markers;
 
@@ -458,9 +543,9 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
     if (!map || !selectedPoi || !selectedPoi.location) return;
 
     // User Request: When a spot is selected, zoom in and center the map on it.
-    // We use setZoomAndCenter (level 15) to ensure the spot is clearly visible but not too close.
-    // Previously set to 16, user requested "like this size" which appears to be slightly wider context.
-    map.setZoomAndCenter(15, [selectedPoi.location.lng, selectedPoi.location.lat]);
+    // We use setZoomAndCenter (level 13) to ensure the spot is clearly visible but not too close.
+    // Changed from 15 to 13 based on user request for wider context.
+    map.setZoomAndCenter(13, [selectedPoi.location.lng, selectedPoi.location.lat]);
     
     // Note: MainLayout might apply a pan offset for the bottom sheet.
     // We leave that responsibility to the layout controller or handle it here if needed.
@@ -470,25 +555,16 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
     return (
         <div className="w-full h-full relative bg-white dark:bg-gray-900 transition-colors duration-300">
             {/* Custom Zoom Controls */}
-            {/* User Request: Move +/- buttons to Top Right, below AdsWidget. */}
-            {/* AdsWidget is at top-28 (112px). Height ~80px. Ends ~192px. */}
-            {/* Let's place Zoom Controls directly below AdsWidget at top-[200px]. */}
-            {/* Global View and ATM will follow. */}
-            {/* BUT User wants: Ads -> Zoom -> Global -> ATM (implied by "move all up below Ads") */}
-            {/* Let's adjust based on layout. */}
-            {/* MainLayout places Ads at top-28. */}
-            {/* Zoom Controls (Here): top-[200px] */}
-            {/* Global View (MainLayout): top-[300px] */}
-            {/* ATM (MainLayout): top-[360px] */}
-            <div className="absolute right-5 top-[200px] flex flex-col gap-2 z-[70]">
+            {/* User Request: Move +/- buttons to below ATM. */}
+            {/* ATM is at top-[265px] in MainLayout. Height 50px. Ends ~315px. */}
+            {/* Let's place Zoom Controls at top-[330px] to be safe. */}
+            <div className="absolute right-5 top-[330px] flex flex-col gap-2 z-[70]">
                 <button 
-                    className="w-10 h-10 bg-white dark:bg-gray-800 rounded-lg shadow-md flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-transform"
+                    className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 flex items-center justify-center text-gray-600 hover:text-blue-600 active:scale-95 transition-transform"
                     onClick={() => {
                         const map = mapInstanceRef.current;
                         if (!map) return;
                         if (selectedPoi && selectedPoi.location) {
-                            // If a POI is selected, zoom towards it!
-                            // First pan to it (centering it), then zoom
                             map.setCenter([selectedPoi.location.lng, selectedPoi.location.lat]);
                             map.zoomIn();
                         } else {
@@ -499,7 +575,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
                     <LucideIcons.Plus size={24} />
                 </button>
                 <button 
-                    className="w-10 h-10 bg-white dark:bg-gray-800 rounded-lg shadow-md flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-transform"
+                    className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 flex items-center justify-center text-gray-600 hover:text-blue-600 active:scale-95 transition-transform"
                     onClick={() => {
                         const map = mapInstanceRef.current;
                         if (!map) return;
@@ -516,22 +592,34 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
             </div>
 
             <style>{`
+                /* Hide AMap default labels by default to prevent ghosting */
                 .amap-marker-label {
                     border: none !important;
                     background-color: transparent !important;
-                    opacity: 0;
-                    transition: opacity 0.3s ease;
+                    opacity: 0 !important;
+                    font-size: 0 !important;
+                    padding: 0 !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                    overflow: hidden !important;
+                    pointer-events: none !important;
+                    visibility: hidden !important;
                 }
-                .show-labels .amap-marker-label {
-                    opacity: 1;
-                }
-                
+
                 /* Dark Mode Map Controls Override */
                 html.dark .amap-ctrl-bar,
                 html.dark .amap-toolbar-vector,
                 html.dark .amap-scale-line,
                 html.dark .amap-geolocation-con {
                     filter: invert(0.9) hue-rotate(180deg) !important;
+                }
+                
+                @keyframes markerPopIn {
+                    0% { opacity: 0; transform: scale(0.5); }
+                    100% { opacity: 1; transform: scale(1); }
+                }
+                .marker-pop-in {
+                    animation: markerPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
                 }
             `}</style>
             <div ref={mapRef} className="w-full h-full" />

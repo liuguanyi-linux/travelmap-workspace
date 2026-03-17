@@ -6,7 +6,11 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useData } from '../../contexts/DataContext';
-import { Heart, MapPin, X, ChevronRight, User, Settings, Bell, Globe, Check, Phone, LogOut, Mail, Loader2, Moon, Sun, ChevronUp, ChevronDown, MessageSquare } from 'lucide-react';
+import { usageGuideService } from '../../services/api';
+import { UsageGuide } from '../../types/data';
+import { Heart, MapPin, X, ChevronRight, User, Settings, Bell, Globe, Check, Phone, LogOut, Mail, Loader2, Moon, Sun, ChevronUp, ChevronDown, MessageSquare, ArrowLeft, ImageIcon, BookOpen } from 'lucide-react';
+
+import { getFullImageUrl } from '../../utils/image';
 
 interface UserDrawerProps {
   isVisible: boolean;
@@ -14,79 +18,119 @@ interface UserDrawerProps {
   onPoiClick?: (poi: any) => void;
 }
 
-type ViewState = 'menu' | 'favorites' | 'settings' | 'contact' | 'login' | 'notifications';
+type ViewState = 'menu' | 'favorites' | 'settings' | 'contact' | 'login' | 'notifications' | 'usage';
 
 export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawerProps) {
   const controls = useAnimation();
   const dragControls = useDragControls();
+  const [viewState, setViewState] = useState<'hidden' | 'peek' | 'full'>('hidden');
   const { favorites, removeFavorite, moveFavorite } = useFavorites();
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const { contactInfo } = useData();
   const { user, login, logout, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [viewState, setViewState] = useState<ViewState>('menu');
+  const [contentView, setContentView] = useState<ViewState>('menu');
   const [email, setEmail] = useState('');
+  const [usageGuides, setUsageGuides] = useState<UsageGuide[]>([]);
+
+  useEffect(() => {
+    if (contentView === 'usage') {
+      usageGuideService.getAll().then(setUsageGuides).catch(console.error);
+    }
+  }, [contentView]);
 
   useEffect(() => {
     if (isVisible) {
-      controls.start({ y: 0 }); // Show full height by default
+      setViewState('peek');
+      controls.start('peek');
+      // Reset content view to menu when opening
+      setContentView('menu');
     } else {
-      controls.start({ y: '100%' });
-      // Reset to menu view after closing
-      const timer = setTimeout(() => setViewState('menu'), 300);
-      return () => clearTimeout(timer);
+      setViewState('hidden');
+      controls.start('hidden');
     }
   }, [isVisible, controls]);
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const variants = {
+    hidden: { y: '100%' },
+    peek: { y: 'calc(100% - 300px)' }, 
+    full: { y: '0%' }   // Full 66vh
+  };
+
+  const handleDragEnd = (event: any, info: PanInfo) => {
     const { offset, velocity } = info;
-    if (offset.y > 100 || (velocity.y > 500 && offset.y > 0)) {
-       onClose();
+    const isDraggingDown = offset.y > 0;
+    const threshold = 100;
+
+    if (viewState === 'full') {
+       if (isDraggingDown && (offset.y > threshold || velocity.y > 500)) {
+           setViewState('peek');
+           controls.start('peek');
+       } else {
+           controls.start('full');
+       }
     } else {
-       controls.start({ y: 0 }); // Snap back to full
+       if (!isDraggingDown && (offset.y < -threshold || velocity.y < -500)) {
+           setViewState('full');
+           controls.start('full');
+       } else {
+           controls.start('peek');
+       }
     }
   };
 
   const handleFavoritesClick = () => {
-      setViewState('favorites');
-      controls.start({ y: 0 }); // Expand to full for list
+      setContentView('favorites');
+      setViewState('full');
+      controls.start('full'); // Expand to full for list
   };
 
   const handleSettingsClick = () => {
-      setViewState('settings');
-      controls.start({ y: 0 }); // Expand to full
+      // Toggle language directly
+      const langs = ['zh-CN', 'en-US', 'ko-KR'];
+      const currentIndex = langs.indexOf(language);
+      const nextLang = langs[(currentIndex + 1) % langs.length];
+      setLanguage(nextLang);
   };
 
   const handleContactClick = () => {
-      setViewState('contact');
-      controls.start({ y: 0 }); // Expand to full
+      setContentView('contact');
+      setViewState('full');
+      controls.start('full'); // Expand to full
   };
 
   const handleNotificationsClick = () => {
-      setViewState('notifications');
-      controls.start({ y: 0 }); // Expand to full
+      setContentView('notifications');
+      setViewState('full');
+      controls.start('full'); // Expand to full
   };
 
   const handleLoginClick = () => {
-      setViewState('login');
-      controls.start({ y: 0 });
+      setContentView('login');
+      setViewState('full');
+      controls.start('full');
   };
 
   const handleLogoutClick = () => {
       logout();
+      setContentView('menu'); // Return to menu after logout
   };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!email) return;
       try {
+          if (email === 'admin@travelmap.com') {
+              localStorage.setItem('admin_token', 'demo_token');
+          }
           await login(email);
           if (email === 'admin@travelmap.com') {
               navigate('/admin/dashboard');
           } else {
-              setViewState('menu');
-              controls.start({ y: 0 });
+              setContentView('menu');
+              setViewState('full');
+              controls.start('full');
           }
       } catch (error) {
           alert('Login failed. Please try again.');
@@ -94,8 +138,9 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
   };
 
   const handleBack = () => {
-      setViewState('menu');
-      controls.start({ y: 0 });
+      setContentView('menu');
+      setViewState('full'); // Keep full if user was navigating deep
+      controls.start('full');
   };
 
   const LANGUAGES = [
@@ -105,25 +150,46 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
   ];
 
   return (
-    <motion.div
-        initial={{ y: '100%' }}
-        animate={controls}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        drag="y"
-        dragControls={dragControls}
-        dragListener={false}
-        dragConstraints={{ top: 0 }}
-        dragElastic={0.1}
-        onDragEnd={handleDragEnd}
-        className="fixed bottom-0 left-0 right-0 z-40 h-[85vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
-    >
-      {/* Handle */}
-      <div 
-        className="w-full flex justify-center pt-3 pb-3 cursor-grab active:cursor-grabbing shrink-0 z-10"
-        onPointerDown={(e) => dragControls.start(e)}
-      >
-        <div className="w-12 h-1.5 bg-gray-200/80 dark:bg-gray-700/80 rounded-full" />
-      </div>
+        <motion.div
+          initial="hidden"
+          animate={controls}
+          variants={variants}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          drag="y"
+          dragControls={dragControls}
+          dragListener={false}
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.2}
+          onDragEnd={handleDragEnd}
+          className="fixed bottom-0 left-0 right-0 z-40 h-[66vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
+        >
+          {/* Handle (Click to Toggle) */}
+          <div 
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer bg-transparent z-20 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
+            onPointerDown={(e) => dragControls.start(e)}
+            onClick={() => {
+                if (viewState === 'peek') {
+                    setViewState('full');
+                    controls.start('full');
+                } else {
+                    setViewState('peek');
+                    controls.start('peek');
+                }
+            }}
+          >
+            {viewState === 'full' ? (
+                <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
+            ) : (
+                <ChevronUp className="text-gray-500 dark:text-gray-400" size={24} />
+            )}
+            <span className="text-xs text-gray-400 font-medium tracking-wide">{t('clickToToggle')}</span>
+          </div>
+
+          {/* Spacer for Handle */}
+          <div className="h-8 shrink-0" />
+
+      {/* Spacer for Handle */}
+      <div className="h-8 shrink-0" />
 
       {/* Close Button */}
       <button 
@@ -136,40 +202,52 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 pb-40">
          
-         {viewState === 'menu' && (
+         {contentView === 'menu' && (
              // Menu View
-             <div className="space-y-6">
+             <div className="space-y-4">
                  {user ? (
-                     <div className="flex items-center gap-4 py-4">
-                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                            <User size={32} />
+                     <div className="flex items-center gap-4 py-2">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                            <User size={24} />
                         </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-gray-900">{user.nickname || user.email.split('@')[0]}</h2>
-                            <p className="text-sm text-gray-500">{user.email}</p>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-gray-900 dark:text-white truncate">{user?.nickname || user?.email.split('@')[0] || t('detail.visitor')}</h3>
+                            <p className="text-xs text-gray-500 truncate">{t('user.slogan')}</p>
                         </div>
                      </div>
                  ) : (
                     <div 
-                        className="flex items-center gap-4 py-4 cursor-pointer hover:bg-gray-50 rounded-xl transition-colors"
+                        className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded-xl transition-colors"
                         onClick={handleLoginClick}
                     >
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
-                            <User size={32} />
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
+                            <User size={24} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900">{t('user.loginRegister')}</h2>
-                            <p className="text-sm text-gray-500">{t('user.loginDesc')}</p>
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('user.loginRegister')}</h2>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{t('user.loginDesc')}</p>
                         </div>
-                        <ChevronRight size={20} className="ml-auto text-gray-300" />
+                        <ChevronRight size={16} className="ml-auto text-gray-300" />
                     </div>
                  )}
 
-                 <div className="space-y-2">
-                     <MenuItem icon={Heart} label={t('user.favorites')} onClick={handleFavoritesClick} color="text-red-500 bg-red-50" />
-                     <MenuItem icon={Phone} label={t('user.contact')} onClick={handleContactClick} color="text-orange-500 bg-orange-50" />
-                     <MenuItem icon={Bell} label={t('user.notifications')} onClick={handleNotificationsClick} color="text-purple-500 bg-purple-50" />
-                     <MenuItem icon={Settings} label={t('user.settings')} onClick={handleSettingsClick} color="text-gray-500 bg-gray-50" />
+                 <div className="space-y-1">
+                     <MenuItem 
+                        icon={Heart} 
+                        label={t('user.favorites')} 
+                        onClick={handleFavoritesClick} 
+                        color="text-red-500 bg-red-50" 
+                     />
+                     {/* Usage Guide Removed as requested */}
+                     <MenuItem 
+                        icon={Phone} 
+                        label={t('user.contact')} 
+                        onClick={handleContactClick} 
+                        color="text-orange-500 bg-orange-50" 
+                     />
+                     {/* Notification Removed */}
+                     {/* Language Switcher Removed */}
+                     <MenuItem icon={Moon} label={theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode')} onClick={toggleTheme} color="text-purple-500 bg-purple-50" />
                      {user && (
                          <MenuItem icon={LogOut} label={t('login.logout')} onClick={handleLogoutClick} color="text-gray-500 bg-gray-50" />
                      )}
@@ -177,88 +255,68 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
              </div>
          )}
 
-         {viewState === 'favorites' && (
+         {contentView === 'favorites' && (
              // Favorites List View
-             <div>
-                 <div className="flex items-center gap-2 mb-6">
-                     <button 
-                        onClick={handleBack}
-                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
-                     >
-                         <ChevronRight size={24} className="rotate-180" />
-                     </button>
-                     <h2 className="text-2xl font-bold">{t('user.favorites')}</h2>
-                 </div>
-
-                 {favorites.length === 0 ? (
-                    <div className="text-gray-400 text-center py-12 flex flex-col items-center">
-                        <Heart size={48} className="mb-4 text-gray-200" />
-                        <p>{t('user.noFavorites')}</p>
-                        <p className="text-sm text-gray-300 mt-2">{t('user.exploreTip')}</p>
+             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <button onClick={handleBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                            <ArrowLeft size={20} />
+                        </button>
+                        <h3 className="text-xl font-bold">{t('user.favorites')}</h3>
                     </div>
-                 ) : (
+                </div>
+                {favorites.length > 0 ? (
                     <div className="space-y-4">
                         {favorites.map((fav, index) => (
-                            <div key={fav.id} className="flex bg-white border border-gray-100 rounded-xl shadow-sm active:scale-[0.98] transition-transform overflow-hidden" onClick={() => onPoiClick && onPoiClick(fav)}>
-                                {/* Content Area - with padding */}
-                                <div className="flex-1 flex gap-3 p-3">
-                                    <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden shrink-0">
-                                        {fav.imageUrl && <img src={fav.imageUrl} className="w-full h-full object-cover" />}
-                                    </div>
-                                    <div className="flex-1 flex flex-col justify-between py-1">
-                                        <div>
-                                            <div className="flex justify-between items-start">
-                                                <h4 className="font-bold text-gray-900 line-clamp-1 mr-2">{fav.name}</h4>
-                                                <button 
-                                                    onClick={(e) => { 
-                                                        e.stopPropagation(); 
-                                                        e.preventDefault();
-                                                        removeFavorite(fav.id); 
-                                                    }}
-                                                    className="relative z-10 text-gray-400 hover:text-red-500 p-2 -mt-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors"
-                                                >
-                                                    <X size={18} />
-                                                </button>
-                                            </div>
-                                            <div className="text-xs text-gray-500 mt-1 px-2 py-0.5 bg-gray-100 inline-block rounded-md">
-                                                {fav.type?.split(';')[0]}
-                                            </div>
+                            <div 
+                                key={fav.id} 
+                                className="bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-3 active:scale-[0.98] transition-all items-center"
+                                onClick={() => {
+                                    onPoiClick(fav);
+                                    onClose();
+                                }}
+                            >
+                                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden shrink-0">
+                                    {fav.imageUrl ? (
+                                        <img src={fav.imageUrl} alt={fav.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                            <ImageIcon size={20} />
                                         </div>
-                                        <div className="text-xs text-gray-400 flex items-center">
-                                            <MapPin size={12} className="mr-1 shrink-0"/>
-                                            <span className="truncate">{fav.address || t('common.unknownPlace')}</span>
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
-                                
-                                {/* Reorder Controls - Full Height Side Panel */}
-                                <div 
-                                    className="w-14 flex flex-col border-l border-gray-100 bg-gray-50/50"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                    }}
-                                >
+                                <div className="flex-1 min-w-0 py-0.5">
+                                    <h4 className="font-bold text-gray-900 dark:text-white truncate">{fav.name}</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{fav.address || t('cityDrawer.noAddress')}</p>
+                                </div>
+                                <div className="flex flex-col items-center gap-1 ml-2 border-l border-gray-100 dark:border-gray-700 pl-3">
                                     <button 
+                                        className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full ${index === 0 ? 'opacity-30 cursor-not-allowed' : 'text-gray-400'}`}
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            e.preventDefault();
                                             moveFavorite(index, 'up');
                                         }}
                                         disabled={index === 0}
-                                        className={`flex-1 flex items-center justify-center active:bg-gray-200 transition-colors ${index === 0 ? 'text-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}
                                     >
                                         <ChevronUp size={24} />
                                     </button>
-                                    <div className="h-[1px] bg-gray-200 w-full"></div>
                                     <button 
+                                        className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full text-red-500"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            e.preventDefault();
+                                            removeFavorite(fav.id);
+                                        }}
+                                    >
+                                        <Heart size={24} fill="currentColor" />
+                                    </button>
+                                    <button 
+                                        className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full ${index === favorites.length - 1 ? 'opacity-30 cursor-not-allowed' : 'text-gray-400'}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
                                             moveFavorite(index, 'down');
                                         }}
                                         disabled={index === favorites.length - 1}
-                                        className={`flex-1 flex items-center justify-center active:bg-gray-200 transition-colors ${index === favorites.length - 1 ? 'text-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}
                                     >
                                         <ChevronDown size={24} />
                                     </button>
@@ -266,250 +324,192 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
                             </div>
                         ))}
                     </div>
-                 )}
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                        <Heart size={48} className="mb-4 opacity-20" />
+                        <p>{t('user.noFavorites')}</p>
+                    </div>
+                )}
              </div>
          )}
 
-         {viewState === 'settings' && (
-             // Settings View
-             <div>
-                 <div className="flex items-center gap-2 mb-6">
-                     <button 
-                        onClick={handleBack}
-                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
-                     >
-                         <ChevronRight size={24} className="rotate-180" />
-                     </button>
-                     <h2 className="text-2xl font-bold">{t('settings.title')}</h2>
-                 </div>
-                 
-                 <div className="space-y-6">
-                     <div>
-                         <h3 className="text-sm font-semibold text-gray-500 mb-3 px-1">{t('settings.appearance')}</h3>
-                         <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl flex relative h-14">
-                             {/* Animated Background */}
-                             <motion.div 
-                                className="absolute top-1 bottom-1 bg-white dark:bg-gray-700 rounded-xl shadow-sm z-0"
-                                initial={false}
-                                animate={{ 
-                                    left: theme === 'dark' ? '50%' : '4px', 
-                                    right: theme === 'dark' ? '4px' : '50%' 
-                                }}
-                                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                             />
-                             
-                             <button
-                                 onClick={() => theme === 'dark' && toggleTheme()}
-                                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl relative z-10 transition-colors ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-500 dark:text-gray-400'}`}
-                             >
-                                 <Sun size={20} />
-                                 <span className="text-sm">{t('settings.lightMode')}</span>
-                             </button>
-                             <button
-                                 onClick={() => theme === 'light' && toggleTheme()}
-                                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl relative z-10 transition-colors ${theme === 'dark' ? 'text-white font-bold' : 'text-gray-500'}`}
-                             >
-                                 <Moon size={20} />
-                                 <span className="text-sm">{t('settings.darkMode')}</span>
-                             </button>
-                         </div>
-                     </div>
+         {contentView === 'usage' && (
+             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-3 mb-6">
+                    <button onClick={handleBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <ArrowLeft size={20} />
+                    </button>
+                    <h3 className="text-xl font-bold">{t('usageGuide.title')}</h3>
+                </div>
+                <div className="space-y-4">
+                  {usageGuides.map(guide => {
+                      const getLocalizedContent = () => {
+                          if (language === 'en-US') {
+                              return {
+                                  title: guide.titleEn || guide.title,
+                                  content: guide.contentEn || guide.content
+                              };
+                          } else if (language === 'ko-KR') {
+                              return {
+                                  title: guide.titleKo || guide.title,
+                                  content: guide.contentKo || guide.content
+                              };
+                          }
+                          return { title: guide.title, content: guide.content };
+                      };
+                      const localized = getLocalizedContent();
 
-                     <div>
-                         <h3 className="text-sm font-semibold text-gray-500 mb-3 px-1">{t('settings.language')}</h3>
-                         <div className="space-y-2">
-                             {LANGUAGES.map((langItem) => (
-                                 <button
-                                     key={langItem.code}
-                                     onClick={() => setLanguage(langItem.code)}
-                                     className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                                         language === langItem.code 
-                                         ? 'bg-blue-50 border-blue-500 text-blue-700' 
-                                         : 'bg-white border-gray-100 text-gray-700 hover:bg-gray-50'
-                                     }`}
-                                 >
-                                     <div className="flex items-center gap-3">
-                                         <Globe size={20} className={language === langItem.code ? 'text-blue-500' : 'text-gray-400'} />
-                                         <span className="font-medium">{langItem.label}</span>
-                                     </div>
-                                     {language === langItem.code && <Check size={20} className="text-blue-500" />}
-                                 </button>
-                             ))}
-                         </div>
-                     </div>
-                 </div>
+                      return (
+                        <div key={guide.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                          <h4 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">{localized.title}</h4>
+                          <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: localized.content }} />
+                        </div>
+                      );
+                  })}
+                  {usageGuides.length === 0 && (
+                    <div className="text-center text-gray-400 py-8">{t('usageGuide.empty')}</div>
+                  )}
+                </div>
              </div>
          )}
 
-         {viewState === 'contact' && (
-             // Contact View
-             <div>
-                 <div className="flex items-center gap-2 mb-6">
-                     <button 
-                        onClick={handleBack}
-                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
-                     >
-                         <ChevronRight size={24} className="rotate-180" />
-                     </button>
-                     <h2 className="text-2xl font-bold">{t('user.contact')}</h2>
-                 </div>
-                 
-                 <div className="bg-orange-50 rounded-2xl p-6 border border-orange-100">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500 shadow-sm">
-                 <Phone size={32} />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">{t('contact.title')}</h3>
-              <p className="text-gray-500 text-sm mb-6 text-center">
-                 {t('contact.desc')}
-              </p>
-              
-              <div className="space-y-4">
-                 {contactInfo?.phone && (
-                   <div className="bg-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
-                     <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600">
-                       <Phone size={20} />
-                     </div>
-                     <div>
-                       <div className="text-xs text-gray-500">电话 / Phone</div>
-                       <div className="font-medium text-gray-900">{contactInfo.phone}</div>
-                     </div>
-                   </div>
-                 )}
-
-                 {contactInfo?.wechat && (
-                   <div className="bg-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
-                     <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600">
-                       <MessageSquare size={20} />
-                     </div>
-                     <div>
-                       <div className="text-xs text-gray-500">微信 / WeChat</div>
-                       <div className="font-medium text-gray-900">{contactInfo.wechat}</div>
-                     </div>
-                   </div>
-                 )}
-
-                 {contactInfo?.email && (
-                   <div className="bg-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
-                     <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
-                       <Mail size={20} />
-                     </div>
-                     <div>
-                       <div className="text-xs text-gray-500">邮箱 / Email</div>
-                       <div className="font-medium text-gray-900 break-all">{contactInfo.email}</div>
-                     </div>
-                   </div>
-                 )}
-
-                 {contactInfo?.website && (
-                   <div className="bg-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
-                     <div className="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
-                       <Globe size={20} />
-                     </div>
-                     <div>
-                       <div className="text-xs text-gray-500">网站 / Website</div>
-                       <div className="font-medium text-gray-900 break-all">{contactInfo.website}</div>
-                     </div>
-                   </div>
-                 )}
-                 
-                 {contactInfo?.address && (
-                   <div className="bg-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
-                     <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center text-red-600">
-                       <MapPin size={20} />
-                     </div>
-                     <div>
-                       <div className="text-xs text-gray-500">地址 / Address</div>
-                       <div className="font-medium text-gray-900">{contactInfo.address}</div>
-                     </div>
-                   </div>
-                 )}
-              </div>
-            </div>
+         {contentView === 'settings' && (
+             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-3 mb-6">
+                    <button onClick={handleBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <ArrowLeft size={20} />
+                    </button>
+                    <h3 className="text-xl font-bold">{t('settings.title')}</h3>
+                </div>
+                <div className="space-y-4">
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
+                                <Globe size={20} />
+                            </div>
+                            <span className="font-medium">{t('settings.language')}</span>
+                        </div>
+                        <select 
+                            value={language}
+                            onChange={(e) => setLanguage(e.target.value as any)}
+                            className="bg-gray-50 dark:bg-gray-700 border-none rounded-lg text-sm px-2 py-1 focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="zh-CN">简体中文</option>
+                            <option value="en-US">English</option>
+                            <option value="ko-KR">한국어</option>
+                        </select>
+                    </div>
+                    
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
+                                {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
+                            </div>
+                            <span className="font-medium">{t('settings.darkMode')}</span>
+                        </div>
+                        <button 
+                            onClick={toggleTheme}
+                            className={`w-12 h-6 rounded-full transition-colors relative ${theme === 'dark' ? 'bg-blue-600' : 'bg-gray-200'}`}
+                        >
+                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${theme === 'dark' ? 'left-7' : 'left-1'}`} />
+                        </button>
+                    </div>
+                </div>
              </div>
          )}
 
-         {viewState === 'notifications' && (
-             // Notifications View
-             <div>
-                 <div className="flex items-center gap-2 mb-6">
-                     <button 
-                        onClick={handleBack}
-                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
-                     >
-                         <ChevronRight size={24} className="rotate-180" />
-                     </button>
-                     <h2 className="text-2xl font-bold">{t('notifications.title')}</h2>
-                 </div>
-                 
-                 <div className="bg-purple-50 rounded-2xl p-6 text-center border border-purple-100">
-                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-purple-500 shadow-sm">
-                        <Bell size={32} />
-                     </div>
-                     <h3 className="text-lg font-bold text-gray-900 mb-2">{t('notifications.empty')}</h3>
-                     <p className="text-gray-500 text-sm mb-6">
-                        {t('notifications.desc')}
-                     </p>
-                     <div className="space-y-3">
-                        <div className="h-12 bg-white rounded-xl w-full animate-pulse"></div>
-                        <div className="h-12 bg-white rounded-xl w-full animate-pulse"></div>
-                     </div>
-                 </div>
+         {contentView === 'contact' && (
+             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-3 mb-6">
+                    <button onClick={handleBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <ArrowLeft size={20} />
+                    </button>
+                    <h3 className="text-xl font-bold">{t('contact.title')}</h3>
+                </div>
+                {contactInfo ? (
+                    <div className="space-y-4">
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 space-y-4">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
+                                    <Phone size={20} />
+                                </div>
+                                <div>
+                                    <div className="text-[10px] text-gray-400 uppercase">{t('detail.phone')}</div>
+                                    <div className="font-bold">{contactInfo.phone || t('common.noInfo')}</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-green-50 dark:bg-green-900/30 rounded-xl text-green-600 dark:text-green-400">
+                                    <Mail size={20} />
+                                </div>
+                                <div>
+                                    <div className="text-[10px] text-gray-400 uppercase">{t('login.email')}</div>
+                                    <div className="font-bold">{contactInfo.email || t('common.noInfo')}</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-orange-50 dark:bg-orange-900/30 rounded-xl text-orange-600 dark:text-orange-400">
+                                    <MessageSquare size={20} />
+                                </div>
+                                <div>
+                                    <div className="text-[10px] text-gray-400 uppercase">WeChat</div>
+                                    <div className="font-bold">{contactInfo.wechat || t('common.noInfo')}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center py-10 text-gray-400">{t('detail.noContact')}</div>
+                )}
              </div>
          )}
 
-         {viewState === 'login' && (
-             // Login View
-             <div>
-                 <div className="flex items-center gap-2 mb-6">
-                     <button 
-                        onClick={handleBack}
-                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
-                     >
-                         <ChevronRight size={24} className="rotate-180" />
-                     </button>
-                     <h2 className="text-2xl font-bold">{t('login.loginRegisterTitle')}</h2>
-                 </div>
-                 
-                 <div className="bg-white p-4">
-                     <div className="mb-8 text-center">
-                         <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
-                             <Mail size={40} />
-                         </div>
-                         <h3 className="text-xl font-bold text-gray-900">{t('login.quickLogin')}</h3>
-                         <p className="text-gray-500 mt-2">{t('login.quickLoginDesc')}</p>
-                     </div>
+         {contentView === 'notifications' && (
+             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-3 mb-6">
+                    <button onClick={handleBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <ArrowLeft size={20} />
+                    </button>
+                    <h3 className="text-xl font-bold">{t('notifications.title')}</h3>
+                </div>
+                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                    <Bell size={48} className="mb-4 opacity-20" />
+                    <p>{t('notifications.empty')}</p>
+                </div>
+             </div>
+         )}
 
-                     <form onSubmit={handleLoginSubmit} className="space-y-6">
-                         <div>
-                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                 {t('login.email')}
-                             </label>
-                             <input
-                                 type="email"
-                                 value={email}
-                                 onChange={(e) => setEmail(e.target.value)}
-                                 placeholder={t('login.placeholderEmail')}
-                                 required
-                                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-                             />
-                         </div>
-
-                         <button
-                             type="submit"
-                             disabled={isLoading}
-                             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                         >
-                             {isLoading ? (
-                                 <>
-                                     <Loader2 size={20} className="animate-spin" />
-                                     {t('login.loggingIn')}
-                                 </>
-                             ) : (
-                                 t('login.loginNow')
-                             )}
-                         </button>
-                     </form>
-                 </div>
+         {contentView === 'login' && (
+             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-3 mb-6">
+                    <button onClick={handleBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <ArrowLeft size={20} />
+                    </button>
+                    <h3 className="text-xl font-bold">{t('login.title')}</h3>
+                </div>
+                <form onSubmit={handleLoginSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <label className="text-sm text-gray-500 ml-1">{t('login.email')}</label>
+                        <input 
+                            type="email" 
+                            required
+                            placeholder={t('login.placeholderEmail')}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all"
+                        />
+                    </div>
+                    <button 
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all disabled:opacity-50"
+                    >
+                        {isLoading ? t('login.loggingIn') : t('login.loginNow')}
+                    </button>
+                    <p className="text-[10px] text-center text-gray-400 mt-4 px-6">
+                        {t('user.loginDesc')}
+                    </p>
+                </form>
              </div>
          )}
       </div>
@@ -522,20 +522,19 @@ function MenuItem({ icon: Icon, label, onClick, color }: any) {
         <div 
             onClick={(e) => {
                 e.stopPropagation();
-                console.log('MenuItem clicked:', label);
                 onClick && onClick();
             }}
             onPointerDown={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-3xl active:bg-gray-50 dark:active:bg-gray-700 transition-colors cursor-pointer touch-manipulation select-none relative z-50 group"
+            className="w-full flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-2xl active:bg-gray-50 dark:active:bg-gray-700 transition-colors cursor-pointer touch-manipulation select-none relative z-50 group"
         >
-            <div className="flex items-center gap-5">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-active:scale-95 ${color} dark:bg-opacity-20`}>
-                    <Icon size={22} strokeWidth={2} />
+            <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-active:scale-95 ${color} dark:bg-opacity-20`}>
+                    <Icon size={18} strokeWidth={2} />
                 </div>
-                <span className="font-bold text-gray-800 dark:text-gray-100 text-lg">{label}</span>
+                <span className="font-bold text-gray-800 dark:text-gray-100 text-sm">{label}</span>
             </div>
-            <ChevronRight size={20} className="text-gray-300 dark:text-gray-600" />
+            <ChevronRight size={16} className="text-gray-300 dark:text-gray-600" />
         </div>
     )
 }

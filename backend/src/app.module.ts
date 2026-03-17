@@ -15,9 +15,10 @@ import { CitiesModule } from './cities/cities.module';
 import { StrategyCategoriesModule } from './strategy-categories/strategy-categories.module';
 import { SpotCategoriesModule } from './spot-categories/spot-categories.module';
 import { UploadModule } from './upload/upload.module';
+import { UsageGuidesModule } from './usage-guides/usage-guides.module';
 
 @Module({
-  imports: [PoisModule, FavoritesModule, BookingsModule, ReviewsModule, UsersModule, GuidesModule, StrategiesModule, SpotsModule, AdsModule, ContactInfoModule, CitiesModule, StrategyCategoriesModule, SpotCategoriesModule, UploadModule],
+  imports: [PoisModule, FavoritesModule, BookingsModule, ReviewsModule, UsersModule, GuidesModule, StrategiesModule, SpotsModule, AdsModule, ContactInfoModule, CitiesModule, StrategyCategoriesModule, SpotCategoriesModule, UploadModule, UsageGuidesModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -18,39 +18,41 @@ export default function BottomTabBar({ activeTab, onTabChange }: BottomTabBarPro
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md pb-6 pt-2 px-6 shadow-[0_-10px_40px_rgba(0,0,0,0.04)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] z-50 rounded-t-[2.5rem] transition-colors duration-300 pointer-events-auto">
-      <div className="flex justify-between items-end h-16 pb-2">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className="flex flex-col items-center justify-center w-16 relative group"
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md h-12 px-6 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] z-[9999] rounded-t-xl transition-colors duration-300 pointer-events-auto flex justify-between items-center">
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.id;
+        const Icon = tab.icon;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => {
+              if (isActive) {
+                onTabChange('');
+              } else {
+                onTabChange(tab.id);
+              }
+            }}
+            className="flex flex-col items-center justify-center flex-1 relative group h-full"
+          >
+            <div 
+              className={`transition-all duration-300 flex flex-col items-center justify-center`}
             >
-              <div 
-                className={`transition-all duration-300 ${
-                  isActive ? '-translate-y-1' : ''
-                }`}
-              >
-                <div className={`p-3 rounded-[1.2rem] transition-all duration-300 ${
-                  isActive 
-                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-[0_8px_20px_rgba(0,0,0,0.15)] scale-110' 
-                    : 'text-gray-400 dark:text-gray-500 bg-transparent group-hover:bg-gray-50 dark:group-hover:bg-gray-800'
-                }`}>
-                  <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-                </div>
+              <div className={`p-0.5 rounded-xl transition-all duration-300 ${
+                isActive 
+                  ? 'text-blue-600' 
+                  : 'text-gray-400 dark:text-gray-500'
+              }`}>
+                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
               </div>
-              <span className={`text-[10px] font-bold mt-1 transition-all duration-300 absolute -bottom-2 ${
-                isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
+              <span className={`text-[11px] font-bold -mt-0.5 transition-all duration-300 ${
+                isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
               }`}>
                 {tab.label}
               </span>
-            </button>
-          );
-        })}
-      </div>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }

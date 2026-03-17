@@ -3,10 +3,19 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { join } from 'path';
 import { json, urlencoded } from 'express';
+import compression from 'compression';
+
+// Monkey patch BigInt toJSON to avoid serialization errors
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.enableCors();
+
+  // Enable compression
+  app.use(compression());
 
   // Increase body size limit
   app.use(json({ limit: '50mb' }));

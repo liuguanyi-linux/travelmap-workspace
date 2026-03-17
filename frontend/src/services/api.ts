@@ -189,4 +189,22 @@ export const spotCategoryService = {
   },
 };
 
+export const usageGuideService = {
+  getAll: async () => {
+    const response = await api.get<any[]>('/usage-guides');
+    return response.data;
+  },
+  create: async (data: any) => {
+    const response = await api.post<any>('/usage-guides', data);
+    return response.data;
+  },
+  update: async (id: number, data: any) => {
+    const response = await api.patch<any>(`/usage-guides/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: number) => {
+    await api.delete(`/usage-guides/${id}`);
+  },
+};
+
 export default api;

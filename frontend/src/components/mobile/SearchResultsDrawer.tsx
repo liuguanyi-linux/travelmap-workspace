@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { MapPin, Star, X, ChevronRight } from 'lucide-react';
+import { MapPin, Star, X, ChevronRight, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -50,10 +50,11 @@ export default function SearchResultsDrawer({ isVisible, results, onPoiClick, on
         >
           {/* Handle */}
           <div 
-            className="w-full flex justify-center pt-3 pb-3 cursor-grab active:cursor-grabbing shrink-0 z-10 touch-none"
+            className="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing shrink-0 z-10 touch-none"
             onPointerDown={(e) => dragControls.start(e)}
+            onClick={onClose}
           >
-            <div className="w-12 h-1.5 bg-gray-200/80 dark:bg-gray-700/80 rounded-full" />
+            <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
           </div>
 
           {/* Header */}

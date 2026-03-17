@@ -1,21 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion, PanInfo, useAnimation, useDragControls } from 'framer-motion';
-import { X, Navigation, Star, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2, Navigation2, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { X, Navigation, Star, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2, Navigation2, ChevronLeft, ChevronRight, Image as ImageIcon, ChevronUp, ChevronDown } from 'lucide-react';
 
-// Define API URL logic outside component to reuse
-const getFullImageUrl = (path: string | undefined) => {
-    if (!path) return '';
-    if (path.startsWith('http') || path.startsWith('data:')) return path;
-    
-    // Remove leading slash to avoid double slashes
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    
-    // Get base URL from VITE_API_URL (e.g., http://110.42.143.48/api -> http://110.42.143.48)
-    const apiUrl = import.meta.env.VITE_API_URL || '';
-    const baseUrl = apiUrl.replace(/\/api\/?$/, '');
-    
-    return `${baseUrl}/${cleanPath}`;
-};
+import { getFullImageUrl } from '../../utils/image';
 
 import { useFavorites } from '../../hooks/useFavorites';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -95,6 +82,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
   
   const [reviews, setReviews] = useState<Review[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [newRating, setNewRating] = useState(5); // Default 5 stars
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
@@ -139,8 +127,9 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
       
       setIsSubmitting(true);
       try {
-          await createReview(user.id, poi.id, 5, newComment);
+          await createReview(user.id, poi.id, newRating, newComment);
           setNewComment('');
+          setNewRating(5);
           fetchReviews(poi.id);
       } catch (error) {
           console.error('Failed to publish comment:', error);
@@ -162,7 +151,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
 
   const variants = {
     hidden: { y: '100%' },
-    peek: { y: '75%' }, // Show bottom 25% (was 35%)
+    peek: { y: 'calc(100% - 280px)' }, // Adjusted to ~280px (lower) as requested, to avoid blocking map
     full: { y: '0%' }   // Full screen
   };
 
@@ -199,7 +188,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
   if (!poi) return null;
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none flex flex-col justify-end">
+    <div className="fixed inset-0 z-[10001] pointer-events-none flex flex-col justify-end">
         {/* Image Preview Modal */}
         {previewIndex !== null && poi.photos && (
             <div 
@@ -289,14 +278,28 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
           dragConstraints={{ top: 0 }}
           dragElastic={0.1}
           onDragEnd={handleDragEnd}
-          className="absolute left-0 right-0 h-[100vh] bg-white rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] overflow-hidden pointer-events-auto flex flex-col will-change-transform"
+          className="absolute left-0 right-0 bottom-0 h-[75vh] bg-white rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] overflow-hidden pointer-events-auto flex flex-col will-change-transform"
         >
           {/* Drag Handle Area - Active Drag Zone */}
           <div 
-            className="w-full flex justify-center pt-5 pb-3 cursor-grab active:cursor-grabbing bg-white z-20 shrink-0 touch-none"
+            className="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing bg-white z-20 shrink-0 touch-none items-center gap-2"
             onPointerDown={(e) => dragControls.start(e)}
+            onClick={() => {
+                if (viewState === 'peek') {
+                    setViewState('full');
+                    controls.start('full');
+                } else {
+                    setViewState('peek');
+                    controls.start('peek');
+                }
+            }}
           >
-            <div className="w-10 h-1 bg-gray-200 rounded-full" />
+            {viewState === 'full' ? (
+                <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
+            ) : (
+                <ChevronUp className="text-gray-500 dark:text-gray-400" size={24} />
+            )}
+            <span className="text-xs text-gray-400 font-medium tracking-wide">{t('clickToToggle')}</span>
           </div>
 
           {/* Content Container */}
@@ -304,64 +307,53 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
               
               {/* Header Info (Always visible) - Also Draggable */}
               <div 
-                className="px-8 pb-6 bg-white z-10 shrink-0 touch-none"
+                className="px-6 pb-1 bg-white z-10 shrink-0 touch-none"
                 onPointerDown={(e) => dragControls.start(e)}
               >
                 <div className="flex justify-between items-start">
-                    <div className="flex-1 mr-4">
-                        <h2 className="text-3xl font-bold text-gray-900 leading-tight mb-1 tracking-tight">{poi.cnName || poi.name}</h2>
-                        {poi.cnName && poi.name && poi.cnName !== poi.name && (
-                            <div className="text-sm text-gray-500 mb-3">{poi.name}</div>
+                    <div className="flex-1 mr-2">
+                        <h2 className="text-xl font-bold text-gray-900 leading-tight mb-0.5 tracking-tight">{poi.name}</h2>
+                        {poi.cnName && (
+                            // <div className="text-xs text-gray-500 mb-2">{poi.cnName}</div>
+                            null
                         )}
-                        <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
-                            <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
-                                <Star size={14} fill="#EAB308" className="text-yellow-500" />
+                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-0 hidden">
+                            <div className="flex items-center gap-0.5 bg-yellow-50 px-1.5 py-0.5 rounded">
+                                <Star size={10} fill="#EAB308" className="text-yellow-500" />
                                 <span className="font-bold text-yellow-700">4.8</span>
                             </div>
                             <span className="text-gray-300">|</span>
-                            <span className="bg-gray-50 px-2 py-1 rounded-lg text-gray-600">
+                            <span className="bg-gray-50 px-1.5 py-0.5 rounded text-gray-600">
                                 {spotCategories?.find(c => poi.tags?.includes(c.key))?.name || 
                                  spotCategories?.find(c => c.key === (poi.type?.split(';')[0]))?.name || 
                                  poi.tags?.[0] || 
                                  poi.type?.split(';')[0] || 
                                  t('common.unknownPlace')}
                             </span>
-                            <span className="text-gray-300">|</span>
-                            <span>1.2km</span>
                         </div>
-                        <div className="flex items-center text-gray-500 text-sm">
-                            <MapPin size={16} className="mr-1.5 shrink-0 text-gray-400" />
+                        {/* <div className="flex items-center text-gray-500 text-xs">
+                            <MapPin size={12} className="mr-1 shrink-0 text-gray-400" />
                             <span className="truncate">{poi.address || t('detail.noContact')}</span>
-                        </div>
+                        </div> */}
                     </div>
                     {/* Action Buttons */}
                     <div className="flex flex-col gap-2 shrink-0">
                         <button 
                             onClick={onClose} 
                             onPointerDown={(e) => e.stopPropagation()}
-                            className="p-2.5 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors self-end"
+                            className="p-1.5 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors self-end"
                         >
-                            <X size={20} className="text-gray-400" />
+                            <X size={16} className="text-gray-400" />
                         </button>
-                        <a 
-                            href={`https://uri.amap.com/marker?position=${poi.location?.lng},${poi.location?.lat}&name=${poi.name}&coordinate=gaode&callnative=1`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onPointerDown={(e) => e.stopPropagation()}
-                            className="p-2.5 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center text-white"
-                            title="导航"
-                        >
-                            <Navigation size={20} />
-                        </a>
                     </div>
                 </div>
               </div>
 
               {/* Scrollable Content (Visible in Full Mode or scrolling in Peek?) */}
-              <div className="flex-1 overflow-y-auto bg-gray-50/50 pb-28">
+              <div className="flex-1 overflow-y-auto bg-gray-50/50 pb-64">
                   {/* Photos Section */}
-                  <div className="mt-4 mb-2">
-                      <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
+                  <div className="mt-1 mb-2">
+                      <div className="flex gap-2 px-6 overflow-x-auto pb-2 scrollbar-hide snap-x">
                           {poi.photos && poi.photos.length > 0 ? (
                               poi.photos.map((photo: any, index: number) => {
                                   const imgSrc = getFullImageUrl(typeof photo === 'string' ? photo : photo.url);
@@ -369,12 +361,12 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                                   return (
                                       <div 
                                         key={index} 
-                                        className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 snap-center shadow-md relative cursor-pointer"
+                                        className="w-32 h-24 shrink-0 rounded-xl overflow-hidden bg-gray-200 snap-center shadow-sm relative cursor-pointer"
                                       >
                                           <SafeImage 
                                             src={imgSrc} 
                                             alt={typeof photo === 'string' ? poi.name : (photo.title || poi.name)} 
-                                            className="w-full h-full rounded-3xl"
+                                            className="w-full h-full rounded-xl"
                                             onClick={() => setPreviewIndex(index)}
                                           />
                                       </div>
@@ -382,14 +374,14 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                               })
                           ) : (
                               [1, 2, 3].map((i) => (
-                                  <div key={i} className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 snap-center shadow-sm relative">
+                                  <div key={i} className="w-32 h-24 shrink-0 rounded-xl overflow-hidden bg-gray-200 snap-center shadow-sm relative">
                                       <img 
                                         src={`https://picsum.photos/seed/${poi.id || 'poi'}${i}/300/200`} 
                                         alt="Preview" 
                                         className="w-full h-full object-cover"
                                       />
                                       <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-                                          <span className="text-white text-xs font-medium bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full">暂无实景</span>
+                                          <span className="text-white text-[10px] font-medium bg-black/20 backdrop-blur-md px-2 py-1 rounded-full">暂无实景</span>
                                       </div>
                                   </div>
                               ))
@@ -398,17 +390,17 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                   </div>
 
                   {/* Copy Info Section (Name & Address) */}
-                  <div className="mt-4 mb-6 px-6">
-                      <div className="bg-white p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] flex flex-col gap-4">
+                  <div className="mt-2 mb-2 px-6">
+                      <div className="bg-white p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] flex flex-col gap-2">
                           {/* Name Copy Row */}
                           <div className="flex items-center justify-between gap-3">
                               <div className="flex-1 min-w-0">
-                                  <p className="text-sm text-gray-500 mb-1">地名</p>
-                                  <p className="font-bold text-gray-900 text-lg truncate">{poi.name}</p>
+                                  <p className="text-[10px] text-gray-500 mb-0.5">{t('cityDrawer.place')}</p>
+                                  <p className="font-bold text-gray-900 text-sm truncate">{poi.cnName || poi.name}</p>
                               </div>
                               <button 
                                 onClick={() => {
-                                    const text = poi.name;
+                                    const text = poi.cnName || poi.name;
                                     // Try Clipboard API first
                                     if (navigator.clipboard && window.isSecureContext) {
                                         navigator.clipboard.writeText(text).catch(() => {
@@ -448,7 +440,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                                     const btn = document.getElementById('copy-name-btn');
                                     if (btn) {
                                         const originalText = btn.innerText;
-                                        btn.innerText = '已复制';
+                                        btn.innerText = t('detail.saved'); // Using 'Saved' as 'Copied' temporarily or add 'Copied' key
                                         btn.classList.add('bg-green-600', 'text-white');
                                         btn.classList.remove('bg-gray-100', 'text-gray-600');
                                         setTimeout(() => {
@@ -459,9 +451,9 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                                     }
                                 }}
                                 id="copy-name-btn"
-                                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                                className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
                               >
-                                  复制地名
+                                  {t('cityDrawer.copyName')}
                               </button>
                           </div>
                           
@@ -471,8 +463,8 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                           {/* Address Copy Row */}
                           <div className="flex items-center justify-between gap-3">
                               <div className="flex-1 min-w-0">
-                                  <p className="text-sm text-gray-500 mb-1">地址</p>
-                                  <p className="font-medium text-gray-700 text-sm truncate">{poi.address || '暂无地址'}</p>
+                                  <p className="text-[10px] text-gray-500 mb-0.5">{t('cityDrawer.address')}</p>
+                                  <p className="font-medium text-gray-700 text-xs truncate">{poi.address || t('cityDrawer.noAddress')}</p>
                               </div>
                               <button 
                                 onClick={() => {
@@ -517,7 +509,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                                         const btn = document.getElementById('copy-addr-btn');
                                         if (btn) {
                                             const originalText = btn.innerText;
-                                            btn.innerText = '已复制';
+                                            btn.innerText = t('detail.saved');
                                             btn.classList.add('bg-green-600', 'text-white');
                                             btn.classList.remove('bg-gray-100', 'text-gray-600');
                                             setTimeout(() => {
@@ -529,67 +521,93 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                                     }
                                 }}
                                 id="copy-addr-btn"
-                                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={!poi.address}
                               >
-                                  复制地址
+                                  {t('cityDrawer.copyAddress')}
                               </button>
                           </div>
                       </div>
                   </div>
 
                   {/* Detailed Info */}
-                  <div className="px-6 space-y-4">
-                      {/* Introduction */}
-                      <div className="bg-white p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                          <h3 className="font-bold text-gray-900 mb-4 text-xl">内容</h3>
-                          <div className="text-gray-600 leading-relaxed text-justify whitespace-pre-line" dangerouslySetInnerHTML={{ __html: poi.content || t('detail.introDesc').replace('{name}', poi.name) }} />
-                      </div>
+                  <div className="px-6 space-y-2">
+                      {/* Introduction - Only show if content exists */}
+                      {poi.content && poi.content !== '<p><br></p>' && (
+                          <div className="bg-white p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                              {/* Title Removed as requested */}
+                              {/* <h3 className="font-bold text-gray-900 mb-2 text-sm">内容</h3> */}
+                              <div className="text-gray-600 leading-relaxed text-justify whitespace-pre-line text-xs" dangerouslySetInnerHTML={{ __html: poi.content }} />
+                          </div>
+                      )}
                       
                       {/* Reviews Preview */}
-                      <div className="bg-white p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] mb-8">
-                          <div className="flex justify-between items-center mb-6">
-                              <h3 className="font-bold text-gray-900 text-xl">{t('detail.visitorReviews')}</h3>
-                              <span className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">{reviews.length} 条</span>
+                      <div className="bg-white p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] mb-4">
+                          <div className="flex justify-between items-center mb-3">
+                              <h3 className="font-bold text-gray-900 text-sm">{t('detail.visitorReviews')}</h3>
+                              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{reviews.length} {t('detail.reviewsCount')}</span>
                           </div>
                           
                           {/* Review Input */}
                           {user ? (
-                              <div className="mb-8">
+                              <div className="mb-4">
+                                  <div className="flex items-center gap-2 mb-2">
+                                      <div className="flex gap-1">
+                                          {[1, 2, 3, 4, 5].map((star) => (
+                                              <button
+                                                  key={star}
+                                                  onClick={() => setNewRating(star)}
+                                                  className="focus:outline-none transition-transform hover:scale-110 p-1"
+                                              >
+                                                  <Star
+                                                      size={20}
+                                                      className={`${
+                                                          star <= newRating
+                                                              ? 'fill-yellow-400 text-yellow-400'
+                                                              : 'text-gray-300 dark:text-gray-600'
+                                                      }`}
+                                                  />
+                                              </button>
+                                          ))}
+                                      </div>
+                                  </div>
                                   <textarea 
-                                      className="w-full p-4 bg-gray-50 dark:bg-gray-700 border-none rounded-2xl focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all resize-none text-sm placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-white"
-                                      placeholder="分享您的游玩体验..."
-                                      rows={3}
+                                      className="w-full p-3 bg-gray-50 dark:bg-gray-700 border-none rounded-xl focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all resize-none text-xs placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-white"
+                                      placeholder={t('detail.shareExperience')}
+                                      rows={2}
                                       value={newComment}
                                       onChange={(e) => setNewComment(e.target.value)}
                                   />
-                                  <div className="flex justify-end mt-3">
+                                  <div className="flex justify-end mt-2">
                                       <button 
-                                          className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full px-6 py-2.5 text-sm font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200 dark:shadow-none active:scale-95 transition-all"
+                                          className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full px-4 py-1.5 text-xs font-bold flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200 dark:shadow-none active:scale-95 transition-all"
                                           onClick={handlePublishComment}
                                           disabled={isSubmitting || !newComment.trim()}
                                       >
-                                          {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                                          发布评论
+                                          {isSubmitting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                                          {t('detail.publishReview')}
                                       </button>
                                   </div>
                               </div>
                           ) : (
-                              <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl text-center text-gray-500 dark:text-gray-400 text-sm font-medium">
-                                  登录后即可发表评论
+                              <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl text-center text-gray-500 dark:text-gray-400 text-xs font-medium">
+                                  {t('detail.loginToReview')}
                               </div>
                           )}
 
                           {/* Reviews List */}
-                          <div className="space-y-6">
+                          <div className="space-y-3">
                               {reviews.length === 0 ? (
-                                  <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">暂无评论，快来抢沙发吧！</div>
+                                  <div className="text-center py-4 text-gray-400 dark:text-gray-500 text-xs">暂无评论，快来抢沙发吧！</div>
                               ) : (
                                   reviews.map(review => (
-                                      <div key={review.id} className="border-b border-gray-50 dark:border-gray-700 last:border-0 pb-6 last:pb-0">
-                                          <div className="flex justify-between items-center mb-2">
-                                              <span className="font-bold text-gray-900 dark:text-white text-sm">
-                                                  {review.user.nickname || review.user.email.split('@')[0]}
+                                      <div key={review.id} className="border-b border-gray-50 dark:border-gray-700 last:border-0 pb-3 last:pb-0">
+                                          <div className="flex justify-between items-center mb-1">
+                                              <span className="font-bold text-gray-900 dark:text-white text-xs">
+                                                  {review.nickname || 
+                                                   (review.user.nickname && review.user.nickname !== '游客' && review.user.nickname !== 'User' 
+                                                      ? review.user.nickname 
+                                                      : t('detail.visitor'))}
                                               </span>
                                               <div className="flex items-center gap-3">
                                               <div className="flex text-yellow-400 scale-90 origin-right">
@@ -623,7 +641,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
           </div>
 
           {/* Fixed Bottom Buttons */}
-          <div className="absolute bottom-0 left-0 right-0 p-5 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-30 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300">
+          <div className="absolute bottom-0 left-0 right-0 p-5 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-[10002] pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300">
               <button 
                 onClick={() => toggleFavorite({
                     id: poi.id,
@@ -633,23 +651,10 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                     location: poi.location,
                     imageUrl: `https://picsum.photos/seed/${poi.id || 'poi'}/300/200`
                 })}
-                className="flex flex-col items-center justify-center w-16 gap-1 active:scale-95 transition-transform"
+                className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg shadow-xl shadow-gray-200 dark:shadow-none active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
               >
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-sm border border-gray-100 dark:border-gray-700 ${isFav ? 'bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 border-red-100 dark:border-red-900/30' : 'bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500'}`}>
-                    <Heart size={24} fill={isFav ? "currentColor" : "none"} />
-                  </div>
-              </button>
-              <button 
-                onClick={() => {
-                    if (poi.location) {
-                        const { lng, lat } = poi.location;
-                        window.open(`https://uri.amap.com/marker?position=${lng},${lat}&name=${encodeURIComponent(poi.name)}&coordinate=gaode&callnative=1`, '_blank');
-                    }
-                }}
-                className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg shadow-xl shadow-gray-200 dark:shadow-none active:scale-95 transition-transform flex items-center justify-center gap-3"
-              >
-                  <Navigation size={20} fill="currentColor" />
-                  <span>导航前往</span>
+                  <Heart size={20} fill={isFav ? "currentColor" : "none"} className={isFav ? "text-red-500" : ""} />
+                  <span>{isFav ? t('detail.saved') : t('detail.save')}</span>
               </button>
           </div>
 

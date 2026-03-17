@@ -1,21 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, Search, User, Car, Building2, MapPin } from 'lucide-react';
+import { X, ArrowLeft, Search, User, Car, Building2, MapPin, Megaphone, ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useData } from '../../contexts/DataContext';
+
+import { getFullImageUrl } from '../../utils/image';
 
 interface GuideViewProps {
   isVisible: boolean;
   onClose: () => void;
   activeCity?: string;
+  initialCategory?: string;
 }
 
-type CategoryType = 'guide' | 'car' | 'agency';
+type CategoryType = 'guide' | 'car' | 'agency' | 'ad';
 
-export default function GuideView({ isVisible, onClose, activeCity }: GuideViewProps) {
+export default function GuideView({ isVisible, onClose, activeCity, initialCategory }: GuideViewProps) {
   const { t } = useLanguage();
   const controls = useAnimation();
   const dragControls = useDragControls();
+  const [viewState, setViewState] = useState<'hidden' | 'peek' | 'full'>('hidden');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   
   // UI State
@@ -23,62 +27,104 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedGuide, setSelectedGuide] = useState<any>(null);
   
+  useEffect(() => {
+    if (initialCategory && ['guide', 'car', 'agency', 'ad'].includes(initialCategory)) {
+        setSelectedCategory(initialCategory as CategoryType);
+    }
+  }, [initialCategory]);
+  
   // Data
-  const { guides } = useData();
+  const { guides, cities, ads } = useData();
+  const { language } = useLanguage();
+
+  // Helper to get localized city name
+  const getLocalizedCityName = (cityName: string) => {
+    const city = cities.find(c => c.name === cityName);
+    if (!city) return cityName;
+    
+    if (language === 'en-US' && city.nameEn) return city.nameEn;
+    if (language === 'ko-KR' && city.nameKo) return city.nameKo;
+    
+    return cityName;
+  };
 
   useEffect(() => {
     if (isVisible) {
-      controls.start({ y: 0 });
+      setViewState('peek');
+      controls.start('peek');
     } else {
-      controls.start({ y: '100%' });
+      setViewState('hidden');
+      controls.start('hidden');
     }
   }, [isVisible, controls]);
 
+  const variants = {
+    hidden: { y: '100%' },
+    peek: { y: 'calc(100% - 300px)' }, 
+    full: { y: '0%' }   // Full 66vh
+  };
+
   const handleDragEnd = (event: any, info: PanInfo) => {
     const { offset, velocity } = info;
-    if (offset.y > 100 || (velocity.y > 500 && offset.y > 0)) {
-       onClose();
+    const isDraggingDown = offset.y > 0;
+    const threshold = 100;
+
+    if (viewState === 'full') {
+       if (isDraggingDown && (offset.y > threshold || velocity.y > 500)) {
+           setViewState('peek');
+           controls.start('peek');
+       } else {
+           controls.start('full');
+       }
     } else {
-       controls.start({ y: 0 });
+       if (!isDraggingDown && (offset.y < -threshold || velocity.y < -500)) {
+           setViewState('full');
+           controls.start('full');
+       } else {
+           controls.start('peek');
+       }
     }
   };
 
   const categories = [
-    { id: 'guide', label: '导游', icon: User, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' },
-    { id: 'car', label: '租车', icon: Car, color: 'text-green-600 bg-green-50 dark:bg-green-900/30' },
-    { id: 'agency', label: '本地旅行社', icon: Building2, color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/30' }
+    { id: 'guide', label: t('categories.guide'), icon: User, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' },
+    { id: 'car', label: t('categories.car'), icon: Car, color: 'text-green-600 bg-green-50 dark:bg-green-900/30' },
+    { id: 'agency', label: t('categories.agency'), icon: Building2, color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/30' },
+    { id: 'ad', label: t('categories.ad'), icon: Megaphone, color: 'text-pink-600 bg-pink-50 dark:bg-pink-900/30' }
   ] as const;
 
   // Filter Logic
-  const filteredGuides = guides
+  console.log('DEBUG DATA: guides', guides);
+  console.log('DEBUG DATA: type of guides', typeof guides);
+  console.log('DEBUG DATA: isArray', Array.isArray(guides));
+  
+  const filteredGuides = (Array.isArray(guides) ? guides : [])
     .filter(g => {
-        // City Filter
-        if (activeCity && g.cities && !g.cities.includes(activeCity)) {
+        // City Filter (Respect isGlobal)
+        if (activeCity && !g.isGlobal && g.cities && !g.cities.includes(activeCity)) {
             return false;
         }
 
         // Category Filter
+        const isLegacyCar = g.title?.includes('包车') || g.title?.includes('租车') || 
+                           g.intro?.includes('包车') || g.intro?.includes('租车') ||
+                           g.name?.includes('包车') || g.name?.includes('租车');
+        
+        const isLegacyAgency = g.title?.includes('旅行社') || g.intro?.includes('旅行社') || g.name?.includes('旅行社');
+
         if (selectedCategory === 'car') {
-            // STRICT 'Car' Filter: Only show items explicitly marked as 'Rent a Car' services.
-            // Do NOT include guides just because they have a car (hasCar=true).
-            // We look for specific keywords in title/intro/name indicating it's a car rental/charter service.
-            const isCarService = g.title?.includes('包车') || g.title?.includes('租车') || 
-                                 g.intro?.includes('包车') || g.intro?.includes('租车') ||
-                                 g.name?.includes('包车') || g.name?.includes('租车');
-            return isCarService;
+            return g.category === 'car' || (g.category === 'guide' && isLegacyCar);
         }
         if (selectedCategory === 'agency') {
-            return g.title?.includes('旅行社') || g.intro?.includes('旅行社') || g.name?.includes('旅行社');
+            return g.category === 'agency' || (g.category === 'guide' && isLegacyAgency);
         }
         // For 'guide', show guides.
         // Exclude pure agencies and pure car services to keep it clean?
         // Let's exclude Agencies and Car Services from 'Guide' tab.
         if (selectedCategory === 'guide') {
-             const isAgency = g.title?.includes('旅行社') || g.intro?.includes('旅行社') || g.name?.includes('旅行社');
-             const isCarService = g.title?.includes('包车') || g.title?.includes('租车') || 
-                                  g.intro?.includes('包车') || g.intro?.includes('租车') ||
-                                  g.name?.includes('包车') || g.name?.includes('租车');
-             return !isAgency && !isCarService;
+             // Show if explicitly 'guide' AND NOT legacy car/agency (unless explicitly marked as guide, but legacy items default to guide)
+             // If it's explicitly 'guide' (which is default), we still filter out legacy car/agency to avoid duplicates in Guide tab
+             return (g.category === 'guide' || !g.category) && !isLegacyCar && !isLegacyAgency;
         }
 
         return true;
@@ -93,7 +139,11 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
             (g.title && g.title.toLowerCase().includes(lowerKeyword))
         );
     })
-    .sort((a, b) => (a.rank || 99) - (b.rank || 99));
+    .sort((a, b) => {
+        // Sort by isTop desc, then rank asc
+        if (a.isTop !== b.isTop) return (b.isTop ? 1 : 0) - (a.isTop ? 1 : 0);
+        return (a.rank || 99) - (b.rank || 99);
+    });
 
   return (
     <AnimatePresence>
@@ -120,25 +170,42 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
           )}
         
         <motion.div
-          initial={{ y: '100%' }}
+          initial="hidden"
           animate={controls}
-          exit={{ y: '100%' }}
+          variants={variants}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           drag="y"
           dragControls={dragControls}
           dragListener={false}
-          dragConstraints={{ top: 0 }}
-          dragElastic={0.1}
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 z-[60] h-[85vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
+          className="fixed bottom-0 left-0 right-0 z-[60] h-[75vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
         >
-          {/* Handle */}
+          {/* Handle (Click to Toggle) */}
           <div 
-            className="w-full flex justify-center pt-3 pb-3 cursor-grab active:cursor-grabbing shrink-0 z-10"
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer bg-transparent z-20 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
             onPointerDown={(e) => dragControls.start(e)}
+            onClick={() => {
+                if (viewState === 'peek') {
+                    setViewState('full');
+                    controls.start('full');
+                } else {
+                    setViewState('peek');
+                    controls.start('peek');
+                }
+            }}
           >
-            <div className="w-12 h-1.5 bg-gray-200/80 dark:bg-gray-700/80 rounded-full" />
+            {viewState === 'full' ? (
+                <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
+            ) : (
+                <ChevronUp className="text-gray-500 dark:text-gray-400" size={24} />
+            )}
+            <span className="text-xs text-gray-400 font-medium tracking-wide">{t('clickToToggle')}</span>
           </div>
+
+          {/* Spacer for Handle */}
+          <div className="h-8 shrink-0" />
 
           {/* Close Button */}
           <button 
@@ -164,7 +231,7 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
                         <h2 className="text-3xl font-bold text-gray-900 dark:text-white leading-tight mb-3 tracking-tight">{selectedGuide.name}</h2>
                         <div className="flex gap-2">
                           <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-medium">{selectedGuide.title}</span>
-                          {selectedGuide.hasCar && <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-xs font-medium">带车向导</span>}
+                          {selectedGuide.hasCar && <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-xs font-medium">{t('guide.hasCar')}</span>}
                         </div>
                     </div>
                 </div>
@@ -194,13 +261,13 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
                   {/* Detailed Info */}
                   <div className="px-6 space-y-6">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">个人简介</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('guide.intro')}</h3>
                       <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm bg-gray-50 dark:bg-gray-800 p-4 rounded-xl prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: selectedGuide.intro }} />
                     </div>
 
                     {selectedGuide.content && (
                       <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">详细介绍</h3>
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('guide.details')}</h3>
                           <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: selectedGuide.content }} />
                       </div>
                     )}
@@ -210,14 +277,14 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
           ) : (
             <>
               {/* Header */}
-              <div className="px-6 pb-2 shrink-0">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{t('guide.title')}</h1>
-                {activeCity && <p className="text-xs text-gray-500 dark:text-gray-400">当前城市：{activeCity}</p>}
+              <div className="px-6 pb-0 shrink-0 pt-2">
+                <h1 className="text-lg font-bold text-gray-900 dark:text-white mb-0.5">{t('guide.title')}</h1>
+                {/* {activeCity && <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('guide.currentCity')}{getLocalizedCityName(activeCity)}</p>} */}
               </div>
 
               {/* Categories (Horizontal Scroll) */}
-              <div className="space-y-4 pt-3 pb-2">
-                 <div className="flex overflow-x-auto gap-3 px-6 pb-2 snap-x snap-mandatory scrollbar-hide">
+              <div className="space-y-2 pt-2 pb-1">
+                 <div className="flex overflow-x-auto gap-2 px-6 pb-2 snap-x snap-mandatory scrollbar-hide">
                     {categories.map((cat) => {
                         const isSelected = selectedCategory === cat.id;
                         return (
@@ -229,16 +296,13 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
                                         setSearchKeyword('');
                                     }
                                 }}
-                                className={`flex-none w-24 flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 h-24 snap-center ${
+                                className={`flex-none w-auto flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 h-auto snap-center ${
                                     isSelected 
                                         ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-500 shadow-md scale-105' 
                                         : 'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95'
                                 }`}
                             >
-                                <div className={`p-2.5 rounded-xl ${cat.color} mb-1.5 flex items-center justify-center`}>
-                                    <cat.icon size={22} />
-                                </div>
-                                <span className={`font-bold text-[10px] z-10 text-center leading-tight w-full truncate ${
+                                <span className={`font-bold text-sm z-10 text-center leading-tight whitespace-nowrap px-3 py-1 ${
                                     isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-white'
                                 }`}>
                                     {cat.label}
@@ -250,60 +314,107 @@ export default function GuideView({ isVisible, onClose, activeCity }: GuideViewP
               </div>
 
               {/* Inline List Content */}
-              <div className="flex-1 overflow-y-auto px-6 pb-24 space-y-4">
-                  {/* Search Bar */}
-                  <div className="relative mb-2 sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 py-2 backdrop-blur-md">
-                      <div className="relative">
-                          <input
-                              type="text"
-                              value={searchKeyword}
-                              onChange={(e) => setSearchKeyword(e.target.value)}
-                              placeholder={
-                                  selectedCategory === 'car' ? '搜索车型、司机...' :
-                                  selectedCategory === 'agency' ? '搜索旅行社...' :
-                                  '搜索导游姓名、简介...'
-                              }
-                              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                          />
-                          <Search className="absolute left-3 top-3.5 text-gray-400" size={18} />
-                      </div>
-                  </div>
+              <div 
+                className="flex-1 overflow-y-auto px-4 pb-24 space-y-2"
+                style={{ 
+                    overscrollBehavior: 'contain', 
+                    touchAction: 'pan-y',
+                    WebkitOverflowScrolling: 'touch' // Ensure smooth scrolling on iOS
+                }}
+                onPointerDown={(e) => {
+                    // IMPORTANT: Stop propagation to prevent drag controls from hijacking scroll
+                    e.stopPropagation();
+                }}
+                onTouchStart={(e) => {
+                    // Ensure touch start is also isolated
+                    e.stopPropagation();
+                }}
+              >
+                  {/* Search Bar Removed as requested */}
 
-                  {/* Filtered List */}
-                  {filteredGuides.length === 0 ? (
+                  {/* Ad List View */}
+                  {selectedCategory === 'ad' ? (
+                      (Array.isArray(ads) ? ads : []).length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                            <Megaphone className="w-12 h-12 mb-2 opacity-20" />
+                            <div className="mb-1 text-sm">暂无广告</div>
+                        </div>
+                      ) : (
+                        (Array.isArray(ads) ? ads : []).map((ad: any) => (
+                            <div 
+                                key={ad.id}
+                                className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 mb-2 relative overflow-hidden group"
+                                onClick={() => {
+                                    if (ad.link && !ad.content) {
+                                        window.open(ad.link, '_blank');
+                                    } else {
+                                        // Open detail view for ad
+                                        setSelectedGuide({
+                                            ...ad,
+                                            name: ad.title,
+                                            intro: ad.description || '',
+                                            avatar: ad.image,
+                                            // Map other fields if necessary, or ensure Detail View handles them
+                                            title: '广告', // Tag
+                                            hasCar: false
+                                        });
+                                    }
+                                }}
+                            >
+                                <div className={`absolute top-0 right-0 w-16 h-16 ${ad.color || 'bg-pink-500'} opacity-10 rounded-bl-[4rem] -mr-4 -mt-4 transition-transform group-hover:scale-150 duration-500`} />
+                                
+                                <div className="flex gap-3 items-center relative z-10">
+                                    <div className={`w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm bg-gray-100`}>
+                                        <img src={ad.image} alt={ad.title} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <h3 className="text-base font-bold text-gray-900 dark:text-white truncate pr-2">{ad.title}</h3>
+                                            {ad.link && <ExternalLink size={14} className="text-gray-400 shrink-0" />}
+                                        </div>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{ad.description}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                      )
+                  ) : (
+                  /* Filtered List */
+                  filteredGuides.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                           <Search className="w-12 h-12 mb-2 opacity-20" />
-                          <div className="mb-1 text-sm">暂无相关结果</div>
-                          <div className="text-xs">请尝试调整筛选条件</div>
+                          <div className="mb-1 text-sm">{t('common.noResults')}</div>
+                          <div className="text-xs">{t('guide.filter')}</div>
                       </div>
                   ) : filteredGuides.map(guide => (
                       <div 
                         key={guide.id} 
                         onClick={() => setSelectedGuide(guide)}
-                        className="bg-white dark:bg-gray-800 rounded-[1.5rem] p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 mb-3"
+                        className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 mb-2"
                       >
-                          <div className="flex gap-4">
-                              <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0 shadow-sm bg-gray-100">
+                          <div className="flex gap-3">
+                              <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm bg-gray-100">
                                   <img src={guide.avatar} alt={guide.name} className="w-full h-full object-cover" />
                               </div>
                               <div className="flex-1 flex flex-col justify-between py-0.5">
                                   <div>
                                       <div className="flex justify-between items-start">
-                                          <h3 className="text-base font-bold text-gray-900 dark:text-white line-clamp-1">{guide.name}</h3>
-                                          <span className="text-xs font-bold text-orange-500">★ {guide.rank || 5.0}</span>
+                                          <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{guide.name}</h3>
+                                          <span className="text-[10px] font-bold text-orange-500">★ {guide.rank || 5.0}</span>
                                       </div>
                                       <div className="flex flex-wrap gap-1 mt-1">
-                                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">{guide.title}</span>
-                                          {guide.hasCar && <span className="text-[10px] text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">带车</span>}
+                                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full">{guide.title}</span>
+                                          {guide.hasCar && <span className="text-[10px] text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-1.5 py-0.5 rounded-full">{t('guide.hasCar')}</span>}
                                       </div>
                                   </div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
-                                      {guide.intro?.replace(/<[^>]*>?/gm, '') || '暂无简介'}
+                                  <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">
+                                      {guide.intro?.replace(/<[^>]*>?/gm, '') || t('guide.noIntro')}
                                   </p>
                               </div>
                           </div>
                       </div>
-                  ))}
+                  ))
+                  )}
               </div>
             </>
           )}

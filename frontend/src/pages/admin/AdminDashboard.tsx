@@ -9,6 +9,7 @@ import SystemSettings from './components/SystemSettings';
 import UserList from './components/UserList';
 import CityManager from './components/CityManager';
 import SpotCategoryManager from './components/SpotCategoryManager';
+import UsageGuideManager from './components/UsageGuideManager';
 
 import ImageUploader from '../../components/admin/ImageUploader';
 import RichTextEditor from '../../components/admin/RichTextEditor';
@@ -106,12 +107,17 @@ export default function AdminDashboard() {
   } = useData();
   const { logout } = useAuth();
   
-  const [activeTab, setActiveTab] = useState<string>('cities');
+  const [activeTab, setActiveTab] = useState<string>('guides'); // Default to 'guides' to match initial render
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [addTag, setAddTag] = useState<string | undefined>(undefined);
   const navigate = useNavigate();
+  
+  // User reported mismatch between sidebar and content
+  // Adding state to track sidebar active state properly if needed, but activeTab should be sufficient.
+  // Ensure 'usage-guides' is correctly handled.
 
 
 
@@ -166,11 +172,13 @@ export default function AdminDashboard() {
 
   const handleEdit = (item: any) => {
     setEditingItem(item);
+    setAddTag(undefined);
     setIsModalOpen(true);
   };
 
-  const handleAdd = () => {
+  const handleAdd = (tag?: string) => {
     setEditingItem(null);
+    setAddTag(typeof tag === 'string' ? tag : undefined);
     setIsModalOpen(true);
   };
 
@@ -236,7 +244,10 @@ export default function AdminDashboard() {
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex justify-between items-center mb-10">
-          <h1 className="text-2xl font-bold text-blue-600">TravelMap 后台</h1>
+          <h1 className="text-2xl font-bold text-blue-600 flex items-center gap-2">
+            TravelMap 后台
+            <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full border border-red-200">v2.0</span>
+          </h1>
           <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-500 hover:text-gray-700">
             <X size={24} />
           </button>
@@ -321,6 +332,12 @@ export default function AdminDashboard() {
               <span>联系方式</span>
             </div>
           </TabButton>
+          <TabButton active={activeTab === 'usage-guides'} onClick={() => setActiveTab('usage-guides')}>
+            <div className="flex items-center gap-3">
+              <BookOpen size={18} />
+              <span>使用介绍</span>
+            </div>
+          </TabButton>
           <TabButton active={activeTab === 'system'} onClick={() => setActiveTab('system')}>
             <div className="flex items-center gap-3">
               <Settings size={18} />
@@ -375,9 +392,10 @@ export default function AdminDashboard() {
             {activeTab === 'users' && '用户列表'}
             {activeTab === 'contact' && '联系方式设置'}
             {activeTab === 'system' && '系统设置'}
+            {activeTab === 'usage-guides' && '使用介绍管理'}
           </h2>
           </div>
-          {activeTab !== 'system' && activeTab !== 'contact' && activeTab !== 'users' && activeTab !== 'cities' && activeTab !== 'menu_categories' && (
+          {activeTab !== 'system' && activeTab !== 'contact' && activeTab !== 'users' && activeTab !== 'cities' && activeTab !== 'menu_categories' && activeTab !== 'usage-guides' && activeTab !== 'transport' && (
           <div className="flex gap-2">
             {activeTab === 'strategies' && (
               <button 
@@ -389,7 +407,7 @@ export default function AdminDashboard() {
               </button>
             )}
             <button 
-              onClick={handleAdd}
+              onClick={() => handleAdd()}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
@@ -423,16 +441,54 @@ export default function AdminDashboard() {
             )
           ))}
           {activeTab === 'transport' && (
-              <SpotsList 
-                data={spots.filter(s => s.tags.includes('rail') || s.tags.includes('airport'))} 
-                onDelete={deleteSpot} 
-                onEdit={handleEdit} 
-              />
+            <div className="space-y-8">
+              <div>
+                <div className="flex justify-between items-center mb-4 px-4">
+                  <h3 className="text-lg font-bold flex items-center gap-2">
+                    <LucideIcons.Train size={20} />
+                    高铁站列表
+                  </h3>
+                  <button 
+                    onClick={() => handleAdd('rail')}
+                    className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus size={16} />
+                    新建高铁站
+                  </button>
+                </div>
+                <SpotsList 
+                  data={spots.filter(s => s.tags.includes('rail'))} 
+                  onDelete={deleteSpot} 
+                  onEdit={handleEdit} 
+                />
+              </div>
+              <div className="border-t pt-8">
+                <div className="flex justify-between items-center mb-4 px-4">
+                  <h3 className="text-lg font-bold flex items-center gap-2">
+                    <LucideIcons.Plane size={20} />
+                    机场列表
+                  </h3>
+                  <button 
+                    onClick={() => handleAdd('airport')}
+                    className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus size={16} />
+                    新建机场
+                  </button>
+                </div>
+                <SpotsList 
+                  data={spots.filter(s => s.tags.includes('airport'))} 
+                  onDelete={deleteSpot} 
+                  onEdit={handleEdit} 
+                />
+              </div>
+            </div>
           )}
             {activeTab === 'ads' && <AdsList data={ads} onDelete={deleteAd} onEdit={handleEdit} />}
             {activeTab === 'users' && <UserList />}
             {activeTab === 'contact' && <ContactSettings info={contactInfo} onSave={updateContactInfo} />}
             {activeTab === 'system' && <SystemSettings isCloudSyncing={isCloudSyncing} onEnableCloud={enableCloud} />}
+            {activeTab === 'usage-guides' && <UsageGuideManager />}
         </div>
       </div>
 
@@ -440,7 +496,7 @@ export default function AdminDashboard() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="p-4 sm:p-6 border-b flex justify-between items-center sticky top-0 bg-white">
+            <div className="p-4 sm:p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
               <h3 className="text-xl font-bold">
                 {editingItem ? '编辑' : '新建'}
                 {activeTab === 'guides' ? '导游' : activeTab === 'strategies' ? '攻略' : activeTab === 'cities' ? '城市' : activeTab === 'ads' ? '广告位' : spotCategories.find(c => c.key === activeTab)?.name || '项目'}
@@ -452,8 +508,8 @@ export default function AdminDashboard() {
             <div className="p-4 sm:p-6">
               {activeTab === 'guides' && <GuideForm initialData={editingItem} onSave={handleSave} isSaving={isSaving} />}
               {activeTab === 'strategies' && <StrategyForm initialData={editingItem} onSave={handleSave} isSaving={isSaving} />}
-              {spotCategories.some(c => c.key === activeTab) && <SpotForm key={activeTab} initialData={editingItem} defaultTag={activeTab} onSave={handleSave} isSaving={isSaving} />}
-              {activeTab === 'transport' && <SpotForm key="transport" initialData={editingItem} defaultTag="transport" onSave={handleSave} isSaving={isSaving} />}
+              {activeTab !== 'transport' && spotCategories.some(c => c.key === activeTab) && <SpotForm key={activeTab} initialData={editingItem} defaultTag={activeTab} onSave={handleSave} isSaving={isSaving} />}
+              {activeTab === 'transport' && <SpotForm key={`transport-${addTag || 'none'}-${editingItem?.id || 'new'}`} initialData={editingItem} defaultTag={addTag || 'transport'} onSave={handleSave} isSaving={isSaving} />}
               {activeTab === 'ads' && <AdForm initialData={editingItem} onSave={handleSave} />}
             </div>
           </div>
@@ -560,6 +616,9 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
         const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
         return dateA - dateB;
     }
+    // Sort by isTop desc, then rank asc, then ID desc (newest first)
+    if (a.isTop !== b.isTop) return (b.isTop ? 1 : 0) - (a.isTop ? 1 : 0);
+    if (a.rank !== b.rank) return (a.rank || 99) - (b.rank || 99);
     return b.id - a.id;
   });
 
@@ -595,6 +654,16 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
           <div className="flex-1 w-full">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
               <h3 className="text-lg font-bold">{guide.name}</h3>
+              <span className={`px-2 py-0.5 text-xs rounded-full border ${
+                  guide.category === 'car' ? 'bg-green-50 text-green-600 border-green-200' :
+                  guide.category === 'agency' ? 'bg-orange-50 text-orange-600 border-orange-200' :
+                  'bg-blue-50 text-blue-600 border-blue-200'
+              }`}>
+                  {guide.category === 'car' ? '租车' : guide.category === 'agency' ? '旅行社' : '导游'}
+              </span>
+              {guide.isTop && <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-bold">置顶</span>}
+              {guide.isGlobal && <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-600 font-bold">全城</span>}
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">排序:{guide.rank || 99}</span>
               <span className={`px-2 py-0.5 text-xs rounded-full ${guide.gender === 'male' ? 'bg-blue-100 text-blue-600' : 'bg-pink-100 text-pink-600'}`}>
                 {guide.gender === 'male' ? '男' : '女'}
               </span>
@@ -643,6 +712,9 @@ function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete
         const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
         return dateA - dateB;
     }
+    // Sort by isTop desc, then rank asc, then ID desc (newest first)
+    if (a.isTop !== b.isTop) return (b.isTop ? 1 : 0) - (a.isTop ? 1 : 0);
+    if (a.rank !== b.rank) return (a.rank || 99) - (b.rank || 99);
     return b.id - a.id;
   });
 
@@ -725,6 +797,10 @@ function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onS
     avatar: 'https://picsum.photos/200',
     intro: '',
     cities: [] as string[],
+    rank: 99,
+    isTop: false,
+    isGlobal: false,
+    category: 'guide',
     photos: [] as string[],
     content: ''
   });
@@ -746,11 +822,28 @@ function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onS
           required
         />
       </div>
-      
-      <ExpirationSelector 
-        value={(formData as any).expiryDate} 
-        onChange={(val) => setFormData({...formData, expiryDate: val} as any)} 
-      />
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">类别</label>
+            <select
+            value={formData.category || 'guide'}
+            onChange={e => setFormData({...formData, category: e.target.value as 'guide' | 'car' | 'agency'})}
+            className="w-full px-3 py-2 border rounded-lg bg-white"
+            >
+            <option value="guide">导游 (Guide)</option>
+            <option value="car">租车 (Car Rental)</option>
+            <option value="agency">旅行社 (Agency)</option>
+            </select>
+        </div>
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">有效期</label>
+            <ExpirationSelector 
+                value={(formData as any).expiryDate} 
+                onChange={(val) => setFormData({...formData, expiryDate: val} as any)} 
+            />
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -815,6 +908,41 @@ function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onS
           ))}
         </div>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">排序权重 (越小越靠前)</label>
+          <input
+            type="number"
+            value={formData.rank || 99}
+            onChange={e => setFormData({...formData, rank: parseInt(e.target.value) || 99})}
+            className="w-full px-3 py-2 border rounded-lg"
+          />
+        </div>
+        <div className="flex items-center pt-6">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+                type="checkbox"
+                checked={formData.isTop || false}
+                onChange={e => setFormData({...formData, isTop: e.target.checked})}
+                className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-bold text-gray-700">置顶显示</span>
+            </label>
+        </div>
+        <div className="flex items-center pt-6">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+                type="checkbox"
+                checked={formData.isGlobal || false}
+                onChange={e => setFormData({...formData, isGlobal: e.target.checked})}
+                className="w-5 h-5 rounded text-purple-600 focus:ring-purple-500"
+            />
+            <span className="text-sm font-bold text-purple-700">全城市置顶</span>
+            </label>
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">简介 (首页显示部分)</label>
         <RichTextEditor
@@ -1156,6 +1284,9 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
         const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
         return dateA - dateB;
     }
+    // Sort by isTop desc, then rank asc, then ID desc (newest first)
+    if (a.isTop !== b.isTop) return (b.isTop ? 1 : 0) - (a.isTop ? 1 : 0);
+    if (a.rank !== b.rank) return (a.rank || 99) - (b.rank || 99);
     return b.id - a.id;
   });
 
@@ -1197,6 +1328,8 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
           <div className="flex-1 w-full">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
               <h3 className="text-lg font-bold">{item.name}</h3>
+              {item.isTop && <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-bold">置顶</span>}
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">排序:{item.rank || 99}</span>
               <div className="flex gap-1">
                 {item.tags?.map(t => (
                     <span key={t} className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">
@@ -1239,7 +1372,9 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
 function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { initialData?: Spot, defaultTag?: string, onSave: (data: any) => void, isSaving?: boolean }) {
   const { cities = [] } = useData();
   const isTransport = defaultTag === 'transport';
-  const effectiveDefaultTag = isTransport ? 'rail' : defaultTag;
+  const isRail = defaultTag === 'rail';
+  const isAirport = defaultTag === 'airport';
+  const effectiveDefaultTag = isRail ? 'rail' : (isAirport ? 'airport' : defaultTag);
 
   const [formData, setFormData] = useState<Partial<Spot>>(initialData ? {
     ...initialData,
@@ -1249,20 +1384,38 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
     reviews: initialData.reviews || []
   } : {
     name: '',
+    cnName: '',
     city: '青岛',
     address: '',
     location: { lng: 120.38, lat: 36.06 },
     photos: [],
     content: '',
     tags: [effectiveDefaultTag],
+    rank: 99,
+    isTop: false,
     reviews: []
   });
 
+  // Ensure formData is updated when initialData changes, BUT ONLY if initialData is provided (edit mode)
   useEffect(() => {
-     if (isTransport && !initialData) {
+    if (initialData) {
+        setFormData(prev => ({
+            ...prev,
+            ...initialData,
+            photos: initialData.photos || [],
+            tags: initialData.tags || [effectiveDefaultTag],
+            reviews: initialData.reviews || []
+        }));
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+     if (isRail && !initialData) {
          setFormData(prev => ({ ...prev, tags: ['rail'] }));
+     } else if (isAirport && !initialData) {
+         setFormData(prev => ({ ...prev, tags: ['airport'] }));
      }
-  }, [isTransport, initialData]);
+  }, [isRail, isAirport, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1277,13 +1430,18 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">名称</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">名称 (主标题，显示在列表，建议韩文) <span className="text-xs text-blue-500 font-normal">(独立输入)</span></label>
         <input
           type="text"
           value={formData.name}
-          onChange={e => setFormData({...formData, name: e.target.value})}
+          onChange={e => {
+              // Strictly update ONLY name
+              setFormData(prev => ({ ...prev, name: e.target.value }));
+          }}
           className="w-full px-3 py-2 border rounded-lg"
           required
+          autoComplete="new-password"
+          name="spot_name_field_unique"
         />
       </div>
 
@@ -1293,13 +1451,18 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
       />
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">中文名称 (详情页显示)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">地名设置 (显示在详情页“地名”栏，建议中文) <span className="text-xs text-blue-500 font-normal">(独立输入)</span></label>
         <input
           type="text"
-          value={formData.name || ''}
-          onChange={e => setFormData({...formData, name: e.target.value})}
+          value={formData.cnName || ''}
+          onChange={e => {
+              // Strictly update ONLY cnName
+              setFormData(prev => ({ ...prev, cnName: e.target.value }));
+          }}
           className="w-full px-3 py-2 border rounded-lg"
-          placeholder="例如：汉拿山"
+          placeholder="请输入地名"
+          autoComplete="new-password"
+          name="spot_cn_name_field_unique"
         />
       </div>
       <div>
@@ -1363,14 +1526,14 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">分类 {isTransport ? '(可选)' : '(已锁定)'}</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">分类 {isRail || isAirport ? '(已锁定)' : '(可选)'}</label>
         <select
           value={formData.tags?.[0] || effectiveDefaultTag}
           onChange={e => setFormData({...formData, tags: [e.target.value as any]})}
-          className={`w-full px-3 py-2 border rounded-lg ${isTransport ? 'bg-white' : 'bg-gray-100 text-gray-500 cursor-not-allowed'}`}
-          disabled={!isTransport}
+          className={`w-full px-3 py-2 border rounded-lg ${isRail || isAirport ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'}`}
+          disabled={isRail || isAirport}
         >
-          {!isTransport && (
+          {!(isRail || isAirport) && (
             <>
                 <option value="spot">景点</option>
                 <option value="dining">美食</option>
@@ -1382,13 +1545,32 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
                 <option value="other">其他</option>
             </>
           )}
-          {isTransport && (
-              <>
-                <option value="rail">高铁</option>
-                <option value="airport">机场</option>
-              </>
-          )}
+          {isRail && <option value="rail">高铁</option>}
+          {isAirport && <option value="airport">机场</option>}
         </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">排序权重 (越小越靠前)</label>
+          <input
+            type="number"
+            value={formData.rank || 99}
+            onChange={e => setFormData({...formData, rank: parseInt(e.target.value) || 99})}
+            className="w-full px-3 py-2 border rounded-lg"
+          />
+        </div>
+        <div className="flex items-center pt-6">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+                type="checkbox"
+                checked={formData.isTop || false}
+                onChange={e => setFormData({...formData, isTop: e.target.checked})}
+                className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-bold text-gray-700">置顶显示</span>
+            </label>
+        </div>
       </div>
       <div>
         <ImageUploader
@@ -1513,12 +1695,19 @@ function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: nu
 }
 
 function AdForm({ initialData, onSave }: { initialData?: AdSlot, onSave: (data: any) => void }) {
-  const [formData, setFormData] = useState(initialData || {
+  const [formData, setFormData] = useState<Partial<AdSlot>>(initialData ? {
+    ...initialData,
+    photos: initialData.photos || [],
+    content: initialData.content || ''
+  } : {
     title: '',
     description: '',
     image: 'https://picsum.photos/300/100',
+    photos: [],
     link: '',
-    layout: 'standard'
+    layout: 'standard',
+    address: '',
+    content: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1529,7 +1718,7 @@ function AdForm({ initialData, onSave }: { initialData?: AdSlot, onSave: (data: 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">标题</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">标题 (主标题)</label>
         <input
           type="text"
           value={formData.title}
@@ -1545,7 +1734,7 @@ function AdForm({ initialData, onSave }: { initialData?: AdSlot, onSave: (data: 
       />
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">描述</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">描述 (简短介绍)</label>
         <input
           type="text"
           value={formData.description || ''}
@@ -1554,24 +1743,56 @@ function AdForm({ initialData, onSave }: { initialData?: AdSlot, onSave: (data: 
           placeholder="简短描述"
         />
       </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">地址 (可选)</label>
+        <input
+          type="text"
+          value={formData.address || ''}
+          onChange={e => setFormData({...formData, address: e.target.value})}
+          className="w-full px-3 py-2 border rounded-lg"
+          placeholder="例如：市南区..."
+        />
+      </div>
+
       <div>
         <ImageUploader
-          label="图片"
+          label="封面图片"
           images={formData.image ? [formData.image] : []}
           onChange={(images) => setFormData({ ...formData, image: images[0] || '' })}
           single={true}
         />
       </div>
+
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">跳转链接</label>
-        <input
-          type="text"
-          value={formData.link}
-          onChange={e => setFormData({...formData, link: e.target.value})}
-          className="w-full px-3 py-2 border rounded-lg"
-          placeholder="https://..."
+        <ImageUploader
+          label="照片墙 (详情页轮播)"
+          images={formData.photos || []}
+          onChange={(images) => setFormData({ ...formData, photos: images })}
+          maxImages={9}
         />
       </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">跳转链接 (可选)</label>
+        <input
+          type="text"
+          value={formData.link || ''}
+          onChange={e => setFormData({...formData, link: e.target.value})}
+          className="w-full px-3 py-2 border rounded-lg"
+          placeholder="如果填写，点击将直接跳转此链接"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">内容详情 (富文本)</label>
+        <RichTextEditor
+          value={formData.content || ''}
+          onChange={val => setFormData({...formData, content: val})}
+          placeholder="请输入详细内容..."
+        />
+      </div>
+
       <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
         保存
       </button>

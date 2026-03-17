@@ -12,7 +12,33 @@ export class SpotsService {
         { expiryDate: { gt: new Date() } }
       ]
     };
-    const spots = await this.prisma.spot.findMany({ where });
+    const spots = await this.prisma.spot.findMany({ 
+      where,
+      select: {
+        id: true,
+        name: true,
+        cnName: true,
+        city: true,
+        address: true,
+        lng: true,
+        lat: true,
+        photos: true,
+        videos: true,
+        intro: true,
+        content: true,
+        tags: true,
+        rank: true,
+        isTop: true,
+        expiryDate: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: [
+        { isTop: 'desc' }, // Top items first
+        { rank: 'asc' },   // Lower rank number = higher priority (1, 2, 3...)
+        { createdAt: 'desc' }
+      ]
+    });
     return spots.map(s => this.transform(s));
   }
 
@@ -86,6 +112,7 @@ export class SpotsService {
 
     return {
       ...spot,
+      content: spot.content || '',
       tags: parseJSON(spot.tags),
       photos: parseJSON(spot.photos),
       reviews: [], // Legacy compatibility

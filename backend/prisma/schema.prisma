@@ -51,13 +51,13 @@ model Review {
   poiId     Int?
   poi       Poi?     @relation(fields: [poiId], references: [id])
 
-  spotId    Int?
+  spotId    BigInt?
   spot      Spot?    @relation(fields: [spotId], references: [id])
 
-  guideId   Int?
+  guideId   BigInt?
   guide     Guide?   @relation(fields: [guideId], references: [id])
 
-  strategyId Int?
+  strategyId BigInt?
   strategy   Strategy? @relation(fields: [strategyId], references: [id])
 
   createdAt DateTime @default(now())
@@ -89,7 +89,7 @@ model Booking {
 // Admin Dashboard Models
 
 model Guide {
-  id        Int      @id @default(autoincrement())
+  id        BigInt   @id @default(autoincrement())
   name      String
   gender    String   // 'male' | 'female'
   hasCar    Boolean  @default(false)
@@ -98,6 +98,9 @@ model Guide {
   intro     String
   cities    String   // JSON string
   rank      Int      @default(99)
+  isTop     Boolean  @default(false)
+  isGlobal  Boolean  @default(false)
+  category  String   @default("guide") // 'guide' | 'car' | 'agency'
   content   String?
   photos    String?  // JSON string
   expiryDate DateTime? // Expiration date for auto-removal
@@ -119,7 +122,7 @@ model City {
 }
 
 model Spot {
-  id        Int      @id @default(autoincrement())
+  id        BigInt   @id @default(autoincrement())
   name      String
   cnName    String?  // Chinese Name for detail view
   city      String
@@ -131,6 +134,8 @@ model Spot {
   intro     String?
   content   String?
   tags      String   // JSON string
+  rank      Int      @default(99)
+  isTop     Boolean  @default(false)
   expiryDate DateTime? // Expiration date for auto-removal
   reviews   Review[] // Relation to Review table
   createdAt DateTime @default(now())
@@ -138,7 +143,7 @@ model Spot {
 }
 
 model Strategy {
-  id        Int      @id @default(autoincrement())
+  id        BigInt   @id @default(autoincrement())
   title     String
   city      String?
   category  String
@@ -163,10 +168,13 @@ model StrategyCategory {
 }
 
 model Ad {
-  id          Int      @id @default(autoincrement())
+  id          BigInt   @id @default(autoincrement())
   title       String
   description String?
+  content     String?  // Rich text detail
   image       String
+  photos      String?  // JSON string for additional photos
+  address     String?
   link        String?
   layout      String?  // 'standard' | 'full'
   expiryDate  DateTime? // Expiration date for auto-removal
@@ -191,6 +199,18 @@ model SpotCategory {
   key       String   @unique // e.g. "dining" - used as tag
   icon      String   // e.g. "Utensils" - lucide icon name
   sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UsageGuide {
+  id        Int      @id @default(autoincrement())
+  title     String
+  titleEn   String?
+  titleKo   String?
+  content   String
+  contentEn String?
+  contentKo String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
