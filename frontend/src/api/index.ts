@@ -158,11 +158,11 @@ export const createReview = async (userId: number | string, poiId: number | stri
       // It's a Spot or internal POI
       const body = {
           userId: Number(userId) || 1,
-          spotId: Number(poiId), // Defaulting to spot, might need adjustment if we distinguish types strictly
+          spotId: Number(poiId), 
           rating,
           content,
-          // If we want to support nickname overriding from frontend:
-          // customNickname: userInfo?.nickname 
+          // Always send nickname if available
+          customNickname: userInfo?.nickname || String(userId) 
       };
       console.log("发送给后端的原始数据 (Spot):", body);
       const res = await fetch('/api/reviews', {
@@ -174,15 +174,15 @@ export const createReview = async (userId: number | string, poiId: number | stri
   } else {
       // It's an AMAP POI
       const body = {
-          userId: Number(userId) || 1, // Fallback to 1 if NaN to avoid 500
+          userId: Number(userId) || 1, 
           amapId: String(poiId),
-          poiName: userInfo?.nickname ? 'Unknown' : 'Unknown', // Need to pass real POI info if possible
+          poiName: userInfo?.nickname ? 'Unknown' : 'Unknown', 
           poiType: 'Unknown',
           rating,
           content,
-          // Support admin mock creation via amap
-          customNickname: userInfo?.nickname,
-          isAdmin: !!userInfo?.nickname
+          // Send customNickname for real users too
+          customNickname: userInfo?.nickname || String(userId),
+          isAdmin: false // Only true if explicitly admin mock
       };
       console.log("发送给后端的原始数据 (AMAP):", body);
        const res = await fetch('/api/reviews/amap', {

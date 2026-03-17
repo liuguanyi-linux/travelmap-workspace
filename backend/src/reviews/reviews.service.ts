@@ -29,6 +29,15 @@ export class ReviewsService {
         reviewData.customNickname = customNickname;
     } else {
         reviewData.type = 'REAL';
+        // IMPORTANT FIX: If safeUserId was forced to 1 (because original userId was too big or invalid),
+        // we MUST preserve the original user intent/name in customNickname so frontend shows "1012494013" not "Test User"
+        if (safeUserId === 1 && reviewData.userId !== 1) {
+            // We can try to grab a nickname from somewhere, but here 'customNickname' might be undefined.
+            // So we rely on the controller passing 'customNickname' even for REAL users if available.
+            if (customNickname) {
+                reviewData.customNickname = customNickname;
+            }
+        }
     }
 
     return this.prisma.review.create({
@@ -172,6 +181,12 @@ export class ReviewsService {
     if (data.isAdmin || data.customNickname) {
         reviewData.type = 'ADMIN_MOCK';
         reviewData.customNickname = data.customNickname;
+    } else {
+        // Fix for REAL users with large IDs being mapped to Admin (1)
+        if (safeUserId === 1 && data.userId !== 1) {
+            // We should save their original ID/name as customNickname
+            reviewData.customNickname = data.customNickname || String(data.userId);
+        }
     }
 
     return this.prisma.review.create({

@@ -128,7 +128,9 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
       setIsSubmitting(true);
       try {
           const targetId = poi.id || poi.amapId;
-          await createReview(user.id, targetId, newRating, newComment);
+          // Pass user.nickname or fallback to user.id if nickname missing
+          const userInfo = { nickname: user.nickname || user.name || String(user.id) };
+          await createReview(user.id, targetId, newRating, newComment, userInfo);
           setNewComment('');
           setNewRating(5);
           fetchReviewsInternal(targetId);
