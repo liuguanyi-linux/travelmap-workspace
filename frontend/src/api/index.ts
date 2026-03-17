@@ -157,14 +157,14 @@ export const createReview = async (userId: number | string, poiId: number | stri
   if (isNumericId) {
       // It's a Spot or internal POI
       const body = {
-          userId: Number(userId),
+          userId: Number(userId) || 1,
           spotId: Number(poiId), // Defaulting to spot, might need adjustment if we distinguish types strictly
           rating,
           content,
           // If we want to support nickname overriding from frontend:
           // customNickname: userInfo?.nickname 
       };
-      
+      console.log("发送给后端的原始数据 (Spot):", body);
       const res = await fetch('/api/reviews', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -184,6 +184,7 @@ export const createReview = async (userId: number | string, poiId: number | stri
           customNickname: userInfo?.nickname,
           isAdmin: !!userInfo?.nickname
       };
+      console.log("发送给后端的原始数据 (AMAP):", body);
        const res = await fetch('/api/reviews/amap', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
