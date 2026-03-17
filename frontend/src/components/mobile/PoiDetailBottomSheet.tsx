@@ -113,7 +113,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
   }, [isOpen, controls, poi]);
 
   // Fetch reviews for internal numeric ID
-  const fetchReviewsInternal = async (id: number) => {
+  const fetchReviewsInternal = async (id: number | string) => {
     try {
         const data = await getReviews(id);
         console.log("前端接收到的真实评论数据 (Internal):", data); // DEBUG LOG
@@ -128,10 +128,11 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
       
       setIsSubmitting(true);
       try {
-          await createReview(user.id, poi.id, newRating, newComment);
+          const targetId = poi.id || poi.amapId;
+          await createReview(user.id, targetId, newRating, newComment);
           setNewComment('');
           setNewRating(5);
-          fetchReviews(poi.id);
+          fetchReviewsInternal(targetId);
       } catch (error) {
           console.error('Failed to publish comment:', error);
       } finally {

@@ -123,52 +123,17 @@ export const getReviews = async (poiId: number | string) => {
   const isNumericId = !isNaN(Number(poiId));
   
   try {
-      let url = '';
       if (isNumericId) {
-          // Try fetching as Spot first (most common for "attractions")
-          // But wait, the frontend distinguishes between 'poi' (amap) and 'spot' (local db)
-          // Actually, 'getReviews' is called with 'poi.id'.
-          // In AdminDashboard, spots have numeric IDs.
-          // In MapView (AMAP), POIs have string IDs (amapId).
-          
-          // Let's try to determine type or just try endpoints.
-          // Better approach: The backend should ideally expose a unified endpoint or we assume type.
-          // Given the current architecture:
-          // /api/reviews/spot/:id
-          // /api/reviews/poi/:id (This expects internal POI ID, not AMAP ID?)
-          // /api/reviews/amap/:amapId (We added this in backend service createForAmap but controller?)
-          
-          // Let's check backend controller for AMAP support.
-          // It seems we only saw `findAllByPoiId`, `findAllBySpotId`.
-          // If the ID is from AMAP (string), we need an endpoint that handles AMAP IDs.
-          
-          // However, for now, let's assume 'poiId' passed here is what the backend expects.
-          // If it's a Spot (from Admin), use /api/reviews/spot/:id
-          // If it's an AMAP POI, use /api/reviews/amap/:id (if exists) or /api/reviews/poi/:id?
-          
-          // Let's rely on the previous implementation pattern but REMOVE MOCKS.
-          
-          // First, try fetching from real backend API if available
-          const endpoint = isNumericId ? `/api/reviews/spot/${poiId}` : `/api/reviews/amap/${poiId}`;
-          
-          // NOTE: Since we don't have a dedicated /amap/ endpoint exposed in the controller snippet we saw,
-          // we might need to rely on the fact that `createReview` handles logic.
-          // But fetching?
-          // Let's assume for now we only fetch real data for SPOTS (numeric IDs) which match the Admin dashboard use case.
-          // For AMAP POIs, if backend doesn't support them yet, we return empty list instead of mocks.
-          
-          if (isNumericId) {
-             const res = await fetch(`/api/reviews/spot/${poiId}`);
-             if (res.ok) {
-                 return await res.json();
-             }
-          } else {
-             // Try fetching by AMAP ID if endpoint exists, otherwise empty
-             const res = await fetch(`/api/reviews/amap/${poiId}`);
-             if (res.ok) {
-                 return await res.json();
-             }
-          }
+         const res = await fetch(`/api/reviews/spot/${poiId}`);
+         if (res.ok) {
+             return await res.json();
+         }
+      } else {
+         // Try fetching by AMAP ID if endpoint exists, otherwise empty
+         const res = await fetch(`/api/reviews/amap/${poiId}`);
+         if (res.ok) {
+             return await res.json();
+         }
       }
   } catch (e) {
       console.error('Failed to fetch real reviews', e);
