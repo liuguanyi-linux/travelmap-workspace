@@ -273,9 +273,9 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
                                 key={fav.id} 
                                 className="bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-3 active:scale-[0.98] transition-all items-center"
                                 onClick={() => {
-                                    onPoiClick(fav);
+                                    if (onPoiClick) onPoiClick(fav);
                                     onClose();
-                                }}
+                                  }}
                             >
                                 <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden shrink-0">
                                     {fav.imageUrl ? (

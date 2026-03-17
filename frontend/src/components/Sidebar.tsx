@@ -711,29 +711,37 @@ export default function Sidebar({
                             {reviews.map((review, i) => (
                                 <div key={i} className='border-b border-slate-800 pb-6 last:border-0 hover:bg-slate-800/30 p-2 rounded-2xl transition-colors'>
                                     <div className='flex items-center gap-3 mb-2'>
-                                        {review.avatar ? (
-                                           <img src={review.avatar} alt="avatar" className='w-10 h-10 rounded-full border border-cyan-500/30 bg-slate-900' />
-                                        ) : (
-                                           <div className='w-10 h-10 bg-gradient-to-br from-cyan-900 to-blue-900 rounded-full flex items-center justify-center text-cyan-300 text-xs font-bold shadow-inner border border-cyan-500/30'>
-                                              {review.username ? review.username[0] : `U${review.user_id}`}
-                                           </div>
+                                        {(!review.type || review.type === 'REAL') && (
+                                            review.avatar ? (
+                                                <img src={review.avatar} alt="avatar" className='w-10 h-10 rounded-full border border-cyan-500/30 bg-slate-900' />
+                                            ) : (
+                                                <div className='w-10 h-10 bg-gradient-to-br from-cyan-900 to-blue-900 rounded-full flex items-center justify-center text-cyan-300 text-xs font-bold shadow-inner border border-cyan-500/30'>
+                                                    {review.user?.nickname ? review.user.nickname[0] : (review.user?.email ? review.user.email[0] : 'U')}
+                                                </div>
+                                            )
                                         )}
                                         <div className='flex-1'>
                                             <div className='flex justify-between items-start'>
-                                                <span className='text-sm font-medium text-cyan-200'>{review.username || `User ${review.user_id}`}</span>
-                                                {review.source && review.source !== 'Local' && (
-                                                  <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                                                    review.source === 'Meituan' 
-                                                      ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' 
-                                                      : 'bg-orange-500/20 text-orange-500 border-orange-500/30'
-                                                  }`}>
-                                                    {review.source === 'Meituan' ? '美团' : '大众点评'}
+                                                <span className='text-sm font-medium text-cyan-200'>
+                                                    {review.customNickname || 
+                                                    (review.user?.nickname && review.user.nickname !== '游客' && review.user.nickname !== 'User' 
+                                                        ? review.user.nickname 
+                                                        : (review.user?.email ? review.user.email.split('@')[0] : '방문자'))}
+                                                </span>
+                                                {review.type === 'SYSTEM_MOCK' && (
+                                                  <span className='text-[10px] px-1.5 py-0.5 rounded border bg-purple-500/20 text-purple-400 border-purple-500/30'>
+                                                    시스템 생성
+                                                  </span>
+                                                )}
+                                                {review.type === 'ADMIN_MOCK' && (
+                                                  <span className='text-[10px] px-1.5 py-0.5 rounded border bg-blue-500/20 text-blue-400 border-blue-500/30'>
+                                                    관리자 추가
                                                   </span>
                                                 )}
                                             </div>
                                             <div className='flex text-yellow-400 gap-0.5 items-center mt-0.5'>
                                                 {[...Array(review.rating || 5)].map((_, j) => <Star key={j} size={10} className='fill-current' />)}
-                                                <span className='text-xs text-slate-500 ml-2'>{new Date(review.created_at).toLocaleDateString()}</span>
+                                                <span className='text-xs text-slate-500 ml-2'>{new Date(review.createdAt || review.created_at || Date.now()).toLocaleDateString()}</span>
                                             </div>
                                         </div>
                                     </div>

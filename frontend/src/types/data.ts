@@ -41,6 +41,8 @@ export interface Review {
   content: string;
   created_at: string;
   source?: string; // 'Local' | 'Meituan' | 'Dianping'
+  type?: string;
+  customNickname?: string;
 }
 
 export interface Spot {

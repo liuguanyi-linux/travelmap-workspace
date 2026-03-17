@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Star, Trash2 } from 'lucide-react';
 
 interface ReviewManagerProps {
-  targetId?: number;
+  targetId?: number | string;
   targetType: 'spot' | 'guide' | 'strategy';
 }
 
@@ -26,77 +26,11 @@ export function ReviewManager({ targetId, targetType }: ReviewManagerProps) {
       const body: any = {
         rating: newReview.rating,
         content: newReview.content,
-        // Backend expects 'userId' but also supports creating a ghost user if needed.
-        // However, the current backend implementation for createReview likely requires a valid userId
-        // or has logic to handle admin-created reviews.
-        // If the backend creates a user from 'nickname', we need to check that logic.
-        // Assuming we want to simulate a user:
-        nickname: newReview.username,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Date.now()}`
+        customNickname: newReview.username,
+        isAdmin: true, // Tell backend this is from admin
       };
-      // Dynamic key based on targetType
+      
       body[`${targetType}Id`] = targetId;
-      // Admin bypass: pass a special flag or userId if backend supports it.
-      // Since we don't have backend code for 'createReview' handy here to confirm, 
-      // let's ensure we are sending what the frontend form implies.
-      // NOTE: The issue "not showing in frontend" is likely because the frontend filters by user or something,
-      // OR the backend createReview doesn't automatically create a 'User' relation if only nickname is passed.
-      
-      // FIX: Hardcode a system/admin user ID or ensure backend handles 'nickname' only.
-      // If we look at previous UserDrawer logic, it uses user.id.
-      // Let's try to send a valid dummy userId if possible, OR rely on backend to handle it.
-      // Actually, better fix: The frontend list expects `review.user`. 
-      // If we create a review without a real user relation, `review.user` might be null.
-      // We should check how `findAll` returns data.
-      
-      // Let's assume we need to attach it to the current admin user (id=1 usually) but override nickname?
-      // Or better, let backend handle "ghost" users.
-      // For now, let's ensure we send userId=1 (Admin) but with the custom content.
-      // BUT `ReviewManager` is client side.
-      // Let's look at the fetch response handling.
-      
-      // To ensure it appears, we might need to send a dummy userId.
-      body.userId = 1; // Bind to admin for now to ensure relation exists
-      
-      // Override nickname on the User object if possible, OR rely on Review's own nickname field (if it exists)
-      // The frontend display logic uses: review.user?.nickname || review.nickname || ...
-      // So as long as we save 'nickname' on the review record, it should be fine.
-      // But wait, the backend schema might not have 'nickname' on Review model directly?
-      // Let's check: The body has 'nickname'. If schema has it, good.
-      // If schema only relies on User relation, then for Admin-created fake reviews,
-      // we are binding to Admin user (userId=1). So frontend will show Admin's nickname unless we override it.
-      // 
-      // If the backend create method ignores 'nickname' in body because it's not in Prisma schema for Review,
-      // then we have a problem: all fake reviews will show as "Admin".
-      // 
-      // SOLUTION: We must ensure the Review model has a 'nickname' field to store this custom name,
-      // AND the frontend prefers this field over user.nickname.
-      // 
-      // If schema doesn't have it, we can't easily store "Test User" while linking to "Admin" account.
-      // A quick workaround if schema update is hard: 
-      // Maybe we don't link to a user? But we just added code to FORCE link to user.
-      // 
-      // Let's assume the schema has 'nickname' on Review because we are passing it.
-      // If not, we need to add it. But let's trust the 'body' construction implies it exists or was intended.
-      // 
-      // Wait, if I linked to Admin (userId=1), and Admin's nickname is "Admin", 
-      // and frontend says `review.user.nickname || review.nickname`,
-      // if `review.user` exists, it might take precedence?
-      // No, `review.user.nickname` is checked first.
-      // If I want to show "Test User", I need `review.user` to be null?
-      // But I just forced `userId=1`.
-      // 
-      // Let's adjust frontend display logic? 
-      // Actually, if `review.nickname` is present (the custom one), it should probably take precedence for "Guest" reviews?
-      // But for real users, we want their profile nickname.
-      // 
-      // Let's check `PoiDetailBottomSheet.tsx` again.
-      // It uses: `(review.user.nickname && ... !== '游客' ...) ? review.user.nickname : t('detail.visitor')`
-      // It DOES NOT check `review.nickname` (the custom field) at all in the new logic!
-      // The old logic `review.user.nickname || review.nickname` did.
-      // 
-      // So, I need to update `PoiDetailBottomSheet.tsx` to respect `review.nickname` if it exists,
-      // especially for these admin-created reviews.
       
       const res = await fetch('/api/reviews', {
         method: 'POST',
@@ -107,7 +41,36 @@ export function ReviewManager({ targetId, targetType }: ReviewManagerProps) {
       if (res.ok) {
         const saved = await res.json();
         setReviews([saved, ...reviews]);
-        setNewReview({ username: '游客', rating: 5, content: '' });
+        setNewReview({ username: '방문자', rating: 5, content: '' }); // Set default to korean visitor
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleBatchGenerate = async () => {
+    if (!confirm('确定要批量生成 3-5 条虚拟好评吗？')) return;
+    try {
+      const res = await fetch('/api/reviews/batch-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetType, targetId })
+      });
+      if (res.ok) {
+        const generated = await res.json();
+        setReviews([...generated, ...reviews]);
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleBatchClear = async () => {
+    if (!confirm('警告：确定要清空所有系统生成的虚拟评论吗？（此操作不可逆，且仅删除 SYSTEM_MOCK 类型数据）')) return;
+    try {
+      const res = await fetch('/api/reviews/batch-clear', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetType, targetId })
+      });
+      if (res.ok) {
+        setReviews(reviews.filter(r => r.type !== 'SYSTEM_MOCK'));
       }
     } catch (e) { console.error(e); }
   };
@@ -130,7 +93,17 @@ export function ReviewManager({ targetId, targetType }: ReviewManagerProps) {
 
   return (
     <div className="border-t pt-4 mt-4">
-      <h3 className="font-bold text-gray-800 mb-3">评论管理</h3>
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="font-bold text-gray-800">评论管理</h3>
+        <div className="flex gap-2">
+            <button onClick={handleBatchGenerate} className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs hover:bg-green-700">
+                批量生成好评
+            </button>
+            <button onClick={handleBatchClear} className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs hover:bg-red-700">
+                清空系统虚拟评论
+            </button>
+        </div>
+      </div>
       
       {/* Add Review Form */}
       <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
@@ -140,7 +113,7 @@ export function ReviewManager({ targetId, targetType }: ReviewManagerProps) {
                   value={newReview.username}
                   onChange={e => setNewReview({...newReview, username: e.target.value})}
                   className="w-1/3 px-3 py-2 border rounded-lg text-sm"
-                  placeholder="用户名"
+                  placeholder="自定义昵称 (留空则使用默认)"
               />
               <select
                   value={newReview.rating}
@@ -164,7 +137,7 @@ export function ReviewManager({ targetId, targetType }: ReviewManagerProps) {
                   onClick={handleAdd}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 whitespace-nowrap"
               >
-                  添加评论
+                  添加后台评论
               </button>
           </div>
       </div>
@@ -177,10 +150,15 @@ export function ReviewManager({ targetId, targetType }: ReviewManagerProps) {
                   <div>
                       <div className="flex items-center gap-2 mb-1">
                           <span className="font-bold text-sm">
-                              {review.user?.nickname || review.nickname || '游客'}
+                              {review.customNickname || review.user?.nickname || review.nickname || '방문자'}
                           </span>
                           <span className="text-yellow-500 text-xs">{'★'.repeat(review.rating)}</span>
                           <span className="text-gray-400 text-xs">{new Date(review.createdAt).toLocaleDateString()}</span>
+                          
+                          {/* Data Source Tag */}
+                          {review.type === 'SYSTEM_MOCK' && <span className="ml-2 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px]">系统生成</span>}
+                          {review.type === 'ADMIN_MOCK' && <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px]">后台添加</span>}
+                          {(!review.type || review.type === 'REAL') && <span className="ml-2 px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px]">真实用户</span>}
                       </div>
                       <p className="text-sm text-gray-600">{review.content}</p>
                   </div>

@@ -20,6 +20,9 @@ interface Review {
   id: number;
   rating: number;
   content: string;
+  type?: string;
+  customNickname?: string;
+  nickname?: string;
   user: {
     nickname: string | null;
     email: string;
@@ -604,10 +607,12 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                                       <div key={review.id} className="border-b border-gray-50 dark:border-gray-700 last:border-0 pb-3 last:pb-0">
                                           <div className="flex justify-between items-center mb-1">
                                               <span className="font-bold text-gray-900 dark:text-white text-xs">
-                                                  {review.nickname || 
-                                                   (review.user.nickname && review.user.nickname !== '游客' && review.user.nickname !== 'User' 
+                                                  {review.customNickname || 
+                                                   (review.user?.nickname && review.user.nickname !== '游客' && review.user.nickname !== 'User' 
                                                       ? review.user.nickname 
-                                                      : t('detail.visitor'))}
+                                                      : (review.user?.email 
+                                                          ? review.user.email.split('@')[0] 
+                                                          : t('detail.visitor')))}
                                               </span>
                                               <div className="flex items-center gap-3">
                                               <div className="flex text-yellow-400 scale-90 origin-right">
