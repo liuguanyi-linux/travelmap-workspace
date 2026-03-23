@@ -25,7 +25,12 @@ export class ReviewsService {
 
     // Handle Admin/Custom Reviews without real users
     if (isAdmin || customNickname) {
-        reviewData.type = 'ADMIN_MOCK';
+        // If it's explicitly an anonymous user, mark as GUEST
+        if (customNickname === '익명 사용자') {
+            reviewData.type = 'GUEST';
+        } else {
+            reviewData.type = 'ADMIN_MOCK';
+        }
         reviewData.customNickname = customNickname;
     } else {
         reviewData.type = 'REAL';

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, PanInfo, useAnimation, useDragControls } from 'framer-motion';
 import { X, Navigation, Star, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2, Navigation2, ChevronLeft, ChevronRight, Image as ImageIcon, ChevronUp, ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { getFullImageUrl } from '../../utils/image';
 
@@ -14,6 +15,7 @@ interface PoiDetailBottomSheetProps {
   poi: any;
   isOpen: boolean;
   onClose: () => void;
+  onLightboxChange?: (isOpen: boolean) => void;
 }
 
 interface Review {
@@ -74,7 +76,7 @@ const SafeImage = ({ src, alt, className, onClick }: { src: string, alt: string,
   );
 };
 
-export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetailBottomSheetProps) {
+export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxChange }: PoiDetailBottomSheetProps) {
   const controls = useAnimation();
   const dragControls = useDragControls();
   const [viewState, setViewState] = useState<'hidden' | 'peek' | 'full'>('hidden');
@@ -90,6 +92,12 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (onLightboxChange) {
+      onLightboxChange(previewIndex !== null);
+    }
+  }, [previewIndex, onLightboxChange]);
 
   const isFav = poi ? isFavorite(poi.id) : false;
 
@@ -123,14 +131,22 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
   };
 
   const handlePublishComment = async () => {
-      if (!user || !newComment.trim() || !poi) return;
+      // Removed user check - allow guest reviews
+      if (!newComment.trim() || !poi) return;
       
       setIsSubmitting(true);
       try {
           const targetId = poi.id || poi.amapId;
-          // Pass user.nickname or fallback to user.id if nickname missing
-          const userInfo = { nickname: user.nickname || user.name || String(user.id) };
-          await createReview(user.id, targetId, newRating, newComment, userInfo);
+          
+          const userInfo = user ? {
+              nickname: user.nickname || user.email?.split('@')[0] || String(user.id),
+              avatar: (user as any).avatar || (user as any).avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`
+          } : {
+              nickname: '익명 사용자', // Anonymous User
+              avatar: undefined
+          };
+
+          await createReview(String(user?.id || ''), targetId, newRating, newComment, userInfo);
           setNewComment('');
           setNewRating(5);
           fetchReviewsInternal(targetId);
@@ -281,11 +297,11 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
           dragConstraints={{ top: 0 }}
           dragElastic={0.1}
           onDragEnd={handleDragEnd}
-          className="absolute left-0 right-0 bottom-0 h-[75vh] bg-white rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] overflow-hidden pointer-events-auto flex flex-col will-change-transform"
+          className="absolute left-0 right-0 bottom-0 h-[75vh] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.2)] border-t border-gray-200 dark:border-gray-800 overflow-hidden pointer-events-auto flex flex-col will-change-transform"
         >
           {/* Drag Handle Area - Active Drag Zone */}
           <div 
-            className="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing bg-white z-20 shrink-0 touch-none items-center gap-2"
+            className="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing bg-transparent z-20 shrink-0 touch-none items-center gap-2"
             onPointerDown={(e) => dragControls.start(e)}
             onClick={() => {
                 if (viewState === 'peek') {
@@ -310,7 +326,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
               
               {/* Header Info (Always visible) - Also Draggable */}
               <div 
-                className="px-6 pb-1 bg-white z-10 shrink-0 touch-none"
+                className="px-6 pb-1 bg-transparent z-10 shrink-0 touch-none"
                 onPointerDown={(e) => dragControls.start(e)}
               >
                 <div className="flex justify-between items-start">
@@ -530,6 +546,188 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                                   {t('cityDrawer.copyAddress')}
                               </button>
                           </div>
+                          
+                          {/* 联系方式 */}
+                          {poi.phone && (
+                              <>
+                                <div className="h-px bg-gray-100" />
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[10px] text-gray-500 mb-0.5">전화번호</p>
+                                        <p className="font-medium text-gray-700 text-xs truncate">{poi.phone}</p>
+                                    </div>
+                                    <button 
+                                      onClick={() => {
+                                          const text = poi.phone || '';
+                                          if (navigator.clipboard && window.isSecureContext) {
+                                              navigator.clipboard.writeText(text);
+                                          } else {
+                                              const textArea = document.createElement("textarea");
+                                              textArea.value = text;
+                                              textArea.style.position = "fixed";
+                                              textArea.style.left = "-9999px";
+                                              document.body.appendChild(textArea);
+                                              textArea.focus();
+                                              textArea.select();
+                                              try { document.execCommand('copy'); } catch (err) {}
+                                              document.body.removeChild(textArea);
+                                          }
+                                          const btn = document.getElementById('copy-phone-btn');
+                                          if (btn) {
+                                              const originalText = btn.innerText;
+                                              btn.innerText = t('detail.saved');
+                                              btn.classList.add('bg-green-600', 'text-white');
+                                              btn.classList.remove('bg-gray-100', 'text-gray-600');
+                                              setTimeout(() => {
+                                                  btn.innerText = originalText;
+                                                  btn.classList.remove('bg-green-600', 'text-white');
+                                                  btn.classList.add('bg-gray-100', 'text-gray-600');
+                                              }, 1500);
+                                          }
+                                      }}
+                                      id="copy-phone-btn"
+                                      className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                                    >
+                                        복사하기
+                                    </button>
+                                </div>
+                              </>
+                          )}
+                          {poi.wechat && (
+                              <>
+                                <div className="h-px bg-gray-100" />
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[10px] text-gray-500 mb-0.5">위챗 ID</p>
+                                        <p className="font-medium text-gray-700 text-xs truncate">{poi.wechat}</p>
+                                    </div>
+                                    <button 
+                                      onClick={() => {
+                                          const text = poi.wechat || '';
+                                          if (navigator.clipboard && window.isSecureContext) {
+                                              navigator.clipboard.writeText(text);
+                                          } else {
+                                              const textArea = document.createElement("textarea");
+                                              textArea.value = text;
+                                              textArea.style.position = "fixed";
+                                              textArea.style.left = "-9999px";
+                                              document.body.appendChild(textArea);
+                                              textArea.focus();
+                                              textArea.select();
+                                              try { document.execCommand('copy'); } catch (err) {}
+                                              document.body.removeChild(textArea);
+                                          }
+                                          const btn = document.getElementById('copy-wechat-btn');
+                                          if (btn) {
+                                              const originalText = btn.innerText;
+                                              btn.innerText = t('detail.saved');
+                                              btn.classList.add('bg-green-600', 'text-white');
+                                              btn.classList.remove('bg-gray-100', 'text-gray-600');
+                                              setTimeout(() => {
+                                                  btn.innerText = originalText;
+                                                  btn.classList.remove('bg-green-600', 'text-white');
+                                                  btn.classList.add('bg-gray-100', 'text-gray-600');
+                                              }, 1500);
+                                          }
+                                      }}
+                                      id="copy-wechat-btn"
+                                      className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                                    >
+                                        복사하기
+                                    </button>
+                                </div>
+                              </>
+                          )}
+                          {poi.kakao && (
+                              <>
+                                <div className="h-px bg-gray-100" />
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[10px] text-gray-500 mb-0.5">카카오톡 ID</p>
+                                        <p className="font-medium text-gray-700 text-xs truncate">{poi.kakao}</p>
+                                    </div>
+                                    <button 
+                                      onClick={() => {
+                                          const text = poi.kakao || '';
+                                          if (navigator.clipboard && window.isSecureContext) {
+                                              navigator.clipboard.writeText(text);
+                                          } else {
+                                              const textArea = document.createElement("textarea");
+                                              textArea.value = text;
+                                              textArea.style.position = "fixed";
+                                              textArea.style.left = "-9999px";
+                                              document.body.appendChild(textArea);
+                                              textArea.focus();
+                                              textArea.select();
+                                              try { document.execCommand('copy'); } catch (err) {}
+                                              document.body.removeChild(textArea);
+                                          }
+                                          const btn = document.getElementById('copy-kakao-btn');
+                                          if (btn) {
+                                              const originalText = btn.innerText;
+                                              btn.innerText = t('detail.saved');
+                                              btn.classList.add('bg-green-600', 'text-white');
+                                              btn.classList.remove('bg-gray-100', 'text-gray-600');
+                                              setTimeout(() => {
+                                                  btn.innerText = originalText;
+                                                  btn.classList.remove('bg-green-600', 'text-white');
+                                                  btn.classList.add('bg-gray-100', 'text-gray-600');
+                                              }, 1500);
+                                          }
+                                      }}
+                                      id="copy-kakao-btn"
+                                      className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                                    >
+                                        복사하기
+                                    </button>
+                                </div>
+                              </>
+                          )}
+                          {poi.email && (
+                              <>
+                                <div className="h-px bg-gray-100" />
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[10px] text-gray-500 mb-0.5">이메일</p>
+                                        <p className="font-medium text-gray-700 text-xs truncate">{poi.email}</p>
+                                    </div>
+                                    <button 
+                                      onClick={() => {
+                                          const text = poi.email || '';
+                                          if (navigator.clipboard && window.isSecureContext) {
+                                              navigator.clipboard.writeText(text);
+                                          } else {
+                                              const textArea = document.createElement("textarea");
+                                              textArea.value = text;
+                                              textArea.style.position = "fixed";
+                                              textArea.style.left = "-9999px";
+                                              document.body.appendChild(textArea);
+                                              textArea.focus();
+                                              textArea.select();
+                                              try { document.execCommand('copy'); } catch (err) {}
+                                              document.body.removeChild(textArea);
+                                          }
+                                          const btn = document.getElementById('copy-email-btn');
+                                          if (btn) {
+                                              const originalText = btn.innerText;
+                                              btn.innerText = t('detail.saved');
+                                              btn.classList.add('bg-green-600', 'text-white');
+                                              btn.classList.remove('bg-gray-100', 'text-gray-600');
+                                              setTimeout(() => {
+                                                  btn.innerText = originalText;
+                                                  btn.classList.remove('bg-green-600', 'text-white');
+                                                  btn.classList.add('bg-gray-100', 'text-gray-600');
+                                              }, 1500);
+                                          }
+                                      }}
+                                      id="copy-email-btn"
+                                      className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                                    >
+                                        복사하기
+                                    </button>
+                                </div>
+                              </>
+                          )}
                       </div>
                   </div>
 
@@ -551,57 +749,51 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
                               <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{reviews.length} {t('detail.reviewsCount')}</span>
                           </div>
                           
-                          {/* Review Input */}
-                          {user ? (
-                              <div className="mb-4">
-                                  <div className="flex items-center gap-2 mb-2">
-                                      <div className="flex gap-1">
-                                          {[1, 2, 3, 4, 5].map((star) => (
-                                              <button
-                                                  key={star}
-                                                  onClick={() => setNewRating(star)}
-                                                  className="focus:outline-none transition-transform hover:scale-110 p-1"
-                                              >
-                                                  <Star
-                                                      size={20}
-                                                      className={`${
-                                                          star <= newRating
-                                                              ? 'fill-yellow-400 text-yellow-400'
-                                                              : 'text-gray-300 dark:text-gray-600'
-                                                      }`}
-                                                  />
-                                              </button>
-                                          ))}
-                                      </div>
-                                  </div>
-                                  <textarea 
-                                      className="w-full p-3 bg-gray-50 dark:bg-gray-700 border-none rounded-xl focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all resize-none text-xs placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-white"
-                                      placeholder={t('detail.shareExperience')}
-                                      rows={2}
-                                      value={newComment}
-                                      onChange={(e) => setNewComment(e.target.value)}
-                                  />
-                                  <div className="flex justify-end mt-2">
-                                      <button 
-                                          className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full px-4 py-1.5 text-xs font-bold flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200 dark:shadow-none active:scale-95 transition-all"
-                                          onClick={handlePublishComment}
-                                          disabled={isSubmitting || !newComment.trim()}
-                                      >
-                                          {isSubmitting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
-                                          {t('detail.publishReview')}
-                                      </button>
+                          {/* Review Input - Always visible for Guest Reviews */}
+                          <div className="mb-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                  <div className="flex gap-1">
+                                      {[1, 2, 3, 4, 5].map((star) => (
+                                          <button
+                                              key={star}
+                                              onClick={() => setNewRating(star)}
+                                              className="focus:outline-none transition-transform hover:scale-110 p-1"
+                                          >
+                                              <Star
+                                                  size={20}
+                                                  className={`${
+                                                      star <= newRating
+                                                          ? 'fill-yellow-400 text-yellow-400'
+                                                          : 'text-gray-300 dark:text-gray-600'
+                                                  }`}
+                                              />
+                                          </button>
+                                      ))}
                                   </div>
                               </div>
-                          ) : (
-                              <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl text-center text-gray-500 dark:text-gray-400 text-xs font-medium">
-                                  {t('detail.loginToReview')}
+                              <textarea 
+                                  className="w-full p-3 bg-gray-50 dark:bg-gray-700 border-none rounded-xl focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all resize-none text-xs placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-white"
+                                  placeholder={t('detail.shareExperience')}
+                                  rows={2}
+                                  value={newComment}
+                                  onChange={(e) => setNewComment(e.target.value)}
+                              />
+                              <div className="flex justify-end mt-2">
+                                  <button 
+                                      className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full px-4 py-1.5 text-xs font-bold flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200 dark:shadow-none active:scale-95 transition-all"
+                                      onClick={handlePublishComment}
+                                      disabled={isSubmitting || !newComment.trim()}
+                                  >
+                                      {isSubmitting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                                      {t('detail.publishReview')}
+                                  </button>
                               </div>
-                          )}
+                          </div>
 
                           {/* Reviews List */}
                           <div className="space-y-3">
                               {reviews.length === 0 ? (
-                                  <div className="text-center py-4 text-gray-400 dark:text-gray-500 text-xs">暂无评论，快来抢沙发吧！</div>
+                                  <div className="text-center py-4 text-gray-400 dark:text-gray-500 text-xs">{t('detail.noReviews')}</div>
                               ) : (
                                   reviews.map(review => (
                                       <div key={review.id} className="border-b border-gray-50 dark:border-gray-700 last:border-0 pb-3 last:pb-0">
@@ -647,14 +839,20 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose }: PoiDetail
           {/* Fixed Bottom Buttons */}
           <div className="absolute bottom-0 left-0 right-0 p-5 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-[10002] pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300">
               <button 
-                onClick={() => toggleFavorite({
-                    id: poi.id,
-                    name: poi.name,
-                    type: poi.type,
-                    address: poi.address,
-                    location: poi.location,
-                    imageUrl: `https://picsum.photos/seed/${poi.id || 'poi'}/300/200`
-                })}
+                onClick={() => {
+                    if (!user) {
+                        toast.error(t('detail.loginToReview').replace('Review', 'Save'));
+                        return;
+                    }
+                    toggleFavorite({
+                        id: poi.id,
+                        name: poi.name,
+                        type: poi.type,
+                        address: poi.address,
+                        location: poi.location,
+                        imageUrl: `https://picsum.photos/seed/${poi.id || 'poi'}/300/200`
+                    });
+                }}
                 className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg shadow-xl shadow-gray-200 dark:shadow-none active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
               >
                   <Heart size={20} fill={isFav ? "currentColor" : "none"} className={isFav ? "text-red-500" : ""} />

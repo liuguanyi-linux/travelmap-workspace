@@ -5,6 +5,8 @@ import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useData } from '../../contexts/DataContext';
 import { useFavorites } from '../../hooks/useFavorites';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 
 interface CityDrawerProps {
   isVisible: boolean;
@@ -52,17 +54,29 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
   const { t, language } = useLanguage();
   const { cities = [], spotCategories = [], refreshData } = useData();
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { user } = useAuth();
 
   const getCityDisplayName = (city: City | undefined) => {
     if (!city) return '';
-    if (language === 'en-US' && city.nameEn) return city.nameEn;
-    if (language === 'ko-KR' && city.nameKo) return city.nameKo;
-    if (language === 'ja-JP' && city.nameJa) return city.nameJa;
+    // Temporary hardcode for Qingdao translation
+    if (city.name === '青岛' && language === 'ko-KR') return '칭다오';
+    if (city.name === '青岛' && language === 'ja-JP') return 'チンタオ';
+    if (city.name === '青岛' && language === 'en-US') return 'Qingdao';
+    
+    // We will add i18n support for cities later if needed
     return city.name;
   };
 
   const getCityDisplayNameByName = (cityName: string) => {
       const city = cities.find(c => c.name === cityName);
+      
+      // Temporary hardcode for Qingdao translation fallback
+      if (!city && cityName === '青岛') {
+          if (language === 'ko-KR') return '칭다오';
+          if (language === 'ja-JP') return 'チンタオ';
+          if (language === 'en-US') return 'Qingdao';
+      }
+      
       return city ? getCityDisplayName(city) : cityName;
   };
 
@@ -195,7 +209,8 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
          color: cat.key === 'spot' ? 'text-green-600 bg-green-50' :
                 cat.key === 'accommodation' ? 'text-blue-600 bg-blue-50' :
                 cat.key === 'dining' ? 'text-orange-600 bg-orange-50' :
-                cat.key === 'shopping' ? 'text-pink-600 bg-pink-50' :
+                cat.key === 'shopping' ? 'text-cyan-600 bg-cyan-50' : // 颜色改为亮青色 (Cyan)
+                cat.key === 'golf' ? 'text-emerald-600 bg-emerald-50' :
                 'text-gray-600 bg-gray-50'
        };
      });
@@ -274,7 +289,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
           dragConstraints={{ top: 0, bottom: 0 }} 
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 z-[60] bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-t-3xl shadow-[0_-10px_60px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col will-change-transform"
+          className="fixed bottom-0 left-0 right-0 z-[60] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-3xl shadow-[0_-10px_60px_rgba(0,0,0,0.15)] border-t border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col will-change-transform"
           style={{ 
               height: '66vh', 
               maxHeight: '66vh'
@@ -373,12 +388,12 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                 <button
                                     key={city.name || index}
                                     onClick={() => handleCityClick(city)}
-                                    className="flex flex-col items-center justify-center p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform w-14 h-14"
+                                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform min-w-[70px] w-auto min-h-[64px]"
                                 >
-                                    <div className="p-0.5 rounded-full bg-gray-50 dark:bg-gray-700 mb-0.5 text-gray-400 dark:text-gray-300">
+                                    <div className="p-0.5 rounded-full bg-gray-50 dark:bg-gray-700 mb-1 text-gray-400 dark:text-gray-300">
                                         <Building2 size={16} />
                                     </div>
-                                    <span className="font-bold text-gray-800 dark:text-white text-[13px] z-10 text-center leading-tight w-full truncate">{getCityDisplayName(city)}</span>
+                                    <span className="font-bold text-gray-800 dark:text-white text-[12px] z-10 text-center leading-tight w-full break-words whitespace-normal">{getCityDisplayName(city)}</span>
                                 </button>
                             ))}
                         </div>
@@ -420,6 +435,8 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                             {(() => {
                                 const filteredResults = (searchResults || []).filter(item => {
                                     if (!item) return false;
+                                    // 过滤掉已下架的项
+                                    if (item.isActive === false) return false;
                                     
                                     const hasTag = (tag: string) => {
                                         if (item.tags && Array.isArray(item.tags)) {
@@ -465,13 +482,24 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                         className="bg-white dark:bg-gray-800 rounded-xl p-2 shadow-sm border border-gray-100 dark:border-gray-700 flex gap-2 active:scale-[0.99] transition-transform cursor-pointer relative"
                                     >
                                         {/* Index Badge */}
-                                        <div className="absolute -left-1 -top-1 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm z-20">
+                                        <div className="absolute -left-1 -top-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm z-20">
                                             {index + 1}
                                         </div>
 
                                         <button 
                                             onClick={(e) => {
                                                 e.stopPropagation();
+                                                if (!user) {
+                                                    toast('로그인 후 즐겨찾기 가능합니다.', {
+                                                        icon: '⚠️',
+                                                        style: {
+                                                            borderRadius: '10px',
+                                                            background: '#333',
+                                                            color: '#fff',
+                                                        },
+                                                    });
+                                                    return;
+                                                }
                                                 toggleFavorite({
                                                     id: spot.id,
                                                     name: spot.name,
@@ -480,6 +508,23 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                                     location: spot.location,
                                                     imageUrl: spot.photos?.[0]?.url || `https://picsum.photos/seed/${spot.id}/300/200`
                                                 });
+                                                if (isFav) {
+                                                    toast.success('즐겨찾기에서 제거되었습니다.', {
+                                                        style: {
+                                                            borderRadius: '10px',
+                                                            background: '#333',
+                                                            color: '#fff',
+                                                        },
+                                                    });
+                                                } else {
+                                                    toast.success('즐겨찾기에 추가되었습니다.', {
+                                                        style: {
+                                                            borderRadius: '10px',
+                                                            background: '#333',
+                                                            color: '#fff',
+                                                        },
+                                                    });
+                                                }
                                             }}
                                             className="absolute top-2 right-2 p-1 bg-white/80 dark:bg-black/20 backdrop-blur-sm rounded-full hover:bg-red-50 transition-colors z-10"
                                         >

@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Put, Param, Delete, Query } from '@nestjs/common';
 import { GuidesService } from './guides.service';
+import { UpdateGuideDto } from './dto/update-guide.dto/update-guide.dto';
 
 @Controller('guides')
 export class GuidesController {
@@ -21,12 +22,12 @@ export class GuidesController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateGuideDto: any) {
-    return this.guidesService.update(+id, updateGuideDto);
+  update(@Param('id') id: string, @Body() updateGuideDto: UpdateGuideDto) {
+    return this.guidesService.update(id, updateGuideDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.guidesService.remove(+id);
+    return this.guidesService.remove(id);
   }
 }

@@ -100,7 +100,7 @@ export default function AdminDashboard() {
     guides = [], addGuide, updateGuide, deleteGuide,
     strategies = [], addStrategy, updateStrategy, deleteStrategy,
     spotCategories = [],
-    spots = [], addSpot, updateSpot, deleteSpot,
+    spots = [], addSpot, updateSpot, deleteSpot, updateSpotStatus,
     ads = [], addAd, updateAd, deleteAd,
     contactInfo, updateContactInfo,
     isCloudSyncing, enableCloud
@@ -206,11 +206,12 @@ export default function AdminDashboard() {
         } else {
           addAd({ ...formData, id: Date.now() });
         }
-      } else if (spotCategories.some(cat => cat.key === activeTab) || activeTab === 'transport') {
+      } else if (spotCategories.some(cat => cat.key === activeTab) || activeTab === 'transport' || activeTab === 'golf') {
         console.log('Matching spot category:', activeTab);
         if (editingItem) {
           await updateSpot({ ...editingItem, ...formData });
         } else {
+          // 重新加入 Date.now() 作为临时 ID，后端 Prisma 需要它，否则报 Null constraint violation
           await addSpot({ ...formData, id: Date.now() });
         }
       } else {
@@ -245,7 +246,7 @@ export default function AdminDashboard() {
       `}>
         <div className="flex justify-between items-center mb-10">
           <h1 className="text-2xl font-bold text-blue-600 flex items-center gap-2">
-            TravelMap 后台
+            anjenMap 后台
             <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full border border-red-200">v2.0</span>
           </h1>
           <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-500 hover:text-gray-700">
@@ -262,9 +263,9 @@ export default function AdminDashboard() {
           </TabButton>
           
           {spotCategories
-            .filter(cat => ['spot', 'dining', 'accommodation', 'shopping'].includes(cat.key))
+            .filter(cat => ['spot', 'dining', 'accommodation', 'shopping', 'golf'].includes(cat.key))
             .sort((a, b) => {
-              const order = { spot: 1, dining: 2, accommodation: 3, shopping: 4 };
+              const order = { spot: 1, dining: 2, accommodation: 3, shopping: 4, golf: 5 };
               return (order[a.key as keyof typeof order] || 99) - (order[b.key as keyof typeof order] || 99);
             })
             .map(cat => {
@@ -431,12 +432,13 @@ export default function AdminDashboard() {
                      // Dynamic exclusion: exclude if it has ANY tag that corresponds to another category
                      const otherCategories = spotCategories.filter(c => c.key !== 'spot').map(c => c.key);
                      const hasOtherTag = s.tags.some(tag => otherCategories.includes(tag));
-                     return s.tags.includes('spot') || !hasOtherTag;
+                     return s.tags.includes('spot') || (!hasOtherTag && s.tags.length > 0);
                    }
                    return s.tags.includes(cat.key);
                 })} 
                 onDelete={deleteSpot} 
                 onEdit={handleEdit} 
+                onToggleStatus={updateSpotStatus}
               />
             )
           ))}
@@ -460,6 +462,7 @@ export default function AdminDashboard() {
                   data={spots.filter(s => s.tags.includes('rail'))} 
                   onDelete={deleteSpot} 
                   onEdit={handleEdit} 
+                  onToggleStatus={updateSpotStatus}
                 />
               </div>
               <div className="border-t pt-8">
@@ -480,6 +483,7 @@ export default function AdminDashboard() {
                   data={spots.filter(s => s.tags.includes('airport'))} 
                   onDelete={deleteSpot} 
                   onEdit={handleEdit} 
+                  onToggleStatus={updateSpotStatus}
                 />
               </div>
             </div>
@@ -601,7 +605,7 @@ function TabButton({ children, active, onClick }: { children: React.ReactNode, a
   );
 }
 
-function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: number) => void, onEdit: (item: Guide) => void }) {
+function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: string) => void, onEdit: (item: Guide) => void }) {
   const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('active');
   const [sort, setSort] = useState<'newest' | 'expiry'>('newest');
 
@@ -619,7 +623,7 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
     // Sort by isTop desc, then rank asc, then ID desc (newest first)
     if (a.isTop !== b.isTop) return (b.isTop ? 1 : 0) - (a.isTop ? 1 : 0);
     if (a.rank !== b.rank) return (a.rank || 99) - (b.rank || 99);
-    return b.id - a.id;
+    return Number(b.id) - Number(a.id);
   });
 
   return (
@@ -687,7 +691,7 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
             <button onClick={() => onEdit(guide)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
               <Edit2 size={18} />
             </button>
-            <button onClick={() => onDelete(guide.id)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500">
+            <button onClick={() => onDelete(String(guide.id))} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500">
               <Trash2 size={18} />
             </button>
           </div>
@@ -697,7 +701,7 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
   );
 }
 
-function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete: (id: number) => void, onEdit: (item: Strategy) => void }) {
+function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete: (id: string) => void, onEdit: (item: Strategy) => void }) {
   const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('active');
   const [sort, setSort] = useState<'newest' | 'expiry'>('newest');
 
@@ -713,9 +717,9 @@ function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete
         return dateA - dateB;
     }
     // Sort by isTop desc, then rank asc, then ID desc (newest first)
-    if (a.isTop !== b.isTop) return (b.isTop ? 1 : 0) - (a.isTop ? 1 : 0);
-    if (a.rank !== b.rank) return (a.rank || 99) - (b.rank || 99);
-    return b.id - a.id;
+    if ((a as any).isTop !== (b as any).isTop) return ((b as any).isTop ? 1 : 0) - ((a as any).isTop ? 1 : 0);
+    if ((a as any).rank !== (b as any).rank) return ((a as any).rank || 99) - ((b as any).rank || 99);
+    return Number(b.id) - Number(a.id);
   });
 
   return (
@@ -777,7 +781,7 @@ function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete
             <button onClick={() => onEdit(item)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
               <Edit2 size={18} />
             </button>
-            <button onClick={() => onDelete(item.id)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500">
+            <button onClick={() => onDelete(String(item.id))} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500">
               <Trash2 size={18} />
             </button>
           </div>
@@ -802,11 +806,16 @@ function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onS
     isGlobal: false,
     category: 'guide',
     photos: [] as string[],
-    content: ''
+    content: '',
+    phone: '',
+    wechat: '',
+    kakao: '',
+    email: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('前端准备提交的 Guide 内容:', formData.content);
     onSave(formData);
   };
 
@@ -951,6 +960,50 @@ function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onS
           placeholder="请输入简短介绍..."
         />
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">电话 (전화번호)</label>
+          <input
+            type="text"
+            value={formData.phone || ''}
+            onChange={e => setFormData({...formData, phone: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="例如: +86 123456789"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">微信 ID (위챗 ID)</label>
+          <input
+            type="text"
+            value={formData.wechat || ''}
+            onChange={e => setFormData({...formData, wechat: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="WeChat ID"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">KakaoTalk ID (카카오톡 ID)</label>
+          <input
+            type="text"
+            value={formData.kakao || ''}
+            onChange={e => setFormData({...formData, kakao: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="Kakao ID"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">邮箱 (이메일)</label>
+          <input
+            type="email"
+            value={formData.email || ''}
+            onChange={e => setFormData({...formData, email: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="Email Address"
+          />
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">详细介绍 (支持HTML, 点击后显示)</label>
         <RichTextEditor
@@ -1065,7 +1118,11 @@ function StrategyForm({ initialData, onSave, isSaving }: { initialData?: Strateg
     image: 'https://picsum.photos/200',
     photos: [] as string[],
     tags: [] as string[],
-    content: ''
+    content: '',
+    phone: '',
+    wechat: '',
+    kakao: '',
+    email: ''
   });
 
   const [customSpot, setCustomSpot] = useState('');
@@ -1079,6 +1136,7 @@ function StrategyForm({ initialData, onSave, isSaving }: { initialData?: Strateg
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('前端准备提交的 Strategy 内容:', formData.content);
     onSave(formData);
   };
 
@@ -1244,6 +1302,50 @@ function StrategyForm({ initialData, onSave, isSaving }: { initialData?: Strateg
           maxImages={9}
         />
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">电话 (전화번호)</label>
+          <input
+            type="text"
+            value={formData.phone || ''}
+            onChange={e => setFormData({...formData, phone: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="例如: +86 123456789"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">微信 ID (위챗 ID)</label>
+          <input
+            type="text"
+            value={formData.wechat || ''}
+            onChange={e => setFormData({...formData, wechat: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="WeChat ID"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">KakaoTalk ID (카카오톡 ID)</label>
+          <input
+            type="text"
+            value={formData.kakao || ''}
+            onChange={e => setFormData({...formData, kakao: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="Kakao ID"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">邮箱 (이메일)</label>
+          <input
+            type="email"
+            value={formData.email || ''}
+            onChange={e => setFormData({...formData, email: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="Email Address"
+          />
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">内容详情</label>
         <RichTextEditor
@@ -1269,14 +1371,16 @@ function StrategyForm({ initialData, onSave, isSaving }: { initialData?: Strateg
   );
 }
 
-function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: number) => void, onEdit: (item: Spot) => void }) {
-  const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('active');
+function SpotsList({ data, onDelete, onEdit, onToggleStatus }: { data: Spot[], onDelete: (id: number | string) => void, onEdit: (item: Spot) => void, onToggleStatus: (id: number | string, isActive: boolean) => void }) {
+  const [filter, setFilter] = useState<'all' | 'active' | 'offline'>('active');
   const [sort, setSort] = useState<'newest' | 'expiry'>('newest');
 
   const filteredData = data.filter(item => {
-    const isExpired = item.expiryDate && new Date(item.expiryDate) < new Date();
-    if (filter === 'active') return !isExpired;
-    if (filter === 'expired') return isExpired;
+    // Treat undefined or null as true (active)
+    const isItemActive = item.isActive !== false;
+    
+    if (filter === 'active') return isItemActive;
+    if (filter === 'offline') return !isItemActive;
     return true;
   }).sort((a, b) => {
     if (sort === 'expiry') {
@@ -1287,7 +1391,7 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
     // Sort by isTop desc, then rank asc, then ID desc (newest first)
     if (a.isTop !== b.isTop) return (b.isTop ? 1 : 0) - (a.isTop ? 1 : 0);
     if (a.rank !== b.rank) return (a.rank || 99) - (b.rank || 99);
-    return b.id - a.id;
+    return Number(b.id) - Number(a.id);
   });
 
   return (
@@ -1295,7 +1399,7 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
       <div className="flex flex-wrap gap-4 justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
         <div className="flex bg-gray-100 rounded-lg p-1">
             <button onClick={() => setFilter('active')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'active' ? 'bg-white shadow text-blue-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>展示中</button>
-            <button onClick={() => setFilter('expired')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'expired' ? 'bg-white shadow text-red-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>已下架</button>
+            <button onClick={() => setFilter('offline')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'offline' ? 'bg-white shadow text-red-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>已下架</button>
             <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-sm rounded-md transition-all ${filter === 'all' ? 'bg-white shadow text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>全部</button>
         </div>
         <div className="flex items-center gap-2">
@@ -1312,8 +1416,8 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
             暂无相关内容
         </div>
       ) : filteredData.map(item => (
-        <div key={item.id} className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 relative overflow-hidden ${item.expiryDate && new Date(item.expiryDate) < new Date() ? 'opacity-75 grayscale-[0.5]' : ''}`}>
-          {item.expiryDate && new Date(item.expiryDate) < new Date() && (
+        <div key={item.id} className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 relative overflow-hidden ${(item.expiryDate && new Date(item.expiryDate) < new Date()) || item.isActive === false ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+          {((item.expiryDate && new Date(item.expiryDate) < new Date()) || item.isActive === false) && (
               <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-3 py-1 rounded-bl-lg font-bold z-10">
                   已下架
               </div>
@@ -1337,6 +1441,7 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
                         {t === 'dining' && '美食'}
                         {t === 'accommodation' && '酒店'}
                         {t === 'shopping' && '购物'}
+                        {t === 'golf' && '高尔夫'}
                         {t === 'rail' && '高铁'}
                         {t === 'airport' && '机场'}
                         {t === 'transport' && '交通'}
@@ -1356,10 +1461,32 @@ function SpotsList({ data, onDelete, onEdit }: { data: Spot[], onDelete: (id: nu
             <div className="text-gray-500 text-sm mb-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: item.intro || item.content || item.address || '暂无介绍' }} />
           </div>
           <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
+            <button
+              onClick={async () => {
+                console.log('Toggling status for spot:', item.id, 'to:', item.isActive === false ? true : false);
+                try {
+                  await onToggleStatus(item.id, item.isActive === false ? true : false);
+                  // Force a small delay to allow state to settle
+                  setTimeout(() => {
+                      setFilter(prev => prev);
+                  }, 50);
+                } catch (e) {
+                  console.error('Toggle failed:', e);
+                  window.alert('状态切换失败，请检查网络或重试');
+                }
+              }}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                item.isActive === false 
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                  : 'bg-red-100 text-red-700 hover:bg-red-200'
+              }`}
+            >
+              {item.isActive === false ? '上架' : '下架'}
+            </button>
             <button onClick={() => onEdit(item)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
               <Edit2 size={18} />
             </button>
-            <button onClick={() => onDelete(item.id)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500">
+            <button onClick={() => onDelete(Number(item.id))} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500">
               <Trash2 size={18} />
             </button>
           </div>
@@ -1393,7 +1520,11 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
     tags: [effectiveDefaultTag],
     rank: 99,
     isTop: false,
-    reviews: []
+    reviews: [],
+    phone: '',
+    wechat: '',
+    kakao: '',
+    email: ''
   });
 
   // Ensure formData is updated when initialData changes, BUT ONLY if initialData is provided (edit mode)
@@ -1539,6 +1670,7 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
                 <option value="dining">美食</option>
                 <option value="accommodation">酒店</option>
                 <option value="shopping">购物</option>
+                <option value="golf">高尔夫</option>
                 <option value="rail">高铁</option>
                 <option value="airport">机场</option>
                 <option value="transport">交通</option>
@@ -1591,6 +1723,50 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
           placeholder="简短介绍，将显示在左侧列表卡片上"
         />
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">电话 (전화번호)</label>
+          <input
+            type="text"
+            value={formData.phone || ''}
+            onChange={e => setFormData({...formData, phone: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="例如: +86 123456789"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">微信 ID (위챗 ID)</label>
+          <input
+            type="text"
+            value={formData.wechat || ''}
+            onChange={e => setFormData({...formData, wechat: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="WeChat ID"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">KakaoTalk ID (카카오톡 ID)</label>
+          <input
+            type="text"
+            value={formData.kakao || ''}
+            onChange={e => setFormData({...formData, kakao: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="Kakao ID"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">邮箱 (이메일)</label>
+          <input
+            type="email"
+            value={formData.email || ''}
+            onChange={e => setFormData({...formData, email: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="Email Address"
+          />
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">内容详情</label>
         <RichTextEditor
@@ -1633,7 +1809,7 @@ function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: nu
         const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
         return dateA - dateB;
     }
-    return b.id - a.id;
+    return Number(b.id) - Number(a.id);
   });
 
   return (
@@ -1684,7 +1860,7 @@ function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: nu
             <button onClick={() => onEdit(item)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
               <Edit2 size={18} />
             </button>
-            <button onClick={() => onDelete(item.id)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500">
+            <button onClick={() => onDelete(Number(item.id))} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500">
               <Trash2 size={18} />
             </button>
           </div>

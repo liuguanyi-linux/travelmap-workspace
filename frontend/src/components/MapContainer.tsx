@@ -135,12 +135,12 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
                  showPin: true 
              }; // Apply pin style to all
         } else if (matchedCategory.key === 'shopping') {
-             color = '#EC4899'; // Pink-500
+             color = '#06B6D4'; // Cyan-500 (A very distinct, bright cyan to stand out completely)
              return { 
                  icon: Icon, 
                  color, 
-                 pinGradient: 'radial-gradient(circle at 30% 30%, #f472b6, #ec4899 50%, #be185d)',
-                 rimColor: 'from-pink-400/30',
+                 pinGradient: 'radial-gradient(circle at 30% 30%, #67e8f9, #06b6d4 50%, #0891b2)',
+                 rimColor: 'from-cyan-400/30',
                  shape: 'rounded-lg', 
                  isDiamond: false, 
                  showPin: true 
@@ -153,6 +153,17 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
                  pinGradient: 'radial-gradient(circle at 30% 30%, #34d399, #10b981 50%, #047857)',
                  rimColor: 'from-emerald-400/30',
                  shape: 'rounded-lg', 
+                 isDiamond: false, 
+                 showPin: true 
+             };
+        } else if (matchedCategory.key === 'golf') {
+             color = '#059669'; // Emerald-600 (Darker Green for Golf)
+             return { 
+                 icon: Icon, 
+                 color, 
+                 pinGradient: 'radial-gradient(circle at 30% 30%, #34d399, #059669 50%, #064e3b)',
+                 rimColor: 'from-green-400/30',
+                 shape: 'rounded-full', 
                  isDiamond: false, 
                  showPin: true 
              };
@@ -285,7 +296,8 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
 
     // Add new markers
     // User Request: Always show all markers, do not hide others when one is selected
-    const displayMarkers = markers;
+    // Filter out inactive items just to be absolutely safe (though MainLayout should have done it)
+    const displayMarkers = markers.filter(poi => poi.isActive !== false);
     
     displayMarkers.forEach((poi, index) => {
       if (!poi.location) return;
@@ -342,9 +354,9 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
             <div className={`relative ${isSelected ? 'z-50 scale-110' : 'z-40'} transition-transform duration-300`}>
                {/* The Red Pin (Anchor) - Realistic Apple Maps Style */}
                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none transform translate-y-[4px]">
-                  {/* Pin Head (Glossy Sphere) - Dynamic Color */}
+                  {/* Pin Head (Glossy Sphere) - Dynamic Color - Reduced Size (20%) */}
                   <div 
-                    className="w-8 h-8 rounded-full shadow-[inset_-2px_-2px_6px_rgba(0,0,0,0.3),_0_0_0_1.5px_#ffffff,_0_2px_4px_rgba(0,0,0,0.4)] z-20 relative"
+                    className="w-[25.6px] h-[25.6px] rounded-full shadow-[inset_-1.5px_-1.5px_4px_rgba(0,0,0,0.3),_0_0_0_1px_#ffffff,_0_1.5px_3px_rgba(0,0,0,0.4)] z-20 relative"
                     style={{ background: config.pinGradient || 'radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000 50%, #8b0000)' }}
                   >
                      {/* Specular Highlight (Stronger) */}
@@ -353,35 +365,35 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
                      <div className={`absolute bottom-[10%] right-[10%] w-[40%] h-[40%] bg-gradient-to-tl ${config.rimColor || 'from-red-400/30'} to-transparent rounded-full blur-[2px]`}></div>
                   </div>
                   
-                  {/* Pin Collar (Connection Ring) */}
-                  <div className="w-[8px] h-[2px] bg-gray-400 rounded-full z-10 -mt-[1px]"></div>
+                  {/* Pin Collar (Connection Ring) - Reduced Size */}
+                  <div className="w-[6.4px] h-[1.6px] bg-gray-400 rounded-full z-10 -mt-[1px]"></div>
 
-                  {/* Pin Stick (Realistic Silver Cylinder) */}
-                  <div className="w-[5px] h-[32px] bg-[linear-gradient(90deg,_#6b7280,_#f3f4f6_40%,_#f3f4f6_60%,_#6b7280)] z-10 -mt-[1px] shadow-[0_2px_4px_rgba(0,0,0,0.2)]"></div>
+                  {/* Pin Stick (Realistic Silver Cylinder) - Reduced Size */}
+                  <div className="w-[4px] h-[25.6px] bg-[linear-gradient(90deg,_#6b7280,_#f3f4f6_40%,_#f3f4f6_60%,_#6b7280)] z-10 -mt-[1px] shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]"></div>
                   
-                  {/* Pin Tip (Pointed Bottom) */}
-                  <div className="w-[5px] h-[4px] bg-gray-600 z-10" style={{clipPath: 'polygon(0 0, 100% 0, 50% 100%)'}}></div>
+                  {/* Pin Tip (Pointed Bottom) - Reduced Size */}
+                  <div className="w-[4px] h-[3.2px] bg-gray-600 z-10" style={{clipPath: 'polygon(0 0, 100% 0, 50% 100%)'}}></div>
 
-                  {/* Cast Shadow (Perspective) */}
-                  <div className="absolute bottom-[-2px] w-5 h-2.5 bg-black/50 blur-[1.5px] rounded-[100%] transform skew-x-[40deg] rotate-[10deg] translate-x-[6px] opacity-60 z-0"></div>
+                  {/* Cast Shadow (Perspective) - Reduced Size */}
+                  <div className="absolute bottom-[-1.5px] w-[16px] h-[8px] bg-black/50 blur-[1.2px] rounded-[100%] transform skew-x-[40deg] rotate-[10deg] translate-x-[4.8px] opacity-60 z-0"></div>
                </div>
 
                {/* Connector Line - Adjusted for new height */}
-               <svg className="absolute bottom-[32px] left-[6px] w-[32px] h-[32px] pointer-events-none overflow-visible z-0">
-                   <line x1="0" y1="32" x2="24" y2="10" stroke="#94a3b8" strokeWidth="2" strokeDasharray="3 2" />
+               <svg className="absolute bottom-[25.6px] left-[4.8px] w-[25.6px] h-[25.6px] pointer-events-none overflow-visible z-0">
+                   <line x1="0" y1="25.6" x2="19.2" y2="8" stroke="#94a3b8" strokeWidth="1.6" strokeDasharray="2.4 1.6" />
                </svg>
 
-               {/* The Floating Icon Box - Significantly Enlarged & High Visibility */}
+               {/* The Floating Icon Box - Significantly Enlarged & High Visibility - Reduced Size (20%) */}
                <div 
-                  className={`absolute bottom-[52px] left-[20px] flex items-center justify-center w-12 h-12 shadow-[0_8px_20px_rgba(0,0,0,0.25),0_0_0_1px_rgba(0,0,0,0.1)] border-[3px] border-white box-border rounded-xl z-20 
+                  className={`absolute bottom-[41.6px] left-[16px] flex items-center justify-center w-[38.4px] h-[38.4px] shadow-[0_6.4px_16px_rgba(0,0,0,0.25),0_0_0_0.8px_rgba(0,0,0,0.1)] border-[2.4px] border-white box-border rounded-[9.6px] z-20 
                     ${isSelected 
-                        ? 'ring-4 ring-offset-2 ring-blue-500 shadow-[0_0_35px_rgba(59,130,246,0.5)] scale-110 brightness-110' 
-                        : 'hover:scale-110 hover:shadow-[0_0_20px_rgba(255,255,255,0.8),0_0_0_2px_rgba(0,0,0,0.2)] brightness-105 shadow-[0_8px_20px_rgba(0,0,0,0.25),0_0_0_2px_#ef4444]'
+                        ? 'ring-[3.2px] ring-offset-[1.6px] ring-blue-500 shadow-[0_0_28px_rgba(59,130,246,0.5)] scale-110 brightness-110' 
+                        : 'hover:scale-110 hover:shadow-[0_0_16px_rgba(255,255,255,0.8),0_0_0_1.6px_rgba(0,0,0,0.2)] brightness-105 shadow-[0_6.4px_16px_rgba(0,0,0,0.25),0_0_0_1.6px_#ef4444]'
                     }`}
                   style={{ backgroundColor: config.color }}
                >
                     <IconComponent 
-                        size={26} 
+                        size={20.8} 
                         color="#ffffff" 
                         strokeWidth={2.5} 
                     />
@@ -389,9 +401,9 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
 
                {/* Marker Label - Rendered INSIDE the marker to ensure Z-Index Control */}
                {/* Positioned ABOVE the icon box and pin assembly */}
-               {/* Pin top is roughly -100px from anchor. We place label at -130px to be safe above it. */}
+               {/* Pin top is roughly -80px from anchor. We place label at -104px to be safe above it. */}
                <div 
-                   className="absolute left-1/2 -translate-x-1/2 -top-[130px] whitespace-nowrap z-[9999] pointer-events-none"
+                   className="absolute left-1/2 -translate-x-1/2 -top-[104px] whitespace-nowrap z-[9999] pointer-events-none"
                    style={{ zIndex: 9999 }} // Force inline z-index
                >
                     <div 

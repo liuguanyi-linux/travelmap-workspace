@@ -49,6 +49,7 @@ export default function MainLayout() {
   const [isAdOpen, setIsAdOpen] = useState(false);
   const [focusedSpotId, setFocusedSpotId] = useState<string | number | null>(null);
   const [viewMode, setViewMode] = useState<'all' | 'favorites'>('all');
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   const { spots = [], spotCategories = [], cities = [] } = useData();
   const { favorites } = useFavorites();
@@ -130,9 +131,10 @@ export default function MainLayout() {
   useEffect(() => {
     if (!spots) return;
 
-    let filtered = spots;
+    // 0. Filter by active status (Global Filter)
+    let filtered = spots.filter(item => item.isActive !== false);
 
-    // 0. Filter by View Mode (Global Filter)
+    // 0.5 Filter by View Mode (Global Filter)
     if (viewMode === 'favorites') {
         const favoriteIds = new Set(favorites.map(f => String(f.id)));
         filtered = filtered.filter(s => favoriteIds.has(String(s.id)));
@@ -173,7 +175,6 @@ export default function MainLayout() {
             finalSearchResults = listFiltered.filter(s => 
                 (s.name && s.name.toLowerCase().includes(lowerKw)) || 
                 (s.intro && s.intro.toLowerCase().includes(lowerKw)) || 
-                (s.description && s.description.toLowerCase().includes(lowerKw)) ||
                 (s.address && s.address.toLowerCase().includes(lowerKw)) ||
                 (s.tags && Array.isArray(s.tags) && s.tags.some((t: string) => t.toLowerCase().includes(lowerKw)))
             );
@@ -198,7 +199,6 @@ export default function MainLayout() {
             mapFiltered = filtered.filter(s => 
                 (s.name && s.name.toLowerCase().includes(lowerKw)) || 
                 (s.intro && s.intro.toLowerCase().includes(lowerKw)) || 
-                (s.description && s.description.toLowerCase().includes(lowerKw)) ||
                 (s.address && s.address.toLowerCase().includes(lowerKw)) ||
                 (s.tags && Array.isArray(s.tags) && s.tags.some((t: string) => t.toLowerCase().includes(lowerKw)))
             );
@@ -223,7 +223,6 @@ export default function MainLayout() {
             finalFiltered = filtered.filter(s => 
                 (s.name && s.name.toLowerCase().includes(lowerKw)) || 
                 (s.intro && s.intro.toLowerCase().includes(lowerKw)) || 
-                (s.description && s.description.toLowerCase().includes(lowerKw)) ||
                 (s.address && s.address.toLowerCase().includes(lowerKw)) ||
                 (s.tags && Array.isArray(s.tags) && s.tags.some((t: string) => t.toLowerCase().includes(lowerKw)))
             );
@@ -422,6 +421,7 @@ export default function MainLayout() {
       <StrategyView 
         isVisible={activeTab === 'strategy'}
         onClose={() => setActiveTab('')}
+        onLightboxChange={setIsLightboxOpen}
       />
 
       <GuideView 
@@ -429,6 +429,7 @@ export default function MainLayout() {
         onClose={() => setActiveTab('')} 
         activeCity={activeCity}
         initialCategory={guideInitialCategory}
+        onLightboxChange={setIsLightboxOpen}
       />
 
       <UserDrawer 
@@ -446,13 +447,16 @@ export default function MainLayout() {
           setSelectedPoi(null);
           setFocusedSpotId(null);
         }}
+        onLightboxChange={setIsLightboxOpen}
       />
       
       {/* Bottom Navigation */}
-      <BottomTabBar 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-      />
+      {!isLightboxOpen && (
+        <BottomTabBar 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+        />
+      )}
 
       {/* Modals */}
       <LoginModal 

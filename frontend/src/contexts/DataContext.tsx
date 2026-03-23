@@ -16,18 +16,19 @@ interface DataContextType {
   isAdmin: boolean;
   updateGuide: (guide: Guide) => void;
   addGuide: (guide: Guide) => void;
-  deleteGuide: (id: number) => void;
+  deleteGuide: (id: string) => void;
   updateStrategy: (strategy: Strategy) => void;
   addStrategy: (strategy: Strategy) => void;
-  deleteStrategy: (id: number) => void;
+  deleteStrategy: (id: string) => void;
   addStrategyCategory: (name: string) => void;
   deleteStrategyCategory: (id: number) => void;
   addSpotCategory: (data: any) => void;
   updateSpotCategory: (id: number, data: any) => void;
   deleteSpotCategory: (id: number) => void;
   updateSpot: (spot: Spot) => void;
+  updateSpotStatus: (id: number | string, isActive: boolean) => void;
   addSpot: (spot: Spot) => void;
-  deleteSpot: (id: number) => void;
+  deleteSpot: (id: number | string) => void;
   updateAd: (ad: AdSlot) => void;
   addAd: (ad: AdSlot) => void;
   deleteAd: (id: number) => void;
@@ -66,7 +67,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // Function to fetch all data from backend
   const refreshData = async () => {
     try {
-      const params = isAdmin ? { includeExpired: true } : {};
+      const params = isAdmin ? { includeExpired: true, includeInactive: true } : {};
       
       // Use allSettled to prevent one failure from blocking others
       const results = await Promise.allSettled([
@@ -201,7 +202,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const updateGuide = async (guide: Guide) => {
     try {
-      const updated = await guideService.update(guide.id, guide);
+      console.log('[前端外发] 准备送往后端的 Guide 数据:', JSON.stringify(guide).substring(0, 100));
+      const updated = await guideService.update(String(guide.id), guide);
       setGuides(prev => prev.map(item => item.id === guide.id ? updated : item));
     } catch (error) {
       console.error("Failed to update guide", error);
@@ -209,7 +211,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const deleteGuide = async (id: number) => {
+  const deleteGuide = async (id: string) => {
     try {
       await guideService.delete(id);
       setGuides(prev => prev.filter(item => item.id !== id));
@@ -232,7 +234,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const updateStrategy = async (strategy: Strategy) => {
       try {
-          const updated = await strategyService.update(strategy.id, strategy);
+          console.log('[前端外发] 准备送往后端的 Strategy 数据:', JSON.stringify(strategy).substring(0, 100));
+          const updated = await strategyService.update(String(strategy.id), strategy);
           setStrategies(prev => prev.map(item => item.id === strategy.id ? updated : item));
       } catch (error) {
           console.error("Failed to update strategy", error);
@@ -240,7 +243,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
   };
 
-  const deleteStrategy = async (id: number) => {
+  const deleteStrategy = async (id: string) => {
       try {
           await strategyService.delete(id);
           setStrategies(prev => prev.filter(item => item.id !== id));
@@ -265,7 +268,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const updateSpot = async (spot: Spot) => {
       try {
-          const updated = await spotService.update(spot.id, spot);
+          const updated = await spotService.update(spot.id as number, spot);
           setSpots(prev => prev.map(item => item.id === spot.id ? updated : item));
       } catch (error) {
           console.error("Failed to update spot", error);
@@ -273,7 +276,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
   };
 
-  const deleteSpot = async (id: number) => {
+  const updateSpotStatus = async (id: number | string, isActive: boolean) => {
+      try {
+          console.log(`[DataContext] Updating spot status: id=${id}, isActive=${isActive}`);
+          const updated = await spotService.updateStatus(id, isActive);
+          console.log(`[DataContext] Update response:`, updated);
+          setSpots(prev => prev.map(item => item.id === id ? { ...item, isActive } : item));
+      } catch (error) {
+          console.error("Failed to update spot status", error);
+          throw error;
+      }
+  };
+
+  const deleteSpot = async (id: number | string) => {
       try {
           await spotService.delete(id);
           setSpots(prev => prev.filter(item => item.id !== id));
@@ -294,7 +309,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const updateAd = async (ad: AdSlot) => {
     try {
-      const updated = await adService.update(ad.id, ad);
+      const updated = await adService.update(Number(ad.id), ad);
       setAds(prev => prev.map(item => item.id === ad.id ? updated : item));
     } catch (error) {
       console.error("Failed to update ad:", error);
@@ -447,7 +462,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       deleteCity,
       isCloudSyncing,
       enableCloud: () => false, // Disabled cloud sync in favor of API
-      refreshData
+      refreshData,
+      updateSpotStatus
     }}>
       {children}
     </DataContext.Provider>

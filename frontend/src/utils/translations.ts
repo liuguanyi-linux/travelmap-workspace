@@ -1,6 +1,6 @@
 export const TRANSLATIONS: any = {
   'zh-CN': {
-    searchPlaceholder: '在 TravelMap 中搜索...',
+    searchPlaceholder: '在 anjenMap 中搜索...',
     common: {
       searching: '正在搜索...',
       loading: '加载中...',
@@ -18,6 +18,7 @@ export const TRANSLATIONS: any = {
     categories: {
       attraction: '景点', spot: '景点', hotel: '酒店', accommodation: '住宿', food: '美食', dining: '美食', atm: 'ATM',
       shopping: '购物', pharmacy: '药店', museum: '博物馆', transport: '交通',
+      golf: '高尔夫',
       ticket: '票务', guide: '导游', more: '更多',
       airport: '机场', high_speed_rail: '高铁', train: '火车',
       car: '租车', agency: '旅行社', ad: '广告'
@@ -73,11 +74,11 @@ export const TRANSLATIONS: any = {
     menu: {
       saved: '已保存', recent: '最近', download: '下载应用',
       contributions: '您的贡献', locationSharing: '位置信息分享', timeline: '您的时间轴',
-      yourData: '您在 TravelMap 中的数据', share: '分享或嵌入地图', print: '打印',
+      yourData: '您在 안전넷 中的数据', share: '分享或嵌入地图', print: '打印',
       addBusiness: '添加您的商家', editMap: '修改地图', tips: '提示和技巧',
       help: '获取帮助', consumerInfo: '消费者信息', language: '语言',
       searchSettings: '搜索设置', mapHistory: '地图历史记录',
-      privacy: '隐私权', terms: '条款', footer: '2026 TravelMap Corporation',
+      privacy: '隐私权', terms: '条款', footer: '2026 안전넷 Corporation',
       footprint: '您的足迹'
     },
     detail: {
@@ -169,7 +170,7 @@ export const TRANSLATIONS: any = {
     },
     locationPrompt: {
       title: '使用当前位置',
-      message: '是否允许 TravelMap 定位到您当前所在的位置？',
+      message: '是否允许 안전넷 定位到您当前所在的位置？',
       allow: '允许',
       deny: '暂不',
       locating: '正在定位...',
@@ -192,7 +193,7 @@ export const TRANSLATIONS: any = {
     }
   },
   'en-US': {
-    searchPlaceholder: 'Search in TravelMap...',
+    searchPlaceholder: 'Search in anjenMap...',
     common: {
       searching: 'Searching...',
       loading: 'Loading...',
@@ -209,6 +210,7 @@ export const TRANSLATIONS: any = {
     categories: {
       attraction: 'Attraction', spot: 'Spot', hotel: 'Hotel', accommodation: 'Accommodation', food: 'Food', dining: 'Dining', atm: 'ATM',
       shopping: 'Shopping', pharmacy: 'Pharmacy', museum: 'Museum', transport: 'Transport',
+      golf: 'Golf',
       ticket: 'Tickets', guide: 'Guide', more: 'More',
       airport: 'Airport', high_speed_rail: 'High Speed Rail', train: 'Train',
       car: 'Car Rental', agency: 'Travel Agency', ad: 'Ads'
@@ -266,11 +268,11 @@ export const TRANSLATIONS: any = {
     menu: {
       saved: 'Saved', recent: 'Recent', download: 'Download App',
       contributions: 'Your Contributions', locationSharing: 'Location Sharing', timeline: 'Your Timeline',
-      yourData: 'Your Data in TravelMap', share: 'Share or Embed Map', print: 'Print',
+      yourData: 'Your Data in anjenMap', share: 'Share or Embed Map', print: 'Print',
       addBusiness: 'Add Your Business', editMap: 'Edit Map', tips: 'Tips & Tricks',
       help: 'Get Help', consumerInfo: 'Consumer Info', language: 'Language',
       searchSettings: 'Search Settings', mapHistory: 'Map History',
-      privacy: 'Privacy', terms: 'Terms', footer: '2026 TravelMap Corporation',
+      privacy: 'Privacy', terms: 'Terms', footer: '2026 anjenMap Corporation',
       footprint: 'Your Footprint'
     },
     detail: {
@@ -362,8 +364,8 @@ export const TRANSLATIONS: any = {
       note: 'No payment required now. Pay at the property.'
     },
     locationPrompt: {
-      title: 'Use your location',
-      message: 'Allow TravelMap to access your current location for better service?',
+      title: 'Use Current Location',
+      message: 'Allow anjenMap to access your current location for better service?',
       allow: 'Allow',
       deny: 'Not Now',
       locating: 'Locating...',
@@ -386,7 +388,7 @@ export const TRANSLATIONS: any = {
     }
   },
   'ko-KR': {
-    searchPlaceholder: 'TravelMap에서 검색...',
+    searchPlaceholder: 'anjenMap 에서 검색...',
     common: {
       searching: '검색 중...',
       loading: '로딩 중...',
@@ -402,11 +404,12 @@ export const TRANSLATIONS: any = {
       noInfo: '정보 없음'
     },
     categories: {
-      food: '맛집', dining: '맛집', hotel: '호텔', accommodation: '호텔', attraction: '명소', spot: '명소', shopping: '쇼핑',
-      pharmacy: '약국', atm: 'ATM', museum: '박물관', transport: '교통',
+      attraction: '명소', spot: '명소', hotel: '호텔', accommodation: '숙박', food: '맛집', dining: '맛집', atm: 'ATM',
+      shopping: '쇼핑', pharmacy: '약국', museum: '박물관', transport: '교통',
+      golf: '골프',
       ticket: '티켓', guide: '가이드', more: '더보기',
       airport: '공항', high_speed_rail: '고속철도', train: '기차',
-      car: '렌트카', agency: '여행사', ad: '광고'
+      car: '렌터카', agency: '여행사', ad: '광고'
     },
     tabs: {
       city: '도시', strategy: '가이드북', guide: '가이드', me: '내 정보'
@@ -423,7 +426,7 @@ export const TRANSLATIONS: any = {
       exploreTip: '좋아하는 장소를 찾아 저장해보세요',
       saved: '저장됨',
       loginRegister: '로그인 / 회원가입',
-      loginDesc: '로그인하여 리뷰를 작성하고 프로필을 관리하세요',
+      loginDesc: '로그인하여 즐겨찾기를 관리하세요',
       contact: '입주신청'
     },
     notifications: {
@@ -464,11 +467,11 @@ export const TRANSLATIONS: any = {
     menu: {
       saved: '저장됨', recent: '최근', download: '앱 다운로드',
       contributions: '내 기여', locationSharing: '위치 공유', timeline: '내 타임라인',
-      yourData: 'TravelMap 데이터', share: '지도 공유 또는 퍼가기', print: '인쇄',
+      yourData: 'anjenMap 데이터', share: '지도 공유 또는 퍼가기', print: '인쇄',
       addBusiness: '비즈니스 추가', editMap: '지도 수정', tips: '팁 및 요령',
-      help: '도움말', consumerInfo: '소비자 정보', language: '언어',
+      help: '도움말 보기', consumerInfo: '소비자 정보', language: '언어',
       searchSettings: '검색 설정', mapHistory: '지도 기록',
-      privacy: '개인정보처리방침', terms: '약관', footer: '2026 TravelMap Corporation',
+      privacy: '개인정보처리방침', terms: '약관', footer: '2026 anjenMap Corporation',
       footprint: '내 발자취'
     },
     detail: {
@@ -476,8 +479,8 @@ export const TRANSLATIONS: any = {
       save: '저장', saved: '저장됨', share: '공유', sendToPhone: '폰으로 전송',
       bookNow: '지금 예약', route: '경로', openTime: '영업 시간',
       contact: '연락처', ticketBooking: '티켓 예약',
-      yourRating: '내 평점', shareExperience: '경험 공유...',
-      publishReview: '등록', noReviews: '첫 번째 리뷰를 작성해보세요!',
+      yourRating: '내 평점', shareExperience: '체험담을 공유해 주세요',
+      publishReview: '등록', noReviews: '새로운 리뷰 없습니다',
       morePhotosComing: '더 많은 사진 준비 중',
       pricePerPerson: '인당', moderatePrice: '보통',
       bookable: '예약 가능', noContact: '연락처 정보 없음',
@@ -564,7 +567,7 @@ export const TRANSLATIONS: any = {
     },
     locationPrompt: {
       title: '현재 위치 사용',
-      message: 'TravelMap이 현재 위치에 액세스하도록 허용하시겠습니까?',
+      message: 'anjenMap이 현재 위치에 액세스하도록 허용하시겠습니까?',
       allow: '허용',
       deny: '나중에',
       locating: '위치 확인 중...',

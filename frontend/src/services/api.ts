@@ -54,11 +54,11 @@ export const guideService = {
     const response = await api.post<Guide>('/guides', data);
     return response.data;
   },
-  update: async (id: number, data: Partial<Guide>) => {
+  update: async (id: string, data: Partial<Guide>) => {
     const response = await api.put<Guide>(`/guides/${id}`, data);
     return response.data;
   },
-  delete: async (id: number) => {
+  delete: async (id: string) => {
     await api.delete(`/guides/${id}`);
   },
 };
@@ -72,11 +72,11 @@ export const strategyService = {
     const response = await api.post<Strategy>('/strategies', data);
     return response.data;
   },
-  update: async (id: number, data: Partial<Strategy>) => {
+  update: async (id: string, data: Partial<Strategy>) => {
     const response = await api.put<Strategy>(`/strategies/${id}`, data);
     return response.data;
   },
-  delete: async (id: number) => {
+  delete: async (id: string) => {
     await api.delete(`/strategies/${id}`);
   },
 };
@@ -108,8 +108,21 @@ export const spotService = {
     const response = await api.put<Spot>(`/spots/${id}`, data);
     return response.data;
   },
-  delete: async (id: number) => {
-    await api.delete(`/spots/${id}`);
+  updateStatus: async (id: number | string, isActive: boolean) => {
+    // 强制转换为字符串，放在 Body 里传输，避开 URL 路径的任何潜在截断和代理问题
+    // 注意：使用相对路径 /spots/update-status 并在外部 baseURL 加上拦截器配置确保 json 发送
+    const response = await api.put<Spot>(`/spots/${String(id)}/status`, {
+      isActive: Boolean(isActive)
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  },
+  delete: async (id: number | string) => {
+    const stringId = String(id);
+    await api.delete(`/spots/${stringId}`);
   },
 };
 

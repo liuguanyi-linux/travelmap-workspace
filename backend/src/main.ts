@@ -12,7 +12,13 @@ import compression from 'compression';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.enableCors();
+  
+  // 开启全跨域允许，排除 CORS 问题
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
 
   // Enable compression
   app.use(compression());
@@ -35,5 +41,9 @@ async function bootstrap() {
   });
 
   await app.listen(process.env.PORT ?? 3000);
+  
+  // Safe way to get URL
+  console.log(`Application is running on: ${await app.getUrl()}`);
+  console.log(`[Registered Route] POST /spots/update-status`);
 }
 bootstrap();

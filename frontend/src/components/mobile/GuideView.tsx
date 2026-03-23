@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, Search, User, Car, Building2, MapPin, Megaphone, ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, ArrowLeft, Search, User, Car, Building2, MapPin, Megaphone, ExternalLink, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useData } from '../../contexts/DataContext';
@@ -11,16 +11,17 @@ interface GuideViewProps {
   onClose: () => void;
   activeCity?: string;
   initialCategory?: string;
+  onLightboxChange?: (isOpen: boolean) => void;
 }
 
 type CategoryType = 'guide' | 'car' | 'agency' | 'ad';
 
-export default function GuideView({ isVisible, onClose, activeCity, initialCategory }: GuideViewProps) {
+export default function GuideView({ isVisible, onClose, activeCity, initialCategory, onLightboxChange }: GuideViewProps) {
   const { t } = useLanguage();
   const controls = useAnimation();
   const dragControls = useDragControls();
   const [viewState, setViewState] = useState<'hidden' | 'peek' | 'full'>('hidden');
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   
   // UI State
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('guide');
@@ -32,6 +33,12 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
         setSelectedCategory(initialCategory as CategoryType);
     }
   }, [initialCategory]);
+
+  useEffect(() => {
+    if (onLightboxChange) {
+      onLightboxChange(previewIndex !== null);
+    }
+  }, [previewIndex, onLightboxChange]);
   
   // Data
   const { guides, cities, ads } = useData();
@@ -150,22 +157,70 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
       {isVisible && (
         <>
         {/* Image Preview Modal */}
-        {previewImage && (
+        {previewIndex !== null && selectedGuide?.photos && (
             <div 
               className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4 pointer-events-auto"
-              onClick={() => setPreviewImage(null)}
+              onClick={() => setPreviewIndex(null)}
             >
               <button 
-                className="absolute top-4 right-4 p-2 bg-white/10 rounded-full text-white hover:bg-white/20"
-                onClick={() => setPreviewImage(null)}
+                className="absolute top-4 right-4 p-2 bg-white/10 rounded-full text-white hover:bg-white/20 z-20"
+                onClick={(e) => { e.stopPropagation(); setPreviewIndex(null); }}
               >
                 <X size={24} />
               </button>
-              <img 
-                src={previewImage} 
-                alt="Preview" 
-                className="max-w-full max-h-full object-contain rounded-lg"
-              />
+
+              {/* Navigation Buttons */}
+              {selectedGuide.photos.length > 1 && (
+                <>
+                  <button 
+                    className="absolute left-4 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 z-20 backdrop-blur-sm transition-colors"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewIndex((prev) => (prev !== null ? (prev - 1 + selectedGuide.photos.length) % selectedGuide.photos.length : 0));
+                    }}
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <button 
+                    className="absolute right-4 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 z-20 backdrop-blur-sm transition-colors"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewIndex((prev) => (prev !== null ? (prev + 1) % selectedGuide.photos.length : 0));
+                    }}
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                  
+                  {/* Counter */}
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-black/50 backdrop-blur-md rounded-full text-white text-sm font-medium z-20">
+                    {previewIndex + 1} / {selectedGuide.photos.length}
+                  </div>
+                </>
+              )}
+
+              <div className="relative w-full h-full flex items-center justify-center">
+                  <motion.img 
+                    key={previewIndex}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                    src={selectedGuide.photos[previewIndex]}
+                    alt="Preview" 
+                    className="max-w-full max-h-full object-contain rounded-lg select-none shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                    drag="x"
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.2}
+                    onDragEnd={(e, { offset, velocity }) => {
+                      const swipe = offset.x;
+                      if (swipe < -50) {
+                         setPreviewIndex((prev) => (prev !== null ? (prev + 1) % selectedGuide.photos.length : 0));
+                      } else if (swipe > 50) {
+                         setPreviewIndex((prev) => (prev !== null ? (prev - 1 + selectedGuide.photos.length) % selectedGuide.photos.length : 0));
+                      }
+                    }}
+                  />
+              </div>
             </div>
           )}
         
@@ -242,11 +297,13 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                   {/* Photos Section */}
                   <div className="mt-4 mb-2">
                       <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
-                          {[selectedGuide.avatar, ...(selectedGuide.photos || [])].filter(Boolean).map((photo, index) => (
+                          {(selectedGuide.photos || []).filter(Boolean).map((photo, index) => (
                               <div 
                                 key={index} 
                                 className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-700 snap-center shadow-md relative cursor-pointer"
-                                onClick={() => setPreviewImage(photo)}
+                                onClick={() => {
+                                    setPreviewIndex(index);
+                                }}
                               >
                                   <img 
                                     src={photo} 

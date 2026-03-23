@@ -9,6 +9,7 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <LanguageProvider>
             <ThemeProvider>
               <FavoritesProvider>
+                <Toaster position="top-center" />
                 <Routes>
                   <Route path="/" element={<MainLayout />} />
                   <Route path="/admin/login" element={<AdminLogin />} />

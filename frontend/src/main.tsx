@@ -12,8 +12,8 @@ if (!Promise.allSettled) {
     return Promise.all(
       Array.from(promises).map(p =>
         Promise.resolve(p).then(
-          value => ({ status: 'fulfilled', value }),
-          reason => ({ status: 'rejected', reason })
+          value => ({ status: 'fulfilled' as const, value }),
+          reason => ({ status: 'rejected' as const, reason })
         )
       )
     );

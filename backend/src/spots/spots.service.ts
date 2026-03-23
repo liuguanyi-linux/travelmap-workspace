@@ -5,13 +5,20 @@ import { PrismaService } from '../prisma.service';
 export class SpotsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(includeExpired: boolean = false) {
-    const where = includeExpired ? {} : {
-      OR: [
+  async findAll(includeExpired: boolean = false, includeInactive: boolean = false) {
+    const where: any = {};
+    
+    if (!includeExpired) {
+      where.OR = [
         { expiryDate: null },
         { expiryDate: { gt: new Date() } }
-      ]
-    };
+      ];
+    }
+    
+    if (!includeInactive) {
+      where.isActive = true;
+    }
+
     const spots = await this.prisma.spot.findMany({ 
       where,
       select: {
@@ -29,6 +36,11 @@ export class SpotsService {
         tags: true,
         rank: true,
         isTop: true,
+        isActive: true,
+        phone: true,
+        wechat: true,
+        kakao: true,
+        email: true,
         expiryDate: true,
         createdAt: true,
         updatedAt: true
@@ -60,6 +72,8 @@ export class SpotsService {
     const spot = await this.prisma.spot.create({
       data: {
         ...rest,
+        // 强制确保有 id，因为前端可能传或者不传，Prisma 此时需要一个值
+        id: rest.id || Date.now(),
         tags: serialize(tags),
         photos: serialize(photos),
         lng: finalLng,
@@ -94,6 +108,16 @@ export class SpotsService {
 
   async remove(id: number) {
     return this.prisma.spot.delete({ where: { id } });
+  }
+
+  async updateStatus(id: number | string, isActive: boolean) {
+    const numericId = BigInt(id);
+    
+    const spot = await this.prisma.spot.update({
+      where: { id: numericId },
+      data: { isActive }
+    });
+    return this.transform(spot);
   }
 
   private transform(spot: any) {

@@ -235,7 +235,7 @@ export default function CityManager() {
             lat: city.lat,
             zoom: city.zoom
         });
-        setEditingId(city.id);
+        setEditingId(Number(city.id));
         setIsAdding(true);
     }, 100);
   };

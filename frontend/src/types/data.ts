@@ -13,6 +13,10 @@ export interface Guide {
   category?: 'guide' | 'car' | 'agency';
   content?: string;
   photos?: string[];
+  phone?: string;
+  wechat?: string;
+  kakao?: string;
+  email?: string;
   expiryDate?: string;
 }
 
@@ -28,6 +32,10 @@ export interface Strategy {
   rank: number;
   content?: string;
   photos?: string[];
+  phone?: string;
+  wechat?: string;
+  kakao?: string;
+  email?: string;
   expiryDate?: string;
 }
 
@@ -61,7 +69,12 @@ export interface Spot {
   tags: SpotTag[];
   rank?: number;
   isTop?: boolean;
+  isActive?: boolean;
   reviews?: Review[];
+  phone?: string;
+  wechat?: string;
+  kakao?: string;
+  email?: string;
   expiryDate?: string;
 }
 
