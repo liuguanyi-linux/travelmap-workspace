@@ -45,8 +45,20 @@ export class StrategiesService {
     // 对特殊字段进行 JSON 序列化
     if (updateData.spots) updateData.spots = JSON.stringify(updateData.spots);
     if (updateData.tags) updateData.tags = JSON.stringify(updateData.tags);
-    if (updateData.photos) updateData.photos = JSON.stringify(updateData.photos);
     if (updateData.videos) updateData.videos = JSON.stringify(updateData.videos);
+    
+    if (updateData.photos !== undefined) {
+      if (Array.isArray(updateData.photos)) {
+        updateData.photos = JSON.stringify(updateData.photos);
+      } else if (typeof updateData.photos === 'string') {
+        try {
+          const parsed = JSON.parse(updateData.photos);
+          updateData.photos = Array.isArray(parsed) ? updateData.photos : JSON.stringify([updateData.photos]);
+        } catch {
+          updateData.photos = JSON.stringify([updateData.photos]);
+        }
+      }
+    }
 
     console.log('[Step 1] 后端 Strategy 接收到的 content 长度:', updateData.content?.length || 0);
     

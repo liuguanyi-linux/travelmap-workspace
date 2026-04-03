@@ -85,7 +85,9 @@ export default function BottomSpotList({ spots, activeSpotId, onSpotFocus, onSpo
         className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 pt-2 px-[5vw] scrollbar-hide pointer-events-auto"
         style={{ scrollPaddingLeft: '5vw', scrollPaddingRight: '5vw' }}
       >
-        {spots.map((spot) => (
+        {spots.map((spot) => {
+          const targetIdForFav = String(spot.id || spot.amapId);
+          return (
           <motion.div
             key={spot.id}
             layoutId={`spot-${spot.id}`}
@@ -103,25 +105,31 @@ export default function BottomSpotList({ spots, activeSpotId, onSpotFocus, onSpo
             {/* Heart Button */}
             <button 
                 className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm shadow-sm z-10 hover:scale-110 active:scale-95 transition-all border ${
-                  isFavorite(String(spot.id)) 
+                  isFavorite(targetIdForFav, 'poi') 
                     ? 'bg-white border-red-100' 
                     : 'bg-white/80 border-gray-100'
                 }`}
-                onClick={(e) => { 
+                onClick={async (e) => { 
                     e.stopPropagation(); 
-                    toggleFavorite({
-                      id: String(spot.id),
-                      name: spot.name,
-                      type: spot.type || '景点',
-                      address: spot.address,
-                      location: `${spot.location.lng},${spot.location.lat}`,
-                      imageUrl: spot.photos?.[0]?.url || spot.image
-                    });
+                    try {
+                      const payload = {
+                        id: targetIdForFav,
+                        name: spot.name,
+                        type: 'poi', // Force 'poi' to prevent type pollution
+                        address: spot.address,
+                        location: `${spot.location.lng},${spot.location.lat}`,
+                        imageUrl: spot.photos?.[0]?.url || spot.image
+                      };
+                      console.log("👉 1. Clicked (BottomSpotList)! Ready to send Payload:", payload);
+                      await toggleFavorite(payload);
+                    } catch (err) {
+                      // error handled in context
+                    }
                 }}
             >
                 <Heart 
                   size={16} 
-                  className={isFavorite(String(spot.id)) ? 'fill-red-500 text-red-500' : 'text-gray-400'} 
+                  className={isFavorite(targetIdForFav, 'poi') ? 'fill-red-500 text-red-500' : 'text-gray-400'} 
                 />
             </button>
 
@@ -153,7 +161,7 @@ export default function BottomSpotList({ spots, activeSpotId, onSpotFocus, onSpo
               </div>
             </div>
           </motion.div>
-        ))}
+        )})}
       </div>
     </div>
   );

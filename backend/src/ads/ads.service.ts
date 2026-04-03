@@ -41,7 +41,21 @@ export class AdsService {
   async update(id: number, data: any) {
     const { photos, ...rest } = data;
     const updateData: any = { ...rest };
-    if (photos !== undefined) updateData.photos = JSON.stringify(photos);
+    
+    if (photos !== undefined) {
+      if (Array.isArray(photos)) {
+        updateData.photos = JSON.stringify(photos);
+      } else if (typeof photos === 'string') {
+        // Fallback: If it's a string, see if it's JSON or just a URL
+        try {
+          const parsed = JSON.parse(photos);
+          updateData.photos = Array.isArray(parsed) ? photos : JSON.stringify([photos]);
+        } catch {
+          updateData.photos = JSON.stringify([photos]);
+        }
+      }
+    }
+    
     return this.prisma.ad.update({ where: { id }, data: updateData });
   }
 

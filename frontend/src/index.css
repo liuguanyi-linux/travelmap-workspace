@@ -33,6 +33,16 @@
 }
 
 /* Map Marker Labels */
+.marker-label {
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.show-labels .marker-label {
+  opacity: 1;
+}
+
 .poi-marker-label {
   @apply bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] text-xs font-semibold text-gray-800 whitespace-nowrap border border-white/50;
   opacity: 0;

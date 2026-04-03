@@ -289,7 +289,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
           dragConstraints={{ top: 0, bottom: 0 }} 
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 z-[60] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-3xl shadow-[0_-10px_60px_rgba(0,0,0,0.15)] border-t border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col will-change-transform"
+          className="fixed bottom-0 left-0 right-0 mx-auto z-[60] w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-3xl shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col will-change-transform"
           style={{ 
               height: '66vh', 
               maxHeight: '66vh'
@@ -388,7 +388,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                 <button
                                     key={city.name || index}
                                     onClick={() => handleCityClick(city)}
-                                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform min-w-[70px] w-auto min-h-[64px]"
+                                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-white dark:bg-gray-800 border border-slate-300 dark:border-slate-500 shadow-sm active:scale-95 transition-transform min-w-[70px] w-auto min-h-[64px]"
                                 >
                                     <div className="p-0.5 rounded-full bg-gray-50 dark:bg-gray-700 mb-1 text-gray-400 dark:text-gray-300">
                                         <Building2 size={16} />
@@ -415,7 +415,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                     className={`flex-none flex items-center justify-center px-3 py-1.5 rounded-md transition-all duration-200 h-auto w-auto snap-center ${
                                         isSelected 
                                             ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-500 shadow-sm' 
-                                            : 'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95'
+                                            : 'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-slate-300 dark:border-slate-500 shadow-sm active:scale-95'
                                     }`}
                                 >
                                     <span className={`font-bold text-sm z-10 text-center leading-tight whitespace-nowrap ${
@@ -473,13 +473,14 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                 }
 
                                 return filteredResults.map((spot, index) => {
-                                    const isFav = isFavorite(spot.id);
+                                    const targetIdForFav = String(spot.id || spot.amapId);
+                                    const isFav = isFavorite(targetIdForFav, 'poi');
                                     
                                     return (
                                     <div 
                                         key={spot.id}
                                         onClick={() => onPoiClick(spot)}
-                                        className="bg-white dark:bg-gray-800 rounded-xl p-2 shadow-sm border border-gray-100 dark:border-gray-700 flex gap-2 active:scale-[0.99] transition-transform cursor-pointer relative"
+                                        className="bg-white dark:bg-gray-800 rounded-xl p-2 shadow-sm border border-slate-300 dark:border-slate-500 flex gap-2 active:scale-[0.99] transition-transform cursor-pointer relative"
                                     >
                                         {/* Index Badge */}
                                         <div className="absolute -left-1 -top-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm z-20">
@@ -487,11 +488,10 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                         </div>
 
                                         <button 
-                                            onClick={(e) => {
+                                            onClick={async (e) => {
                                                 e.stopPropagation();
                                                 if (!user) {
-                                                    toast('로그인 후 즐겨찾기 가능합니다.', {
-                                                        icon: '⚠️',
+                                                    toast.error('로그인이 필요합니다.', {
                                                         style: {
                                                             borderRadius: '10px',
                                                             background: '#333',
@@ -500,30 +500,36 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                                     });
                                                     return;
                                                 }
-                                                toggleFavorite({
-                                                    id: spot.id,
-                                                    name: spot.name,
-                                                    type: spot.type || 'spot',
-                                                    address: spot.address,
-                                                    location: spot.location,
-                                                    imageUrl: spot.photos?.[0]?.url || `https://picsum.photos/seed/${spot.id}/300/200`
-                                                });
-                                                if (isFav) {
-                                                    toast.success('즐겨찾기에서 제거되었습니다.', {
-                                                        style: {
-                                                            borderRadius: '10px',
-                                                            background: '#333',
-                                                            color: '#fff',
-                                                        },
-                                                    });
-                                                } else {
-                                                    toast.success('즐겨찾기에 추가되었습니다.', {
-                                                        style: {
-                                                            borderRadius: '10px',
-                                                            background: '#333',
-                                                            color: '#fff',
-                                                        },
-                                                    });
+                                                try {
+                                                    const payload = {
+                                                        id: targetIdForFav,
+                                                        name: spot.name,
+                                                        type: 'poi', // Force 'poi' to prevent type pollution
+                                                        address: spot.address,
+                                                        location: spot.location,
+                                                        imageUrl: spot.photos?.[0]?.url || `https://picsum.photos/seed/${targetIdForFav}/300/200`
+                                                    };
+                                                    console.log("👉 1. Clicked (CityDrawer)! Ready to send Payload:", payload);
+                                                    await toggleFavorite(payload);
+                                                    if (isFav) {
+                                                        toast.success('즐겨찾기에서 제거되었습니다.', {
+                                                            style: {
+                                                                borderRadius: '10px',
+                                                                background: '#333',
+                                                                color: '#fff',
+                                                            },
+                                                        });
+                                                    } else {
+                                                        toast.success('즐겨찾기에 추가되었습니다.', {
+                                                            style: {
+                                                                borderRadius: '10px',
+                                                                background: '#333',
+                                                                color: '#fff',
+                                                            },
+                                                        });
+                                                    }
+                                                } catch (err) {
+                                                    // Error is handled in context
                                                 }
                                             }}
                                             className="absolute top-2 right-2 p-1 bg-white/80 dark:bg-black/20 backdrop-blur-sm rounded-full hover:bg-red-50 transition-colors z-10"

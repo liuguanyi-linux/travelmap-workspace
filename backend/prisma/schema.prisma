@@ -70,11 +70,14 @@ model Favorite {
   id        Int      @id @default(autoincrement())
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
-  poiId     Int
-  poi       Poi      @relation(fields: [poiId], references: [id])
+  poiId     Int?
+  poi       Poi?     @relation(fields: [poiId], references: [id])
+  strategyId BigInt?
+  strategy  Strategy? @relation(fields: [strategyId], references: [id])
   createdAt DateTime @default(now())
 
-  @@unique([userId, poiId])
+  // Removed unique constraint to allow logic-level deduplication or create composite unique if needed.
+  // We'll rely on service logic to prevent duplicates.
 }
 
 model Booking {
@@ -179,6 +182,7 @@ model Strategy {
 
   expiryDate DateTime? // Expiration date for auto-removal
   reviews   Review[]
+  favorites Favorite[] // Added reverse relation for favorites
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

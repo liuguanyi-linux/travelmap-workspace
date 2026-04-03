@@ -23,7 +23,7 @@ export default function FloatingSearchBar({ onSearch, onCategorySelect, rightAct
           <input
             type="text"
             placeholder={t('searchPlaceholder')}
-            className="w-full h-12 pl-12 pr-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-sm border border-white/20 dark:border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-gray-900 dark:text-white placeholder-gray-600 dark:placeholder-gray-400 text-base transition-all font-medium"
+            className="w-full h-12 pl-12 pr-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-sm border border-slate-300 dark:border-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-gray-900 dark:text-white placeholder-gray-600 dark:placeholder-gray-400 text-base transition-all font-medium"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 onSearch(e.currentTarget.value);

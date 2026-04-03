@@ -392,11 +392,11 @@ export default function MainLayout() {
       {/* Widgets Layer - Highest Z-Index (except Portals/Overlays) */}
       {!isBottomSheetOpen && (
         <>
-          <div className={`fixed top-[120px] right-4 z-[10002] transition-all duration-300 ${activeTab !== '' ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible pointer-events-auto'}`}>
+          <div className={`fixed top-[90px] right-4 z-[10002] transition-all duration-300 ${activeTab !== '' ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible pointer-events-auto'}`}>
              <AdsWidget isOpen={isAdOpen} onOpenChange={setIsAdOpen} />
           </div>
           
-          <div className={`fixed top-[265px] right-4 z-[10002] transition-all duration-300 ${activeTab !== '' ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible pointer-events-auto'}`}>
+          <div className={`fixed top-[205px] right-4 z-[10002] transition-all duration-300 ${activeTab !== '' ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible pointer-events-auto'}`}>
              <AtmWidget onSelect={() => setIsAtmActive(!isAtmActive)} isActive={isAtmActive} />
           </div>
         </>
@@ -405,7 +405,7 @@ export default function MainLayout() {
       {/* Map View Toggle - Moved to FloatingSearchBar */}
       
       {/* Global View Button - Repositioned */}
-      <div className="absolute top-[200px] right-4 z-30">
+      <div className="absolute top-[265px] right-4 z-30">
         <GlobalViewButton onClick={handleGlobalView} />
       </div>
       <CityDrawer 

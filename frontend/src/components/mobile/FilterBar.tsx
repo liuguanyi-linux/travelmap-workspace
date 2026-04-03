@@ -46,7 +46,7 @@ export default function FilterBar({
       <div className="relative pointer-events-auto">
         <button
           onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
-          className="flex items-center gap-1 bg-white/90 backdrop-blur shadow-md px-3 py-2 rounded-full text-sm font-bold text-gray-800 border border-gray-100 active:scale-95 transition-transform"
+          className="flex items-center gap-1 bg-white/90 backdrop-blur shadow-md px-3 py-2 rounded-full text-sm font-bold text-gray-800 border border-slate-300 dark:border-slate-500 active:scale-95 transition-transform"
         >
           <span>城市</span>
           <ChevronDown size={14} className={`transition-transform ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
@@ -58,7 +58,7 @@ export default function FilterBar({
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              className="absolute top-full left-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden py-1 origin-top-left"
+              className="absolute top-full left-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-slate-300 overflow-hidden py-1 origin-top-left"
             >
               <div className="px-4 py-2 text-xs text-gray-400 font-bold border-b border-gray-50">选择城市</div>
               {cities.map((city) => (
@@ -89,8 +89,8 @@ export default function FilterBar({
               onClick={() => onCategorySelect(activeCategory === cat.key ? '' : cat.key)}
               className={`flex-none px-4 py-2 rounded-full text-base font-medium shadow-sm transition-all whitespace-nowrap ${
                 activeCategory === cat.key
-                  ? 'bg-blue-600 text-white shadow-blue-200'
-                  : 'bg-white/90 text-gray-600 hover:bg-white backdrop-blur border border-gray-100'
+                  ? 'bg-blue-600 text-white shadow-blue-200 border border-blue-600'
+                  : 'bg-white/90 text-gray-600 hover:bg-white backdrop-blur border border-slate-300 dark:border-slate-500'
               }`}
             >
               {getCategoryLabel(cat.key)}

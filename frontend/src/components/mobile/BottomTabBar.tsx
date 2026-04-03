@@ -18,7 +18,7 @@ export default function BottomTabBar({ activeTab, onTabChange }: BottomTabBarPro
   ];
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[420px] bg-slate-50/90 dark:bg-gray-900/90 backdrop-blur-md border border-gray-200 dark:border-white/10 h-14 px-6 shadow-[0_-4px_15px_-1px_rgba(0,0,0,0.1),0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] z-[9999] rounded-full transition-colors duration-300 pointer-events-auto flex justify-between items-center">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[420px] bg-slate-50/90 dark:bg-gray-900/90 backdrop-blur-md border border-slate-300 dark:border-white/20 h-14 px-6 shadow-[0_-4px_15px_-1px_rgba(0,0,0,0.1),0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] z-[9999] rounded-full transition-colors duration-300 pointer-events-auto flex justify-between items-center">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         const Icon = tab.icon;

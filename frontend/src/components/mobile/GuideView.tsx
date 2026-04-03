@@ -94,10 +94,10 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
   };
 
   const categories = [
-    { id: 'guide', label: t('categories.guide'), icon: User, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' },
-    { id: 'car', label: t('categories.car'), icon: Car, color: 'text-green-600 bg-green-50 dark:bg-green-900/30' },
-    { id: 'agency', label: t('categories.agency'), icon: Building2, color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/30' },
-    { id: 'ad', label: t('categories.ad'), icon: Megaphone, color: 'text-pink-600 bg-pink-50 dark:bg-pink-900/30' }
+    { id: 'guide', label: '가이드', icon: User, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' },
+    { id: 'car', label: '렌트카', icon: Car, color: 'text-green-600 bg-green-50 dark:bg-green-900/30' },
+    { id: 'agency', label: '현지여행사', icon: Building2, color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/30' },
+    { id: 'ad', label: t('categories.ad') || '광고', icon: Megaphone, color: 'text-pink-600 bg-pink-50 dark:bg-pink-900/30' }
   ] as const;
 
   // Filter Logic
@@ -170,13 +170,14 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
               </button>
 
               {/* Navigation Buttons */}
-              {selectedGuide.photos.length > 1 && (
+              {(Array.isArray(selectedGuide.photos) ? selectedGuide.photos : typeof selectedGuide.photos === 'string' ? [selectedGuide.photos] : []).length > 1 && (
                 <>
                   <button 
                     className="absolute left-4 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 z-20 backdrop-blur-sm transition-colors"
                     onClick={(e) => {
                         e.stopPropagation();
-                        setPreviewIndex((prev) => (prev !== null ? (prev - 1 + selectedGuide.photos.length) % selectedGuide.photos.length : 0));
+                        const photosList = Array.isArray(selectedGuide.photos) ? selectedGuide.photos : typeof selectedGuide.photos === 'string' ? [selectedGuide.photos] : [];
+                        setPreviewIndex((prev) => (prev !== null ? (prev - 1 + photosList.length) % photosList.length : 0));
                     }}
                   >
                     <ChevronLeft size={24} />
@@ -185,7 +186,8 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                     className="absolute right-4 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 z-20 backdrop-blur-sm transition-colors"
                     onClick={(e) => {
                         e.stopPropagation();
-                        setPreviewIndex((prev) => (prev !== null ? (prev + 1) % selectedGuide.photos.length : 0));
+                        const photosList = Array.isArray(selectedGuide.photos) ? selectedGuide.photos : typeof selectedGuide.photos === 'string' ? [selectedGuide.photos] : [];
+                        setPreviewIndex((prev) => (prev !== null ? (prev + 1) % photosList.length : 0));
                     }}
                   >
                     <ChevronRight size={24} />
@@ -193,7 +195,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                   
                   {/* Counter */}
                   <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-black/50 backdrop-blur-md rounded-full text-white text-sm font-medium z-20">
-                    {previewIndex + 1} / {selectedGuide.photos.length}
+                    {previewIndex + 1} / {(Array.isArray(selectedGuide.photos) ? selectedGuide.photos : typeof selectedGuide.photos === 'string' ? [selectedGuide.photos] : []).length}
                   </div>
                 </>
               )}
@@ -204,7 +206,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.2 }}
-                    src={selectedGuide.photos[previewIndex]}
+                    src={(Array.isArray(selectedGuide.photos) ? selectedGuide.photos : typeof selectedGuide.photos === 'string' ? [selectedGuide.photos] : [])[previewIndex]}
                     alt="Preview" 
                     className="max-w-full max-h-full object-contain rounded-lg select-none shadow-2xl"
                     onClick={(e) => e.stopPropagation()}
@@ -213,10 +215,11 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                     dragElastic={0.2}
                     onDragEnd={(e, { offset, velocity }) => {
                       const swipe = offset.x;
+                      const photosList = Array.isArray(selectedGuide.photos) ? selectedGuide.photos : typeof selectedGuide.photos === 'string' ? [selectedGuide.photos] : [];
                       if (swipe < -50) {
-                         setPreviewIndex((prev) => (prev !== null ? (prev + 1) % selectedGuide.photos.length : 0));
+                         setPreviewIndex((prev) => (prev !== null ? (prev + 1) % photosList.length : 0));
                       } else if (swipe > 50) {
-                         setPreviewIndex((prev) => (prev !== null ? (prev - 1 + selectedGuide.photos.length) % selectedGuide.photos.length : 0));
+                         setPreviewIndex((prev) => (prev !== null ? (prev - 1 + photosList.length) % photosList.length : 0));
                       }
                     }}
                   />
@@ -235,7 +238,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 z-[60] h-[75vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
+          className="fixed bottom-0 left-0 right-0 mx-auto z-[60] w-[96%] max-w-[500px] h-[75vh] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
         >
           {/* Handle (Click to Toggle) */}
           <div 
@@ -285,7 +288,9 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                         </button>
                         <h2 className="text-3xl font-bold text-gray-900 dark:text-white leading-tight mb-3 tracking-tight">{selectedGuide.name}</h2>
                         <div className="flex gap-2">
-                          <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-medium">{selectedGuide.title}</span>
+                          <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-medium border border-blue-200 dark:border-blue-800">
+                              {selectedGuide.category === 'car' ? '렌트카' : selectedGuide.category === 'agency' ? '현지여행사' : '가이드'}
+                          </span>
                           {selectedGuide.hasCar && <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-xs font-medium">{t('guide.hasCar')}</span>}
                         </div>
                     </div>
@@ -297,7 +302,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                   {/* Photos Section */}
                   <div className="mt-4 mb-2">
                       <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
-                          {(selectedGuide.photos || []).filter(Boolean).map((photo, index) => (
+                          {(Array.isArray(selectedGuide.photos) ? selectedGuide.photos : typeof selectedGuide.photos === 'string' ? [selectedGuide.photos] : []).filter(Boolean).map((photo, index) => (
                               <div 
                                 key={index} 
                                 className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-700 snap-center shadow-md relative cursor-pointer"
@@ -306,7 +311,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                                 }}
                               >
                                   <img 
-                                    src={photo} 
+                                    src={photo as string} 
                                     alt={selectedGuide.name} 
                                     className="w-full h-full object-cover"
                                   />
@@ -321,6 +326,194 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('guide.intro')}</h3>
                       <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm bg-gray-50 dark:bg-gray-800 p-4 rounded-xl prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: selectedGuide.intro }} />
                     </div>
+
+                    {/* Contact Info (Copied from POI) */}
+                    {(selectedGuide.phone || selectedGuide.wechat || selectedGuide.kakao || selectedGuide.email) && (
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">연락처 정보</h3>
+                            <div className="space-y-4">
+                                {selectedGuide.phone && (
+                                    <>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[10px] text-gray-500 mb-0.5">전화번호</p>
+                                                <p className="font-medium text-gray-700 text-xs truncate">{selectedGuide.phone}</p>
+                                            </div>
+                                            <button 
+                                              onClick={() => {
+                                                  const text = selectedGuide.phone || '';
+                                                  if (navigator.clipboard && window.isSecureContext) {
+                                                      navigator.clipboard.writeText(text);
+                                                  } else {
+                                                      const textArea = document.createElement("textarea");
+                                                      textArea.value = text;
+                                                      textArea.style.position = "fixed";
+                                                      textArea.style.left = "-9999px";
+                                                      document.body.appendChild(textArea);
+                                                      textArea.focus();
+                                                      textArea.select();
+                                                      try { document.execCommand('copy'); } catch (err) {}
+                                                      document.body.removeChild(textArea);
+                                                  }
+                                                  const btn = document.getElementById('copy-guide-phone-btn');
+                                                  if (btn) {
+                                                      const originalText = btn.innerText;
+                                                      btn.innerText = t('detail.saved') || '복사됨';
+                                                      btn.classList.add('bg-green-600', 'text-white');
+                                                      btn.classList.remove('bg-gray-100', 'text-gray-600');
+                                                      setTimeout(() => {
+                                                          btn.innerText = originalText;
+                                                          btn.classList.remove('bg-green-600', 'text-white');
+                                                          btn.classList.add('bg-gray-100', 'text-gray-600');
+                                                      }, 1500);
+                                                  }
+                                              }}
+                                              id="copy-guide-phone-btn"
+                                              className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                                            >
+                                                복사하기
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                                {selectedGuide.wechat && (
+                                    <>
+                                        {selectedGuide.phone && <div className="h-px bg-gray-100" />}
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[10px] text-gray-500 mb-0.5">위챗 ID</p>
+                                                <p className="font-medium text-gray-700 text-xs truncate">{selectedGuide.wechat}</p>
+                                            </div>
+                                            <button 
+                                              onClick={() => {
+                                                  const text = selectedGuide.wechat || '';
+                                                  if (navigator.clipboard && window.isSecureContext) {
+                                                      navigator.clipboard.writeText(text);
+                                                  } else {
+                                                      const textArea = document.createElement("textarea");
+                                                      textArea.value = text;
+                                                      textArea.style.position = "fixed";
+                                                      textArea.style.left = "-9999px";
+                                                      document.body.appendChild(textArea);
+                                                      textArea.focus();
+                                                      textArea.select();
+                                                      try { document.execCommand('copy'); } catch (err) {}
+                                                      document.body.removeChild(textArea);
+                                                  }
+                                                  const btn = document.getElementById('copy-guide-wechat-btn');
+                                                  if (btn) {
+                                                      const originalText = btn.innerText;
+                                                      btn.innerText = t('detail.saved') || '복사됨';
+                                                      btn.classList.add('bg-green-600', 'text-white');
+                                                      btn.classList.remove('bg-gray-100', 'text-gray-600');
+                                                      setTimeout(() => {
+                                                          btn.innerText = originalText;
+                                                          btn.classList.remove('bg-green-600', 'text-white');
+                                                          btn.classList.add('bg-gray-100', 'text-gray-600');
+                                                      }, 1500);
+                                                  }
+                                              }}
+                                              id="copy-guide-wechat-btn"
+                                              className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                                            >
+                                                복사하기
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                                {selectedGuide.kakao && (
+                                    <>
+                                        {(selectedGuide.phone || selectedGuide.wechat) && <div className="h-px bg-gray-100" />}
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[10px] text-gray-500 mb-0.5">카카오톡 ID</p>
+                                                <p className="font-medium text-gray-700 text-xs truncate">{selectedGuide.kakao}</p>
+                                            </div>
+                                            <button 
+                                              onClick={() => {
+                                                  const text = selectedGuide.kakao || '';
+                                                  if (navigator.clipboard && window.isSecureContext) {
+                                                      navigator.clipboard.writeText(text);
+                                                  } else {
+                                                      const textArea = document.createElement("textarea");
+                                                      textArea.value = text;
+                                                      textArea.style.position = "fixed";
+                                                      textArea.style.left = "-9999px";
+                                                      document.body.appendChild(textArea);
+                                                      textArea.focus();
+                                                      textArea.select();
+                                                      try { document.execCommand('copy'); } catch (err) {}
+                                                      document.body.removeChild(textArea);
+                                                  }
+                                                  const btn = document.getElementById('copy-guide-kakao-btn');
+                                                  if (btn) {
+                                                      const originalText = btn.innerText;
+                                                      btn.innerText = t('detail.saved') || '복사됨';
+                                                      btn.classList.add('bg-green-600', 'text-white');
+                                                      btn.classList.remove('bg-gray-100', 'text-gray-600');
+                                                      setTimeout(() => {
+                                                          btn.innerText = originalText;
+                                                          btn.classList.remove('bg-green-600', 'text-white');
+                                                          btn.classList.add('bg-gray-100', 'text-gray-600');
+                                                      }, 1500);
+                                                  }
+                                              }}
+                                              id="copy-guide-kakao-btn"
+                                              className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                                            >
+                                                복사하기
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                                {selectedGuide.email && (
+                                    <>
+                                        {(selectedGuide.phone || selectedGuide.wechat || selectedGuide.kakao) && <div className="h-px bg-gray-100" />}
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[10px] text-gray-500 mb-0.5">이메일</p>
+                                                <p className="font-medium text-gray-700 text-xs truncate">{selectedGuide.email}</p>
+                                            </div>
+                                            <button 
+                                              onClick={() => {
+                                                  const text = selectedGuide.email || '';
+                                                  if (navigator.clipboard && window.isSecureContext) {
+                                                      navigator.clipboard.writeText(text);
+                                                  } else {
+                                                      const textArea = document.createElement("textarea");
+                                                      textArea.value = text;
+                                                      textArea.style.position = "fixed";
+                                                      textArea.style.left = "-9999px";
+                                                      document.body.appendChild(textArea);
+                                                      textArea.focus();
+                                                      textArea.select();
+                                                      try { document.execCommand('copy'); } catch (err) {}
+                                                      document.body.removeChild(textArea);
+                                                  }
+                                                  const btn = document.getElementById('copy-guide-email-btn');
+                                                  if (btn) {
+                                                      const originalText = btn.innerText;
+                                                      btn.innerText = t('detail.saved') || '복사됨';
+                                                      btn.classList.add('bg-green-600', 'text-white');
+                                                      btn.classList.remove('bg-gray-100', 'text-gray-600');
+                                                      setTimeout(() => {
+                                                          btn.innerText = originalText;
+                                                          btn.classList.remove('bg-green-600', 'text-white');
+                                                          btn.classList.add('bg-gray-100', 'text-gray-600');
+                                                      }, 1500);
+                                                  }
+                                              }}
+                                              id="copy-guide-email-btn"
+                                              className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                                            >
+                                                복사하기
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {selectedGuide.content && (
                       <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
@@ -356,7 +549,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                                 className={`flex-none w-auto flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 h-auto snap-center ${
                                     isSelected 
                                         ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-500 shadow-md scale-105' 
-                                        : 'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95'
+                                        : 'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-slate-300 dark:border-slate-500 shadow-sm active:scale-95'
                                 }`}
                             >
                                 <span className={`font-bold text-sm z-10 text-center leading-tight whitespace-nowrap px-3 py-1 ${
@@ -400,7 +593,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                         (Array.isArray(ads) ? ads : []).map((ad: any) => (
                             <div 
                                 key={ad.id}
-                                className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 mb-2 relative overflow-hidden group"
+                                className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-300 dark:border-slate-500 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 mb-2 relative overflow-hidden group"
                                 onClick={() => {
                                     if (ad.link && !ad.content) {
                                         window.open(ad.link, '_blank');
@@ -447,7 +640,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                       <div 
                         key={guide.id} 
                         onClick={() => setSelectedGuide(guide)}
-                        className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 mb-2"
+                        className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-300 dark:border-slate-500 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 mb-2"
                       >
                           <div className="flex gap-3">
                               <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm bg-gray-100">
@@ -460,7 +653,9 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                                           <span className="text-[10px] font-bold text-orange-500">★ {guide.rank || 5.0}</span>
                                       </div>
                                       <div className="flex flex-wrap gap-1 mt-1">
-                                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full">{guide.title}</span>
+                                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
+                                              {guide.category === 'car' ? '렌트카' : guide.category === 'agency' ? '현지여행사' : '가이드'}
+                                          </span>
                                           {guide.hasCar && <span className="text-[10px] text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-1.5 py-0.5 rounded-full">{t('guide.hasCar')}</span>}
                                       </div>
                                   </div>

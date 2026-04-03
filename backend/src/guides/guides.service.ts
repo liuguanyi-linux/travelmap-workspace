@@ -29,6 +29,10 @@ export class GuidesService {
         category: true,
         photos: true,
         content: true, // 致命修复：加上 content！
+        phone: true,
+        wechat: true,
+        kakao: true,
+        email: true,
         expiryDate: true,
         createdAt: true,
         updatedAt: true
@@ -68,7 +72,19 @@ export class GuidesService {
     
     // 对特殊字段进行 JSON 序列化
     if (updateData.cities) updateData.cities = JSON.stringify(updateData.cities);
-    if (updateData.photos) updateData.photos = JSON.stringify(updateData.photos);
+    
+    if (updateData.photos !== undefined) {
+      if (Array.isArray(updateData.photos)) {
+        updateData.photos = JSON.stringify(updateData.photos);
+      } else if (typeof updateData.photos === 'string') {
+        try {
+          const parsed = JSON.parse(updateData.photos);
+          updateData.photos = Array.isArray(parsed) ? updateData.photos : JSON.stringify([updateData.photos]);
+        } catch {
+          updateData.photos = JSON.stringify([updateData.photos]);
+        }
+      }
+    }
 
     console.log('[Step 1] 后端 Guide 接收到的 content 长度:', updateData.content?.length || 0);
     

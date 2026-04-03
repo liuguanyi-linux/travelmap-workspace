@@ -280,7 +280,7 @@ export default function AdminDashboard() {
               return (
               <TabButton key={cat.key} active={activeTab === cat.key} onClick={() => setActiveTab(cat.key)}>
                 <div className="flex items-center gap-3">
-                  <span>- {cat.name}管理</span>
+                  <span>- {cat.name.replace(/管理$/, '')}</span>
                 </div>
               </TabButton>
             )})}
@@ -288,7 +288,7 @@ export default function AdminDashboard() {
           {/* Merged Transport Category */}
           <TabButton active={activeTab === 'transport'} onClick={() => setActiveTab('transport')}>
             <div className="flex items-center gap-3">
-              <span>- 高铁/机场管理</span>
+              <span>- 高铁/机场</span>
             </div>
           </TabButton>
 
@@ -296,13 +296,13 @@ export default function AdminDashboard() {
           <TabButton active={activeTab === 'guides'} onClick={() => setActiveTab('guides')}>
             <div className="flex items-center gap-3">
               <Compass size={18} />
-              <span>导游管理</span>
+              <span>导游</span>
             </div>
           </TabButton>
           <TabButton active={activeTab === 'strategies'} onClick={() => setActiveTab('strategies')}>
             <div className="flex items-center gap-3">
               <BookOpen size={18} />
-              <span>攻略管理</span>
+              <span>攻略</span>
             </div>
           </TabButton>
 
@@ -310,7 +310,7 @@ export default function AdminDashboard() {
           <TabButton active={activeTab === 'ads'} onClick={() => setActiveTab('ads')}>
             <div className="flex items-center gap-3">
               <Megaphone size={18} />
-              <span>广告位管理</span>
+              <span>广告位</span>
             </div>
           </TabButton>
 
@@ -318,7 +318,7 @@ export default function AdminDashboard() {
           <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')}>
             <div className="flex items-center gap-3">
               <Users size={18} />
-              <span>用户管理</span>
+              <span>用户</span>
             </div>
           </TabButton>
           <TabButton active={activeTab === 'menu_categories'} onClick={() => setActiveTab('menu_categories')}>
@@ -793,7 +793,23 @@ function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete
 
 function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onSave: (data: any) => void, isSaving?: boolean }) {
   const { cities = [] } = useData();
-  const [formData, setFormData] = useState<Partial<Guide>>(initialData || {
+  
+  let parsedPhotos: string[] = [];
+  try {
+    if (Array.isArray(initialData?.photos)) {
+      parsedPhotos = initialData.photos;
+    } else if (typeof initialData?.photos === 'string' && initialData.photos.trim() !== '') {
+      parsedPhotos = JSON.parse(initialData.photos);
+    }
+  } catch (e) {
+    console.error("Failed to parse Guide photos:", e);
+    parsedPhotos = typeof initialData?.photos === 'string' ? [initialData.photos] : [];
+  }
+
+  const [formData, setFormData] = useState<Partial<Guide>>(initialData ? {
+    ...initialData,
+    photos: parsedPhotos
+  } : {
     name: '',
     gender: 'male',
     hasCar: false,
@@ -1109,7 +1125,23 @@ function ContactSettings({ info, onSave }: { info: ContactInfo, onSave: (data: C
 
 function StrategyForm({ initialData, onSave, isSaving }: { initialData?: Strategy, onSave: (data: any) => void, isSaving?: boolean }) {
   const { spots: availableSpots = [], strategyCategories = [], cities = [] } = useData();
-  const [formData, setFormData] = useState<Partial<Strategy>>(initialData || {
+  
+  let parsedPhotos: string[] = [];
+  try {
+    if (Array.isArray(initialData?.photos)) {
+      parsedPhotos = initialData.photos;
+    } else if (typeof initialData?.photos === 'string' && initialData.photos.trim() !== '') {
+      parsedPhotos = JSON.parse(initialData.photos);
+    }
+  } catch (e) {
+    console.error("Failed to parse Strategy photos:", e);
+    parsedPhotos = typeof initialData?.photos === 'string' ? [initialData.photos] : [];
+  }
+
+  const [formData, setFormData] = useState<Partial<Strategy>>(initialData ? {
+    ...initialData,
+    photos: parsedPhotos
+  } : {
     title: '',
     city: '青岛',
     category: strategyCategories.length > 0 ? strategyCategories[0].name : '',
@@ -1503,10 +1535,22 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
   const isAirport = defaultTag === 'airport';
   const effectiveDefaultTag = isRail ? 'rail' : (isAirport ? 'airport' : defaultTag);
 
+  let parsedPhotos: string[] = [];
+  try {
+    if (Array.isArray(initialData?.photos)) {
+      parsedPhotos = initialData.photos;
+    } else if (typeof initialData?.photos === 'string' && initialData.photos.trim() !== '') {
+      parsedPhotos = JSON.parse(initialData.photos);
+    }
+  } catch (e) {
+    console.error("Failed to parse Spot photos:", e);
+    parsedPhotos = typeof initialData?.photos === 'string' ? [initialData.photos] : [];
+  }
+
   const [formData, setFormData] = useState<Partial<Spot>>(initialData ? {
     ...initialData,
     // Ensure arrays are initialized correctly to prevent nulls
-    photos: initialData.photos || [],
+    photos: parsedPhotos,
     tags: initialData.tags || [effectiveDefaultTag],
     reviews: initialData.reviews || []
   } : {
@@ -1530,10 +1574,21 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
   // Ensure formData is updated when initialData changes, BUT ONLY if initialData is provided (edit mode)
   useEffect(() => {
     if (initialData) {
+        let effectParsedPhotos: string[] = [];
+        try {
+          if (Array.isArray(initialData.photos)) {
+            effectParsedPhotos = initialData.photos;
+          } else if (typeof initialData.photos === 'string' && initialData.photos.trim() !== '') {
+            effectParsedPhotos = JSON.parse(initialData.photos);
+          }
+        } catch (e) {
+          effectParsedPhotos = typeof initialData.photos === 'string' ? [initialData.photos] : [];
+        }
+
         setFormData(prev => ({
             ...prev,
             ...initialData,
-            photos: initialData.photos || [],
+            photos: effectParsedPhotos,
             tags: initialData.tags || [effectiveDefaultTag],
             reviews: initialData.reviews || []
         }));
@@ -1871,9 +1926,21 @@ function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: nu
 }
 
 function AdForm({ initialData, onSave }: { initialData?: AdSlot, onSave: (data: any) => void }) {
+  let parsedPhotos: string[] = [];
+  try {
+    if (Array.isArray(initialData?.photos)) {
+      parsedPhotos = initialData.photos;
+    } else if (typeof initialData?.photos === 'string' && initialData.photos.trim() !== '') {
+      parsedPhotos = JSON.parse(initialData.photos);
+    }
+  } catch (e) {
+    console.error("Failed to parse Ad photos:", e);
+    parsedPhotos = typeof initialData?.photos === 'string' ? [initialData.photos] : [];
+  }
+
   const [formData, setFormData] = useState<Partial<AdSlot>>(initialData ? {
     ...initialData,
-    photos: initialData.photos || [],
+    photos: parsedPhotos,
     content: initialData.content || ''
   } : {
     title: '',
@@ -1883,7 +1950,11 @@ function AdForm({ initialData, onSave }: { initialData?: AdSlot, onSave: (data: 
     link: '',
     layout: 'standard',
     address: '',
-    content: ''
+    content: '',
+    phone: '',
+    wechat: '',
+    kakao: '',
+    email: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1947,6 +2018,49 @@ function AdForm({ initialData, onSave }: { initialData?: AdSlot, onSave: (data: 
           onChange={(images) => setFormData({ ...formData, photos: images })}
           maxImages={9}
         />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">电话 (전화번호)</label>
+          <input
+            type="text"
+            value={formData.phone || ''}
+            onChange={e => setFormData({...formData, phone: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="例如: +86 123456789"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">微信 ID (위챗 ID)</label>
+          <input
+            type="text"
+            value={formData.wechat || ''}
+            onChange={e => setFormData({...formData, wechat: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="WeChat ID"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">KakaoTalk ID (카카오톡 ID)</label>
+          <input
+            type="text"
+            value={formData.kakao || ''}
+            onChange={e => setFormData({...formData, kakao: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="Kakao ID"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">邮箱 (이메일)</label>
+          <input
+            type="email"
+            value={formData.email || ''}
+            onChange={e => setFormData({...formData, email: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="Email Address"
+          />
+        </div>
       </div>
 
       <div>

@@ -12,9 +12,14 @@ interface StrategyViewProps {
 }
 
 import { getFullImageUrl } from '../../utils/image';
+import { useAuth } from '../../contexts/AuthContext';
+import { useFavorites } from '../../hooks/useFavorites';
+import { toast } from 'sonner';
 
 export default function StrategyView({ isVisible, onClose, onLightboxChange }: StrategyViewProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { isFavorite, toggleFavorite, removeFavorite } = useFavorites();
   const controls = useAnimation();
   const dragControls = useDragControls();
   const [viewState, setViewState] = React.useState<'hidden' | 'peek' | 'full'>('hidden');
@@ -89,6 +94,65 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange }: S
     if (cat === '当地体验') return t('strategy.localExp');
     if (cat === '实用攻略') return t('strategy.practical');
     return cat; // Fallback to original name
+  };
+
+  const handleShare = async () => {
+    if (!selectedStrategy) return;
+    
+    const shareData = {
+      title: selectedStrategy.title,
+      text: selectedStrategy.description || '',
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error('Error sharing:', err);
+      }
+    } else {
+      // Fallback: Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success('링크가 복사되었습니다'); // Success toast
+      } catch (err) {
+        console.error('Failed to copy link:', err);
+        toast.error('링크 복사에 실패했습니다');
+      }
+    }
+  };
+
+  const handleFavoriteClick = async () => {
+    if (!selectedStrategy) return;
+
+    if (!user) {
+      toast.error('请先登录 / 로그인이 필요합니다');
+      // Dispatch event to open login modal via App/MainLayout
+      window.dispatchEvent(new CustomEvent('open-login-modal'));
+      return;
+    }
+
+    try {
+      const currentlyFavorited = isFavorite(selectedStrategy.id, 'strategy');
+      if (currentlyFavorited) {
+        await removeFavorite(selectedStrategy.id);
+        toast.success(t('detail.unsaved') || '저장 취소되었습니다');
+      } else {
+        const payload = {
+          id: selectedStrategy.id,
+          name: selectedStrategy.title,
+          type: 'strategy',
+          imageUrl: selectedStrategy.image
+        };
+        console.log("👉 1. Clicked (StrategyDetail)! Ready to send Payload:", payload);
+        await toggleFavorite(payload);
+        toast.success(t('detail.saved') || '저장되었습니다');
+      }
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      toast.error('操作失败 / 처리 실패');
+    }
   };
 
   return (
@@ -174,7 +238,7 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange }: S
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 z-40 h-[75vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
+          className="fixed bottom-0 left-0 right-0 mx-auto z-40 w-[96%] max-w-[500px] h-[75vh] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
         >
           {/* Handle (Click to Toggle) */}
           <div 
@@ -266,7 +330,7 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange }: S
                         </div>
                         <div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">{t('strategy.days')}</div>
-                          <div className="font-bold text-gray-900 dark:text-white">{selectedStrategy.days}</div>
+                          <div className="font-bold text-gray-900 dark:text-white">{selectedStrategy.days.replace('天', '일')}</div>
                         </div>
                       </div>
                       <div className="w-px bg-gray-200 dark:bg-gray-700" />
@@ -276,14 +340,14 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange }: S
                         </div>
                         <div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">{t('strategy.spots')}</div>
-                          <div className="font-bold text-gray-900 dark:text-white">{selectedStrategy.spots.length}个</div>
+                          <div className="font-bold text-gray-900 dark:text-white">{selectedStrategy.spots.length}곳</div>
                         </div>
                       </div>
                     </div>
 
                     {/* Route Details */}
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{t('strategy.route')}</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">여행코스</h3>
                       <div className="relative pl-4 border-l-2 border-blue-100 dark:border-blue-900 space-y-6">
                         {selectedStrategy.spots.map((spot, index) => (
                           <div key={index} className="relative">
@@ -308,14 +372,13 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange }: S
                   )}
                   
                   {/* Action Buttons */}
-                  <div className="flex gap-4 pt-4">
-                      <button className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 py-3 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                        <Share2 size={20} />
-                        <span className="font-bold">{t('detail.share')}</span>
-                      </button>
-                      <button className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
-                        <Heart size={20} />
-                        <span className="font-bold">{t('detail.save')}</span>
+                  <div className="flex pt-4">
+                      <button 
+                        onClick={handleFavoriteClick}
+                        className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                      >
+                        <Heart size={20} className={isFavorite(selectedStrategy.id) ? "fill-current" : ""} />
+                        <span className="font-bold">{isFavorite(selectedStrategy.id) ? (t('detail.saved') || '저장됨') : (t('detail.save') || '저장')}</span>
                       </button>
                   </div>
                   </div>
@@ -340,10 +403,10 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange }: S
                     <button
                       key={cat}
                       onClick={() => setSelectedCategory(cat)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors flex-shrink-0 ${
+                      className={`px-3 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors flex-shrink-0 border ${
                         selectedCategory === cat 
-                          ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
+                          ? 'bg-blue-600 text-white shadow-md shadow-blue-200 border-blue-600' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 border-slate-300 dark:border-slate-500'
                       }`}
                     >
                       {getCategoryLabel(cat)}
@@ -358,13 +421,52 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange }: S
                       <div 
                         key={route.id} 
                         onClick={() => setSelectedStrategy(route)}
-                        className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-[1rem] p-3 shadow-sm border border-gray-100 dark:border-gray-700 active:scale-[0.98] transition-transform cursor-pointer hover:shadow-md"
+                        className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-[1rem] p-3 shadow-sm border border-slate-300 dark:border-slate-500 active:scale-[0.98] transition-transform cursor-pointer hover:shadow-md"
                       >
-                        <div className="flex gap-3">
+                        <div className="flex gap-3 relative">
                           <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 shadow-sm">
                             <img src={getFullImageUrl(route.image)} alt={route.title} className="w-full h-full object-cover" />
                           </div>
-                          <div className="flex-1 flex flex-col justify-between py-0.5">
+                          
+                          <button 
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              if (!user) {
+                                toast.error('请先登录 / 로그인이 필요합니다');
+                                window.dispatchEvent(new CustomEvent('open-login-modal'));
+                                return;
+                              }
+                              try {
+                                const currentlyFavorited = isFavorite(route.id, 'strategy');
+                                if (currentlyFavorited) {
+                                  await removeFavorite(route.id);
+                                  toast.success(t('detail.unsaved') || '저장 취소되었습니다');
+                                } else {
+                                  const payload = {
+                                    id: route.id,
+                                    name: route.title,
+                                    type: 'strategy',
+                                    imageUrl: route.image
+                                  };
+                                  console.log("👉 1. Clicked (StrategyCard)! Ready to send Payload:", payload);
+                                  await toggleFavorite(payload);
+                                  toast.success(t('detail.saved') || '저장되었습니다');
+                                }
+                              } catch (error) {
+                                console.error('Failed to toggle favorite:', error);
+                                toast.error('操作失败 / 처리 실패');
+                              }
+                            }}
+                            className="absolute top-2 right-2 p-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-sm z-10"
+                          >
+                            <Heart 
+                              size={16} 
+                              className={isFavorite(route.id, 'strategy') ? "fill-red-500 text-red-500" : "text-gray-400 dark:text-gray-300"} 
+                            />
+                          </button>
+
+                          <div className="flex-1 flex flex-col justify-between py-0.5 pr-1">
                             <div>
                               <h4 className="font-bold text-gray-900 dark:text-white text-sm line-clamp-1">{route.title}</h4>
                               <div className="flex flex-wrap gap-1 mt-1.5">
@@ -375,8 +477,8 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange }: S
                             </div>
                             <div className="flex justify-between items-end mt-1">
                               <div className="flex items-center gap-3 text-[10px] font-medium text-gray-500 dark:text-gray-400">
-                                <span className="flex items-center gap-1"><Calendar size={12} className="text-blue-500" /> {route.days}</span>
-                                <span className="flex items-center gap-1"><Map size={12} className="text-green-500" /> {route.spots.length}{t('strategy.spots')}</span>
+                                <span className="flex items-center gap-1"><Calendar size={12} className="text-blue-500" /> {route.days.replace('天', '일')}</span>
+                                <span className="flex items-center gap-1"><Map size={12} className="text-green-500" /> {route.spots.length}명소</span>
                               </div>
                               <button className="w-6 h-6 rounded-full bg-black dark:bg-white flex items-center justify-center text-white dark:text-black shadow-md shadow-gray-200 dark:shadow-none">
                                 <ChevronRight size={14} />

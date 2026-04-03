@@ -237,9 +237,14 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         
         // Handle Zoom for Labels
         const handleZoomChange = () => {
-          // User Request: Always show labels regardless of zoom level
           if (mapRef.current) {
-            mapRef.current.classList.add('show-labels');
+            const currentZoom = map.getZoom();
+            // Threshold is 13: if >= 13 show labels, else hide
+            if (currentZoom >= 13) {
+                mapRef.current.classList.add('show-labels');
+            } else {
+                mapRef.current.classList.remove('show-labels');
+            }
           }
         };
         map.on('zoomchange', handleZoomChange);
@@ -351,7 +356,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
           markerContent.style.overflow = 'visible';
 
           root.render(
-            <div className={`relative ${isSelected ? 'z-50 scale-110' : 'z-40'} transition-transform duration-300`}>
+            <div className={`relative ${isSelected ? 'z-50 scale-[1.10]' : 'z-40'} transition-transform duration-300 scale-[0.90] origin-bottom`}>
                {/* The Red Pin (Anchor) - Realistic Apple Maps Style */}
                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none transform translate-y-[4px]">
                   {/* Pin Head (Glossy Sphere) - Dynamic Color - Reduced Size (20%) */}
@@ -403,7 +408,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
                {/* Positioned ABOVE the icon box and pin assembly */}
                {/* Pin top is roughly -80px from anchor. We place label at -104px to be safe above it. */}
                <div 
-                   className="absolute left-1/2 -translate-x-1/2 -top-[104px] whitespace-nowrap z-[9999] pointer-events-none"
+                   className="marker-label absolute left-1/2 -translate-x-1/2 -top-[104px] whitespace-nowrap z-[9999] pointer-events-none"
                    style={{ zIndex: 9999 }} // Force inline z-index
                >
                     <div 
@@ -416,7 +421,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
           );
       } else {
           // Standard Marker Layout
-          markerContent.className = `${baseClass} ${stateClass}`;
+          markerContent.className = `${baseClass} ${stateClass} scale-[0.90] origin-bottom`;
           // Apply colors via inline style for precision
           markerContent.style.backgroundColor = config.color;
           markerContent.style.borderColor = isSelected ? '#ffffff' : (config.borderColor || '#ffffff');

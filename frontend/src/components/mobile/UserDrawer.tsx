@@ -161,7 +161,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 z-40 h-[66vh] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
+          className="fixed bottom-0 left-0 right-0 mx-auto z-40 w-[96%] max-w-[500px] h-[66vh] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
         >
           {/* Handle (Click to Toggle) */}
           <div 
@@ -271,7 +271,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
                         {favorites.map((fav, index) => (
                             <div 
                                 key={fav.id} 
-                                className="bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-3 active:scale-[0.98] transition-all items-center"
+                                className="bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border border-slate-300 dark:border-slate-500 flex gap-3 active:scale-[0.98] transition-all items-center"
                                 onClick={() => {
                                     if (onPoiClick) onPoiClick(fav);
                                     onClose();
@@ -526,7 +526,7 @@ function MenuItem({ icon: Icon, label, onClick, color }: any) {
             }}
             onPointerDown={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-full flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-2xl active:bg-gray-50 dark:active:bg-gray-700 transition-colors cursor-pointer touch-manipulation select-none relative z-50 group"
+            className="w-full flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-2xl border border-slate-300 dark:border-slate-500 active:bg-gray-50 dark:active:bg-gray-700 transition-colors cursor-pointer touch-manipulation select-none relative z-50 group"
         >
             <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-active:scale-95 ${color} dark:bg-opacity-20`}>

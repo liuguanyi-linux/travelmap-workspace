@@ -99,7 +99,8 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
     }
   }, [previewIndex, onLightboxChange]);
 
-  const isFav = poi ? isFavorite(poi.id) : false;
+  const targetIdForFav = poi ? String(poi.id || poi.amapId) : '';
+  const isFav = isFavorite(targetIdForFav, 'poi');
 
   useEffect(() => {
     if (isOpen) {
@@ -297,7 +298,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
           dragConstraints={{ top: 0 }}
           dragElastic={0.1}
           onDragEnd={handleDragEnd}
-          className="absolute left-0 right-0 bottom-0 h-[75vh] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.2)] border-t border-gray-200 dark:border-gray-800 overflow-hidden pointer-events-auto flex flex-col will-change-transform"
+          className="absolute bottom-0 left-0 right-0 mx-auto w-[96%] max-w-[500px] h-[75vh] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.2)] border-t border-x border-gray-200 dark:border-gray-800 overflow-hidden pointer-events-auto flex flex-col will-change-transform"
         >
           {/* Drag Handle Area - Active Drag Zone */}
           <div 
@@ -839,19 +840,30 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
           {/* Fixed Bottom Buttons */}
           <div className="absolute bottom-0 left-0 right-0 p-5 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-[10002] pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300">
               <button 
-                onClick={() => {
+                onClick={async () => {
                     if (!user) {
                         toast.error(t('detail.loginToReview').replace('Review', 'Save'));
                         return;
                     }
-                    toggleFavorite({
-                        id: poi.id,
-                        name: poi.name,
-                        type: poi.type,
-                        address: poi.address,
-                        location: poi.location,
-                        imageUrl: `https://picsum.photos/seed/${poi.id || 'poi'}/300/200`
-                    });
+                    try {
+                        const payload = {
+                            id: targetIdForFav,
+                            name: poi.name,
+                            type: 'poi', // Force 'poi' to prevent type pollution
+                            address: poi.address,
+                            location: poi.location,
+                            imageUrl: `https://picsum.photos/seed/${targetIdForFav || 'poi'}/300/200`
+                        };
+                        console.log("👉 1. Clicked (PoiDetail)! Ready to send Payload:", payload);
+                        await toggleFavorite(payload);
+                        if (isFav) {
+                            toast.success(t('detail.unsaved') || '저장 취소되었습니다');
+                        } else {
+                            toast.success(t('detail.saved') || '저장되었습니다');
+                        }
+                    } catch (e) {
+                        // Error handled in context
+                    }
                 }}
                 className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg shadow-xl shadow-gray-200 dark:shadow-none active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
               >
