@@ -17,7 +17,7 @@ import AdsWidget from './mobile/AdsWidget';
 import AtmWidget from './mobile/AtmWidget';
 import PoiDetailBottomSheet from './mobile/PoiDetailBottomSheet';
 import MapToggle from './mobile/MapToggle';
-// import SearchResultsDrawer from './mobile/SearchResultsDrawer'; // Deprecated
+import SearchResultsDrawer, { SearchResultItem } from './mobile/SearchResultsDrawer';
 import GlobalViewButton from './mobile/GlobalViewButton';
 // import TopNavBar from './mobile/TopNavBar'; // Deprecated
 // import FilterBar from './mobile/FilterBar'; // Deprecated
@@ -45,13 +45,14 @@ export default function MainLayout() {
   const [activeCity, setActiveCity] = useState(DEFAULT_CITY.name); 
   const [activeCategory, setActiveCategory] = useState(''); // 'spot', 'dining', etc.
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [unifiedSearchResults, setUnifiedSearchResults] = useState<SearchResultItem[]>([]);
   const [isAtmActive, setIsAtmActive] = useState(false);
   const [isAdOpen, setIsAdOpen] = useState(false);
   const [focusedSpotId, setFocusedSpotId] = useState<string | number | null>(null);
   const [viewMode, setViewMode] = useState<'all' | 'favorites'>('all');
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
-  const { spots = [], spotCategories = [], cities = [] } = useData();
+  const { spots = [], spotCategories = [], cities = [], guides = [], strategies = [] } = useData();
   const { favorites } = useFavorites();
   
   // Close bottom sheet when tab changes to avoid conflicts
@@ -245,10 +246,73 @@ export default function MainLayout() {
 
   // --- Combine Base Markers and ATM Markers ---
   useEffect(() => {
-      // Combine base markers with ATM markers
-      // Ensure no duplicates based on ID (though ATMs usually have different IDs)
       setMapMarkers([...baseMapMarkers, ...atmMarkers]);
   }, [baseMapMarkers, atmMarkers]);
+
+  // --- Unified Search Results (spots + guides + strategies) ---
+  useEffect(() => {
+    if (!searchKeyword.trim()) {
+      setUnifiedSearchResults([]);
+      return;
+    }
+    const kw = searchKeyword.toLowerCase();
+
+    // 城市中文名 → 韩文名映射（从后台 cities 数据）
+    const cityKoMap: Record<string, string> = {};
+    cities.forEach((c: any) => { if (c.name && c.nameKo) cityKoMap[c.name] = c.nameKo; });
+    const getCityKo = (name: string) => cityKoMap[name] || name;
+
+    const spotResults: SearchResultItem[] = spots
+      .filter(s => s.isActive !== false)
+      .filter(s =>
+        (s.name && s.name.toLowerCase().includes(kw)) ||
+        (s.intro && s.intro.toLowerCase().includes(kw)) ||
+        (s.address && s.address.toLowerCase().includes(kw)) ||
+        (s.tags && s.tags.some((t: string) => t.toLowerCase().includes(kw)))
+      )
+      .map(s => ({
+        id: s.id,
+        type: 'spot' as const,
+        name: s.name,
+        description: s.intro || s.content || '',
+        imageUrl: s.photos?.[0] || '',
+        city: s.city ? getCityKo(s.city) : '',
+      }));
+
+    const guideResults: SearchResultItem[] = guides
+      .filter(g =>
+        (g.name && g.name.toLowerCase().includes(kw)) ||
+        (g.intro && g.intro.toLowerCase().includes(kw)) ||
+        (g.title && g.title.toLowerCase().includes(kw)) ||
+        (g.cities && g.cities.some((c: string) => c.toLowerCase().includes(kw)))
+      )
+      .map(g => ({
+        id: g.id,
+        type: 'guide' as const,
+        name: g.name,
+        description: g.intro || g.title || '',
+        imageUrl: g.avatar || '',
+        city: (g.cities || []).map((c: string) => getCityKo(c)).join('·'),
+      }));
+
+    const strategyResults: SearchResultItem[] = strategies
+      .filter(s =>
+        (s.title && s.title.toLowerCase().includes(kw)) ||
+        (s.category && s.category.toLowerCase().includes(kw)) ||
+        (s.tags && s.tags.some((t: string) => t.toLowerCase().includes(kw))) ||
+        (s.spots && s.spots.some((sp: string) => sp.toLowerCase().includes(kw)))
+      )
+      .map(s => ({
+        id: s.id,
+        type: 'strategy' as const,
+        name: s.title,
+        description: s.category || (s.tags || []).join('·'),
+        imageUrl: s.image || '',
+        city: s.city ? getCityKo(s.city) : '',
+      }));
+
+    setUnifiedSearchResults([...spotResults, ...guideResults, ...strategyResults]);
+  }, [searchKeyword, spots, guides, strategies]);
 
   // --- ATM Search Logic ---
   useEffect(() => {
@@ -408,28 +472,49 @@ export default function MainLayout() {
       <div className="absolute top-[265px] right-4 z-30">
         <GlobalViewButton onClick={handleGlobalView} />
       </div>
-      <CityDrawer 
+      {/* Unified Search Results Drawer */}
+      <SearchResultsDrawer
+        isVisible={!!searchKeyword.trim() && unifiedSearchResults.length >= 0}
+        results={unifiedSearchResults}
+        keyword={searchKeyword}
+        onClose={() => setSearchKeyword('')}
+        onItemClick={(item) => {
+          if (item.type === 'guide') {
+            setActiveTab('guide');
+          } else if (item.type === 'strategy') {
+            setActiveTab('strategy');
+          } else {
+            const spot = spots.find(s => String(s.id) === String(item.id));
+            if (spot) handleMarkerClick({ ...spot, photos: (spot.photos || []).map(url => ({ url })) });
+          }
+          setSearchKeyword('');
+        }}
+      />
+
+      <CityDrawer
         isVisible={activeTab === 'city'}
         onSelectCategory={setActiveCategory}
         onSelectCity={handleCitySelect}
         searchResults={searchResults}
         onPoiClick={handleMarkerClick}
         activeCityName={activeCity}
-        onClose={() => setActiveTab('')} // Ensure this clears the tab
+        onClose={() => setActiveTab('')}
       />
 
-      <StrategyView 
+      <StrategyView
         isVisible={activeTab === 'strategy'}
         onClose={() => setActiveTab('')}
         onLightboxChange={setIsLightboxOpen}
+        searchKeyword={searchKeyword}
       />
 
-      <GuideView 
-        isVisible={activeTab === 'guide'} 
-        onClose={() => setActiveTab('')} 
+      <GuideView
+        isVisible={activeTab === 'guide'}
+        onClose={() => setActiveTab('')}
         activeCity={activeCity}
         initialCategory={guideInitialCategory}
         onLightboxChange={setIsLightboxOpen}
+        searchKeyword={searchKeyword}
       />
 
       <UserDrawer 

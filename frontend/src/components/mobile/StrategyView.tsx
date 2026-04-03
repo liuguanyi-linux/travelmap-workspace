@@ -9,6 +9,7 @@ interface StrategyViewProps {
   isVisible: boolean;
   onClose: () => void;
   onLightboxChange?: (isOpen: boolean) => void;
+  searchKeyword?: string;
 }
 
 import { getFullImageUrl } from '../../utils/image';
@@ -16,7 +17,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useFavorites } from '../../hooks/useFavorites';
 import { toast } from 'sonner';
 
-export default function StrategyView({ isVisible, onClose, onLightboxChange }: StrategyViewProps) {
+export default function StrategyView({ isVisible, onClose, onLightboxChange, searchKeyword = '' }: StrategyViewProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { isFavorite, toggleFavorite, removeFavorite } = useFavorites();
@@ -76,9 +77,18 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange }: S
   const { strategies, strategyCategories = [] } = useData();
 
   const allRoutes = strategies.sort((a, b) => (a.rank || 99) - (b.rank || 99));
-  const filteredRoutes = selectedCategory === 'all' 
-    ? allRoutes 
+  const categoryFiltered = selectedCategory === 'all'
+    ? allRoutes
     : allRoutes.filter(r => r.category === selectedCategory);
+  const filteredRoutes = searchKeyword
+    ? categoryFiltered.filter(r => {
+        const kw = searchKeyword.toLowerCase();
+        return (r.title && r.title.toLowerCase().includes(kw)) ||
+               (r.category && r.category.toLowerCase().includes(kw)) ||
+               (r.tags && r.tags.some((tag: string) => tag.toLowerCase().includes(kw))) ||
+               (r.spots && r.spots.some((s: string) => s.toLowerCase().includes(kw)));
+      })
+    : categoryFiltered;
 
   const categories = ['all', ...strategyCategories.map(c => c.name)];
 

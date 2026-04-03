@@ -9,16 +9,30 @@ export default function AdminLogin() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple hardcoded check for demo purposes
-    if (username === 'admin' && password === 'travelmap2024') {
-      localStorage.setItem('admin_token', 'demo_token');
-      // Login as admin user for frontend features (e.g. deleting comments)
-      await login('admin@travelmap.com');
-      navigate('/admin/dashboard');
-    } else {
-      alert('用户名或密码错误');
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (res.ok) {
+        localStorage.setItem('admin_token', 'demo_token');
+        await login('admin@travelmap.com');
+        navigate('/admin/dashboard');
+      } else {
+        setError('用户名或密码错误');
+      }
+    } catch {
+      setError('网络错误，请重试');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -52,11 +66,13 @@ export default function AdminLogin() {
               placeholder="请输入密码"
             />
           </div>
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 disabled:opacity-60"
           >
-            登录后台
+            {loading ? '登录中...' : '登录后台'}
           </button>
         </form>
       </div>

@@ -12,20 +12,22 @@ interface GuideViewProps {
   activeCity?: string;
   initialCategory?: string;
   onLightboxChange?: (isOpen: boolean) => void;
+  searchKeyword?: string;
 }
 
 type CategoryType = 'guide' | 'car' | 'agency' | 'ad';
 
-export default function GuideView({ isVisible, onClose, activeCity, initialCategory, onLightboxChange }: GuideViewProps) {
+export default function GuideView({ isVisible, onClose, activeCity, initialCategory, onLightboxChange, searchKeyword: externalKeyword = '' }: GuideViewProps) {
   const { t } = useLanguage();
   const controls = useAnimation();
   const dragControls = useDragControls();
   const [viewState, setViewState] = useState<'hidden' | 'peek' | 'full'>('hidden');
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
-  
+
   // UI State
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('guide');
-  const [searchKeyword, setSearchKeyword] = useState('');
+  const [internalKeyword, setInternalKeyword] = useState('');
+  const searchKeyword = externalKeyword || internalKeyword;
   const [selectedGuide, setSelectedGuide] = useState<any>(null);
   
   useEffect(() => {
@@ -543,7 +545,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                                 onClick={() => {
                                     if (selectedCategory !== cat.id) {
                                         setSelectedCategory(cat.id as CategoryType);
-                                        setSearchKeyword('');
+                                        setInternalKeyword('');
                                     }
                                 }}
                                 className={`flex-none w-auto flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 h-auto snap-center ${
