@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, Mail, Calendar, User, Monitor, Smartphone, Tablet, MapPin, Wifi } from 'lucide-react';
-import { userService } from '../../../services/api';
+import api, { userService } from "../../../services/api";
 
 interface UserData {
   id: number;
@@ -36,7 +36,7 @@ export default function UserList() {
   useEffect(() => {
     Promise.all([
       userService.getAll().catch(() => []),
-      fetch('/api/users/login-logs').then(r => r.json()).catch(() => []),
+      api.get('/users/login-logs').then(r => r.data).catch(() => []),
     ]).then(([u, l]) => {
       setUsers(u);
       setLogs(l);
