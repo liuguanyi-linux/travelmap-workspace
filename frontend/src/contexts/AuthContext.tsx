@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import axios from 'axios';
 
-// Determine API URL based on environment
 const API_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:3000');
 
 interface User {
@@ -22,26 +21,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const parsed = JSON.parse(storedUser);
-      // Fix for legacy Date.now() IDs that overflow Prisma 32-bit Int
-      if (parsed.id > 2147483647) {
-        parsed.id = 1; 
-        localStorage.setItem('user', JSON.stringify(parsed));
-      }
-      return parsed;
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return null; }
     }
     return null;
   });
 
   const [isAdmin, setIsAdmin] = useState(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      return parsedUser.email === 'admin@travelmap.com';
-    }
-    return false;
+    return !!localStorage.getItem('admin_token');
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -49,28 +37,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string) => {
     setIsLoading(true);
     try {
-      // Call backend API to login/register the user
       const response = await axios.post(`${API_URL}/users/login`, { email });
       const userData = response.data;
-
       setUser(userData);
-      if (email === 'admin@travelmap.com') {
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
-      }
+      setIsAdmin(!!localStorage.getItem('admin_token'));
       localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       console.error('Login error:', error);
-      // Fallback for static/demo mode if backend is completely down
-      const fallbackUserData = {
-        id: email === 'admin@travelmap.com' ? 1 : Math.floor(Math.random() * 100000) + 2,
-        email,
-        nickname: email.split('@')[0]
-      };
-      setUser(fallbackUserData);
-      setIsAdmin(email === 'admin@travelmap.com');
-      localStorage.setItem('user', JSON.stringify(fallbackUserData));
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -80,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setIsAdmin(false);
     localStorage.removeItem('user');
+    localStorage.removeItem('admin_token');
   };
 
   return (

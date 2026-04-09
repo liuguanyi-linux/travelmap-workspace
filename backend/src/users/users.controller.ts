@@ -1,5 +1,6 @@
-import { Controller, Post, Body, Get, Param, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Req, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { AdminGuard } from '../auth/admin.guard';
 
 @Controller('users')
 export class UsersController {
@@ -16,16 +17,19 @@ export class UsersController {
   }
 
   @Get()
+  @UseGuards(AdminGuard)
   async findAll() {
     return this.usersService.findAll();
   }
 
   @Get('login-logs')
+  @UseGuards(AdminGuard)
   async getLoginLogs() {
     return this.usersService.getLoginLogs(200);
   }
 
   @Get(':email')
+  @UseGuards(AdminGuard)
   async findByEmail(@Param('email') email: string) {
     return this.usersService.findByEmail(email);
   }

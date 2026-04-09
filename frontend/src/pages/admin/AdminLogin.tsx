@@ -23,7 +23,8 @@ export default function AdminLogin() {
         body: JSON.stringify({ username, password }),
       });
       if (res.ok) {
-        localStorage.setItem('admin_token', 'demo_token');
+        const data = await res.json();
+        localStorage.setItem('admin_token', data.token);
         await login('admin@travelmap.com');
         navigate('/admin/dashboard');
       } else {

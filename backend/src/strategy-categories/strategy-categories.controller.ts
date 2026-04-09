@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Delete, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Delete, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { StrategyCategoriesService } from './strategy-categories.service';
+import { AdminGuard } from '../auth/admin.guard';
 
 @Controller('strategy-categories')
 export class StrategyCategoriesController {
@@ -11,11 +12,13 @@ export class StrategyCategoriesController {
   }
 
   @Post()
+  @UseGuards(AdminGuard)
   create(@Body('name') name: string) {
     return this.strategyCategoriesService.create(name);
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.strategyCategoriesService.remove(id);
   }

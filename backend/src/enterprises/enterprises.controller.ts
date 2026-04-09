@@ -1,5 +1,6 @@
-import { Controller, Get, HttpCode, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { EnterprisesService } from './enterprises.service';
+import { AdminGuard } from '../auth/admin.guard';
 
 @Controller('enterprises')
 export class EnterprisesController {
@@ -12,12 +13,15 @@ export class EnterprisesController {
   findOne(@Param('id') id: string) { return this.service.findOne(+id); }
 
   @Post()
+  @UseGuards(AdminGuard)
   create(@Body() body: any) { return this.service.create(body); }
 
   @Put(':id')
+  @UseGuards(AdminGuard)
   update(@Param('id') id: string, @Body() body: any) { return this.service.update(+id, body); }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
   remove(@Param('id') id: string) { return this.service.remove(+id); }
 
   @Post(':id/view')

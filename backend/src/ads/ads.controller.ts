@@ -1,5 +1,6 @@
-import { Controller, Get, HttpCode, Post, Body, Put, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Body, Put, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { AdsService } from './ads.service';
+import { AdminGuard } from '../auth/admin.guard';
 
 @Controller('ads')
 export class AdsController {
@@ -16,16 +17,19 @@ export class AdsController {
   }
 
   @Post()
+  @UseGuards(AdminGuard)
   create(@Body() createAdDto: any) {
     return this.adsService.create(createAdDto);
   }
 
   @Put(':id')
+  @UseGuards(AdminGuard)
   update(@Param('id') id: string, @Body() updateAdDto: any) {
     return this.adsService.update(+id, updateAdDto);
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
   remove(@Param('id') id: string) {
     return this.adsService.remove(+id);
   }

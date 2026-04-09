@@ -20,8 +20,8 @@ export class UsersService {
       return { country: '本地', region: '', city: '', isp: '' };
     }
     return new Promise((resolve) => {
-      const mod = ip.includes(':') ? https : http;
-      const req = (ip.startsWith('https') ? https : http).get(
+
+      const req = http.get(
         `http://ip-api.com/json/${ip}?fields=country,regionName,city,isp&lang=zh-CN`,
         (res) => {
           let data = '';

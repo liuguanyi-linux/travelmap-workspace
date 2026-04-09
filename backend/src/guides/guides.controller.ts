@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, Query, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, Query, HttpCode, UseGuards } from '@nestjs/common';
 import { GuidesService } from './guides.service';
 import { UpdateGuideDto } from './dto/update-guide.dto/update-guide.dto';
+import { AdminGuard } from '../auth/admin.guard';
 
 @Controller('guides')
 export class GuidesController {
@@ -17,16 +18,19 @@ export class GuidesController {
   }
 
   @Post()
+  @UseGuards(AdminGuard)
   create(@Body() createGuideDto: any) {
     return this.guidesService.create(createGuideDto);
   }
 
   @Put(':id')
+  @UseGuards(AdminGuard)
   update(@Param('id') id: string, @Body() updateGuideDto: UpdateGuideDto) {
     return this.guidesService.update(id, updateGuideDto);
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
   remove(@Param('id') id: string) {
     return this.guidesService.remove(id);
   }

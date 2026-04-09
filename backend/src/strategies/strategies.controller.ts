@@ -1,6 +1,7 @@
-import { Controller, Get, HttpCode, Post, Body, Put, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Body, Put, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { StrategiesService } from './strategies.service';
 import { UpdateStrategyDto } from './dto/update-strategy.dto/update-strategy.dto';
+import { AdminGuard } from '../auth/admin.guard';
 
 @Controller('strategies')
 export class StrategiesController {
@@ -17,16 +18,19 @@ export class StrategiesController {
   }
 
   @Post()
+  @UseGuards(AdminGuard)
   create(@Body() createStrategyDto: any) {
     return this.strategiesService.create(createStrategyDto);
   }
 
   @Put(':id')
+  @UseGuards(AdminGuard)
   update(@Param('id') id: string, @Body() updateStrategyDto: UpdateStrategyDto) {
     return this.strategiesService.update(id, updateStrategyDto);
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
   remove(@Param('id') id: string) {
     return this.strategiesService.remove(id);
   }

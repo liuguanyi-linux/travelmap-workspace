@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe, Delete, UseGuards } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { Prisma } from '@prisma/client';
+import { AdminGuard } from '../auth/admin.guard';
 
 @Controller('reviews')
 export class ReviewsController {
@@ -12,11 +13,13 @@ export class ReviewsController {
   }
 
   @Post('batch-generate')
+  @UseGuards(AdminGuard)
   async batchGenerate(@Body() data: { targetType: string, targetId: number | string }) {
     return this.reviewsService.batchGenerate(data.targetType, data.targetId);
   }
 
   @Delete('batch-clear')
+  @UseGuards(AdminGuard)
   async batchClear(@Body() data: { targetType: string, targetId: number | string }) {
     return this.reviewsService.batchClear(data.targetType, data.targetId);
   }
@@ -37,6 +40,7 @@ export class ReviewsController {
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.reviewsService.delete(id);
   }

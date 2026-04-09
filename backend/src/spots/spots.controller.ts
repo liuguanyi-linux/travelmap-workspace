@@ -1,5 +1,6 @@
-import { Controller, Get, HttpCode, Post, Body, Put, Param, Delete, Query, Patch } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Body, Put, Param, Delete, Query, Patch, UseGuards } from '@nestjs/common';
 import { SpotsService } from './spots.service';
+import { AdminGuard } from '../auth/admin.guard';
 
 @Controller('spots')
 export class SpotsController {
@@ -16,11 +17,9 @@ export class SpotsController {
   @Put(':id/status')
   @Patch(':id/status')
   @Post(':id/status')
+  @UseGuards(AdminGuard)
   updateStatus(@Param('id') id: string, @Body('isActive') isActive: boolean) {
-    console.log(`--- 收到状态更新请求 ---`, { id, isActive });
-    if (!id) {
-        throw new Error('Invalid request param: id is required');
-    }
+    if (!id) throw new Error('Invalid request param: id is required');
     return this.spotsService.updateStatus(id, isActive);
   }
 
@@ -30,16 +29,19 @@ export class SpotsController {
   }
 
   @Post()
+  @UseGuards(AdminGuard)
   create(@Body() createSpotDto: any) {
     return this.spotsService.create(createSpotDto);
   }
 
   @Put(':id')
+  @UseGuards(AdminGuard)
   update(@Param('id') id: string, @Body() updateSpotDto: any) {
     return this.spotsService.update(+id, updateSpotDto);
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
   remove(@Param('id') id: string) {
     return this.spotsService.remove(+id);
   }
