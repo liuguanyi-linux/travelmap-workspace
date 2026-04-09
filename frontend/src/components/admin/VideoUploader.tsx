@@ -36,8 +36,10 @@ export default function VideoUploader({
         formData.append('file', file);
 
         // Use fetch directly to handle FormData
+        const token = localStorage.getItem("admin_token");
         const response = await fetch(`${API_URL}/upload`, {
              method: 'POST',
+             headers: token ? { 'Authorization': `Bearer ${token}` } : {},
              body: formData,
         });
         

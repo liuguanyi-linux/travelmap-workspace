@@ -145,8 +145,10 @@ export default function ImageUploader({
         const formData = new FormData();
         formData.append('file', file);
 
+        const token = localStorage.getItem("admin_token");
         const response = await fetch(`${API_URL}/upload`, {
-             method: 'POST',
+             method: "POST",
+             headers: token ? { "Authorization": `Bearer ${token}` } : {},
              body: formData,
         });
         
