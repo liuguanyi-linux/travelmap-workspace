@@ -1,0 +1,28 @@
+node_modules/
+dist/
+.env
+*.log
+._*
+.DS_Store
+uploads/
+*.tar.gz
+*.zip
+travelmap_clean.zip
+output.txt
+surge_list.txt
+test_deploy/
+
+# 后端
+backend/node_modules/
+backend/dist/
+backend/uploads/
+backend/*.log
+
+# 前端
+frontend/node_modules/
+frontend/dist/
+frontend/*.tar.gz
+frontend/*.zip
+frontend/output.txt
+frontend/surge_list.txt
+frontend/test_deploy/

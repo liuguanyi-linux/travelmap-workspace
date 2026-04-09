@@ -1,0 +1,291 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id         Int         @id @default(autoincrement())
+  email      String      @unique
+  nickname   String?
+  reviews    Review[]
+  favorites  Favorite[]
+  bookings   Booking[]
+  loginLogs  LoginLog[]
+  createdAt  DateTime    @default(now())
+}
+
+model LoginLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  email     String
+  ip        String?
+  country   String?
+  region    String?
+  city      String?
+  isp       String?
+  device    String?
+  userAgent String?
+  loginAt   DateTime @default(now())
+}
+
+model Poi {
+  id          Int        @id @default(autoincrement())
+  amapId      String     @unique
+  name        String
+  type        String
+  address     String?
+  tel         String?
+  rating      Float      @default(0)
+  cost        Float?
+  openTime    String?
+  description String?
+  photos      String?
+  reviews     Review[]
+  favorites   Favorite[]
+  bookings    Booking[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  content   String?
+  images    String?
+  
+  type      String   @default("REAL") // REAL, ADMIN_MOCK, SYSTEM_MOCK
+  customNickname String?
+
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  
+  nickname  String?  // Legacy field, keeping for safety but we will use customNickname
+  avatar    String?  // For bot/guest reviews
+
+  poiId     Int?
+  poi       Poi?     @relation(fields: [poiId], references: [id])
+
+  spotId    BigInt?
+  spot      Spot?    @relation(fields: [spotId], references: [id])
+
+  guideId   BigInt?
+  guide     Guide?   @relation(fields: [guideId], references: [id])
+
+  strategyId BigInt?
+  strategy   Strategy? @relation(fields: [strategyId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  poiId     Int?
+  poi       Poi?     @relation(fields: [poiId], references: [id])
+  strategyId BigInt?
+  strategy  Strategy? @relation(fields: [strategyId], references: [id])
+  createdAt DateTime @default(now())
+
+  // Removed unique constraint to allow logic-level deduplication or create composite unique if needed.
+  // We'll rely on service logic to prevent duplicates.
+}
+
+model Booking {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  poiId     Int
+  poi       Poi      @relation(fields: [poiId], references: [id])
+  date      DateTime
+  guests    Int      @default(1)
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+}
+
+// Admin Dashboard Models
+
+model Guide {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  gender    String   // 'male' | 'female'
+  hasCar    Boolean  @default(false)
+  title     String
+  avatar    String
+  intro     String
+  cities    String   // JSON string
+  rank      Int      @default(99)
+  isTop     Boolean  @default(false)
+  isGlobal  Boolean  @default(false)
+  category  String   @default("guide") // 'guide' | 'car' | 'agency'
+  content   String?
+  photos    String?  // JSON string
+  
+  phone     String?
+  wechat    String?
+  kakao     String?
+  email     String?
+
+  viewCount Int      @default(0)
+  expiryDate DateTime? // Expiration date for auto-removal
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reviews   Review[]
+}
+
+model City {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  nameEn    String?
+  nameKo    String?
+  lng       Float
+  lat       Float
+  zoom      Int      @default(10)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Spot {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  cnName    String?  // Chinese Name for detail view
+  city      String
+  address   String?
+  lng       Float?
+  lat       Float?
+  photos    String?  // JSON string
+  videos    String?  // JSON string
+  intro     String?
+  content   String?
+  tags      String   // JSON string
+  rank      Int      @default(99)
+  isTop     Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  
+  phone     String?
+  wechat    String?
+  kakao     String?
+  email     String?
+
+  viewCount Int      @default(0)
+  expiryDate DateTime? // Expiration date for auto-removal
+  reviews   Review[] // Relation to Review table
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Strategy {
+  id        BigInt   @id @default(autoincrement())
+  title     String
+  city      String?
+  category  String
+  days      String
+  spots     String   // JSON string
+  image     String   // Cover image
+  tags      String   // JSON string
+  rank      Int      @default(99)
+  content   String?
+  photos    String?  // JSON string - Additional photos
+  videos    String?  // JSON string
+
+  phone     String?
+  wechat    String?
+  kakao     String?
+  email     String?
+
+  viewCount Int      @default(0)
+  expiryDate DateTime? // Expiration date for auto-removal
+  reviews   Review[]
+  favorites Favorite[] // Added reverse relation for favorites
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StrategyCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Ad {
+  id          BigInt   @id @default(autoincrement())
+  title       String
+  description String?
+  content     String?  // Rich text detail
+  image       String
+  photos      String?  // JSON string for additional photos
+  address     String?
+  link        String?
+  layout      String?  // 'standard' | 'full'
+
+  phone       String?
+  wechat      String?
+  kakao       String?
+  email       String?
+
+  viewCount   Int       @default(0)
+  expiryDate  DateTime? // Expiration date for auto-removal
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ContactInfo {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  email     String
+  wechat    String?
+  website   String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SpotCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  key       String   @unique // e.g. "dining" - used as tag
+  icon      String   // e.g. "Utensils" - lucide icon name
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Enterprise {
+  id          BigInt    @id @default(autoincrement())
+  name        String
+  description String?
+  content     String?
+  image       String?
+  photos      String?
+  city        String?
+  address     String?
+  phone       String?
+  wechat      String?
+  kakao       String?
+  email       String?
+  website     String?
+  rank        Int       @default(99)
+  isTop       Boolean   @default(false)
+  isActive    Boolean   @default(true)
+  viewCount   Int       @default(0)
+  expiryDate  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model UsageGuide {
+  id        Int      @id @default(autoincrement())
+  title     String
+  titleEn   String?
+  titleKo   String?
+  content   String
+  contentEn String?
+  contentKo String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,49 @@
+import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { AppModule } from './app.module';
+import { join } from 'path';
+import { json, urlencoded } from 'express';
+import compression from 'compression';
+
+// Monkey patch BigInt toJSON to avoid serialization errors
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
+async function bootstrap() {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  
+  // 开启全跨域允许，排除 CORS 问题
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
+
+  // Enable compression
+  app.use(compression());
+
+  // Increase body size limit
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ extended: true, limit: '50mb' }));
+  
+  // Disable caching for all API routes
+  app.use((req, res, next) => {
+    res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    res.header('Expires', '-1');
+    res.header('Pragma', 'no-cache');
+    next();
+  });
+
+  // Serve uploaded files statically
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
+
+  await app.listen(process.env.PORT ?? 3000);
+  
+  // Safe way to get URL
+  console.log(`Application is running on: ${await app.getUrl()}`);
+  console.log(`[Registered Route] POST /spots/update-status`);
+}
+bootstrap();
