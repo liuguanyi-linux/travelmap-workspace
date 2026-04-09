@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-
 import * as http from 'http';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
+
+  // IP 地理位置缓存，避免重复请求被 ip-api.com 限流
+  private geoCache = new Map<string, { country: string; region: string; city: string; isp: string; cachedAt: number }>();
+  private readonly GEO_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 小时
 
   private parseDevice(userAgent: string): string {
     if (!userAgent) return '未知';
@@ -19,8 +22,26 @@ export class UsersService {
     if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168') || ip.startsWith('10.')) {
       return { country: '本地', region: '', city: '', isp: '' };
     }
-    return new Promise((resolve) => {
 
+    // 查缓存
+    const cached = this.geoCache.get(ip);
+    if (cached && Date.now() - cached.cachedAt < this.GEO_CACHE_TTL) {
+      return { country: cached.country, region: cached.region, city: cached.city, isp: cached.isp };
+    }
+
+    // 查数据库：同 IP 之前查过的记录
+    const existing = await this.prisma.loginLog.findFirst({
+      where: { ip, country: { not: '' } },
+      orderBy: { loginAt: 'desc' },
+    });
+    if (existing && existing.country) {
+      const result = { country: existing.country, region: existing.region || '', city: existing.city || '', isp: existing.isp || '' };
+      this.geoCache.set(ip, { ...result, cachedAt: Date.now() });
+      return result;
+    }
+
+    // 请求 API
+    return new Promise((resolve) => {
       const req = http.get(
         `http://ip-api.com/json/${ip}?fields=country,regionName,city,isp&lang=zh-CN`,
         (res) => {
@@ -29,7 +50,11 @@ export class UsersService {
           res.on('end', () => {
             try {
               const json = JSON.parse(data);
-              resolve({ country: json.country || '', region: json.regionName || '', city: json.city || '', isp: json.isp || '' });
+              const result = { country: json.country || '', region: json.regionName || '', city: json.city || '', isp: json.isp || '' };
+              if (result.country) {
+                this.geoCache.set(ip, { ...result, cachedAt: Date.now() });
+              }
+              resolve(result);
             } catch {
               resolve(fallback);
             }
