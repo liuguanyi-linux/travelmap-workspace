@@ -20,7 +20,7 @@ export class ReviewsService {
 
     const safeUserId = (typeof reviewData.userId === 'number' && reviewData.userId > 0 && reviewData.userId < 2147483647) 
         ? reviewData.userId 
-        : 1;
+        : null;
     reviewData.userId = safeUserId;
 
     // Handle Admin/Custom Reviews without real users
@@ -172,7 +172,7 @@ export class ReviewsService {
 
     const safeUserId = (typeof data.userId === 'number' && data.userId > 0 && data.userId < 2147483647) 
       ? data.userId 
-      : 1;
+      : null;
 
     // 2. Create review
     const reviewData: any = {

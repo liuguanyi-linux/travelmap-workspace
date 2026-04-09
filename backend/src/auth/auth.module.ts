@@ -7,7 +7,7 @@ import { AdminGuard } from './admin.guard';
 @Module({
   imports: [
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'travelmap-jwt-secret-2024',
+      secret: process.env.JWT_SECRET || 'fallback-change-me',
       signOptions: { expiresIn: '7d' },
     }),
   ],

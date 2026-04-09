@@ -73,8 +73,7 @@ export class SpotsService {
     const spot = await this.prisma.spot.create({
       data: {
         ...rest,
-        // 强制确保有 id，因为前端可能传或者不传，Prisma 此时需要一个值
-        id: rest.id || Date.now(),
+        
         tags: serialize(tags),
         photos: serialize(photos),
         lng: finalLng,

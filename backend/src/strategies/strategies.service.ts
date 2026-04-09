@@ -60,16 +60,12 @@ export class StrategiesService {
       }
     }
 
-    console.log('[Step 1] 后端 Strategy 接收到的 content 长度:', updateData.content?.length || 0);
     
     const result = await this.prisma.strategy.update({
       where: { id: bigIntId },
       data: updateData // 确保 updateData 里含有 content
     });
 
-    // 立即反向查询，验证是否真的入库
-    const verify = await this.prisma.strategy.findUnique({ where: { id: bigIntId } });
-    console.log('[Step 2] 数据库持久化后的 Strategy content 长度:', verify?.content?.length || 0);
 
     return this.transform(result);
   }

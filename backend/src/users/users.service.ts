@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import * as https from 'https';
+
 import * as http from 'http';
 
 @Injectable()
