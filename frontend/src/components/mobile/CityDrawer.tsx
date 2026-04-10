@@ -479,7 +479,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                         className="bg-white dark:bg-gray-800 rounded-xl p-2 shadow-sm border border-slate-300 dark:border-slate-500 flex gap-2 active:scale-[0.99] transition-transform cursor-pointer relative"
                                     >
                                         {/* Index Badge */}
-                                        <div className="absolute -left-1 -top-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm z-20">
+                                        <div className="absolute -left-1 -top-1 w-5 h-5 bg-white text-gray-700 border border-gray-300 rounded-full flex items-center justify-center text-xs font-semibold shadow-sm z-20">
                                             {index + 1}
                                         </div>
 

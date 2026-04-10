@@ -51,7 +51,7 @@ function MapPicker({ lng, lat, onChange }: { lng: number; lat: number; onChange:
 
   return (
     <div className="space-y-2">
-      <div ref={mapRef} style={{ width: '100%', height: '220px', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+      <div ref={mapRef} style={{ width: '100%', height: '500px', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
       <div className="grid grid-cols-2 gap-2">
         <div className="flex items-center gap-1 px-3 py-2 bg-gray-50 border rounded-lg text-sm text-gray-700">
           <span className="text-gray-400 text-xs">经度</span>
