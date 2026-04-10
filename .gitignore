@@ -26,3 +26,9 @@ frontend/*.zip
 frontend/output.txt
 frontend/surge_list.txt
 frontend/test_deploy/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
