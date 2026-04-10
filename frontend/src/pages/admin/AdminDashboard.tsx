@@ -727,7 +727,7 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
           </div>
           <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
             <button
-              onClick={() => { const url = `${window.location.origin}/guide/${guide.id}`; navigator.clipboard.writeText(url); alert('分享链接已复制！\n' + url); }}
+              onClick={() => { const url = `${window.location.origin}/?open=guide&id=${guide.id}`; navigator.clipboard.writeText(url); alert('分享链接已复制！\n' + url); }}
               className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-green-600"
               title="复制分享链接"
             ><LucideIcons.Link size={18} /></button>
@@ -821,6 +821,11 @@ function StrategiesList({ data, onDelete, onEdit }: { data: Strategy[], onDelete
             </div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
+            <button
+              onClick={() => { const url = `${window.location.origin}/?open=strategy&id=${item.id}`; navigator.clipboard.writeText(url); alert('分享链接已复制！\n' + url); }}
+              className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-green-600"
+              title="复制分享链接"
+            ><LucideIcons.Link size={18} /></button>
             <button onClick={() => onEdit(item)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
               <Edit2 size={18} />
             </button>
@@ -1579,6 +1584,11 @@ function SpotsList({ data, onDelete, onEdit, onToggleStatus }: { data: Spot[], o
             >
               {item.isActive === false ? '上架' : '下架'}
             </button>
+            <button
+              onClick={() => { const url = `${window.location.origin}/?open=spot&id=${item.id}`; navigator.clipboard.writeText(url); alert('分享链接已复制！\n' + url); }}
+              className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-green-600"
+              title="复制分享链接"
+            ><LucideIcons.Link size={18} /></button>
             <button onClick={() => onEdit(item)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600">
               <Edit2 size={18} />
             </button>
@@ -1957,7 +1967,7 @@ function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: nu
           <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
             <button
               onClick={() => {
-                const url = `${window.location.origin}/ad/${item.id}`;
+                const url = `${window.location.origin}/?open=ad&id=${item.id}`;
                 navigator.clipboard.writeText(url);
                 alert('分享链接已复制！\n' + url);
               }}
@@ -2177,7 +2187,7 @@ function EnterprisesList({ data, onDelete, onEdit }: { data: any[], onDelete: (i
           </div>
           <div className="flex gap-2 shrink-0">
             <button
-              onClick={() => { const url = `${window.location.origin}/enterprise/${item.id}`; navigator.clipboard.writeText(url); alert('分享链接已复制！\n' + url); }}
+              onClick={() => { const url = `${window.location.origin}/?open=enterprise&id=${item.id}`; navigator.clipboard.writeText(url); alert('分享链接已复制！\n' + url); }}
               className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-green-600"
               title="复制分享链接"
             ><LucideIcons.Link size={18} /></button>

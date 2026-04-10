@@ -109,6 +109,36 @@ export default function MainLayout() {
 
   // State for deep linking into drawers
   const [guideInitialCategory, setGuideInitialCategory] = useState<string | undefined>(undefined);
+  const [enterpriseInitialId, setEnterpriseInitialId] = useState<string | undefined>(undefined);
+
+  const [spotInitialId, setSpotInitialId] = useState<string | undefined>(undefined);
+  const [guideInitialId, setGuideInitialId] = useState<string | undefined>(undefined);
+
+  // URL parameter deep linking (e.g. ?open=enterprise&id=123, ?open=spot&id=456)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const openTab = params.get('open');
+    const openId = params.get('id');
+    if (!openTab || !openId) return;
+    // Clean URL without reload
+    window.history.replaceState({}, '', window.location.pathname);
+
+    if (openTab === 'enterprise') {
+      setActiveTab('enterprise');
+      setEnterpriseInitialId(openId);
+    } else if (openTab === 'spot') {
+      setSpotInitialId(openId);
+    } else if (openTab === 'guide') {
+      setActiveTab('guide');
+      setGuideInitialId(openId);
+    } else if (openTab === 'strategy') {
+      setActiveTab('strategy');
+    } else if (openTab === 'ad') {
+      setActiveTab('guide');
+      setGuideInitialCategory('ad');
+      setGuideInitialId(openId);
+    }
+  }, []);
 
   useEffect(() => {
     const handleNavigate = (e: any) => {
@@ -404,6 +434,17 @@ export default function MainLayout() {
     setIsBottomSheetOpen(true); // Open full details
   };
 
+  // Deep link: auto-open spot by URL param
+  useEffect(() => {
+    if (spotInitialId && spots && spots.length > 0) {
+      const spot = spots.find(s => String(s.id) === String(spotInitialId));
+      if (spot) {
+        handleMarkerClick({ ...spot, photos: (spot.photos || []).map((url: string) => ({ url })) });
+      }
+      setSpotInitialId(undefined);
+    }
+  }, [spotInitialId, spots]);
+
   const handleCitySelect = (city: any) => {
     setActiveCity(city.name);
     // Map will update via useEffect
@@ -505,6 +546,8 @@ export default function MainLayout() {
         isVisible={activeTab === 'enterprise'}
         onClose={() => setActiveTab('')}
         activeCity={activeCity}
+        initialId={enterpriseInitialId}
+        onInitialIdConsumed={() => setEnterpriseInitialId(undefined)}
       />
 
       <GuideView
@@ -512,6 +555,8 @@ export default function MainLayout() {
         onClose={() => setActiveTab('')}
         activeCity={activeCity}
         initialCategory={guideInitialCategory}
+        initialId={guideInitialId}
+        onInitialIdConsumed={() => setGuideInitialId(undefined)}
         onLightboxChange={setIsLightboxOpen}
         searchKeyword={searchKeyword}
       />

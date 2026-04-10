@@ -128,22 +128,6 @@ export default function AdDetail() {
           </div>
         )}
 
-        {/* nihaoboss promotion card */}
-        <a
-          href="https://nihaoboss.com/#/enterpriseInformation-details?id=10047"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block bg-white rounded-2xl p-4 shadow-sm border border-orange-100 hover:border-orange-300 transition-colors"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-gray-800">니하오보스에서 더 많은 정보 보기</p>
-              <p className="text-xs text-gray-400 mt-1">nihaoboss.com</p>
-            </div>
-            <ExternalLink size={18} className="text-orange-400 shrink-0" />
-          </div>
-        </a>
-
         {/* Footer */}
         <div className="text-center text-xs text-gray-300 pb-4">
           anjenMap · anjen.net

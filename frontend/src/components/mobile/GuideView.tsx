@@ -13,13 +13,15 @@ interface GuideViewProps {
   onClose: () => void;
   activeCity?: string;
   initialCategory?: string;
+  initialId?: string;
+  onInitialIdConsumed?: () => void;
   onLightboxChange?: (isOpen: boolean) => void;
   searchKeyword?: string;
 }
 
 type CategoryType = 'guide' | 'car' | 'agency' | 'translator' | 'ad';
 
-export default function GuideView({ isVisible, onClose, activeCity, initialCategory, onLightboxChange, searchKeyword: externalKeyword = '' }: GuideViewProps) {
+export default function GuideView({ isVisible, onClose, activeCity, initialCategory, initialId, onInitialIdConsumed, onLightboxChange, searchKeyword: externalKeyword = '' }: GuideViewProps) {
   const { t } = useLanguage();
   const controls = useAnimation();
   const dragControls = useDragControls();
@@ -46,6 +48,29 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
   
   // Data
   const { guides, cities, ads } = useData();
+
+  // Deep link: auto-select guide or ad by initialId
+  useEffect(() => {
+    if (!initialId) return;
+    if (selectedCategory === 'ad' && ads && ads.length > 0) {
+      const match = (ads as any[]).find((a: any) => String(a.id) === String(initialId));
+      if (match) {
+        setSelectedGuide({
+          ...match,
+          name: match.title,
+          intro: match.description || '',
+          avatar: match.image,
+          title: '广告',
+          hasCar: false
+        });
+      }
+      onInitialIdConsumed?.();
+    } else if (selectedCategory !== 'ad' && guides && guides.length > 0) {
+      const match = guides.find((g: any) => String(g.id) === String(initialId));
+      if (match) setSelectedGuide(match);
+      onInitialIdConsumed?.();
+    }
+  }, [initialId, guides, ads, selectedCategory]);
   const { user } = useAuth();
   const isAdmin = user?.email === 'admin@travelmap.com';
 

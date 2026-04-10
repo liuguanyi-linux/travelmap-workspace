@@ -8,9 +8,11 @@ interface EnterpriseViewProps {
   isVisible: boolean;
   onClose: () => void;
   activeCity?: string;
+  initialId?: string;
+  onInitialIdConsumed?: () => void;
 }
 
-export default function EnterpriseView({ isVisible, onClose, activeCity }: EnterpriseViewProps) {
+export default function EnterpriseView({ isVisible, onClose, activeCity, initialId, onInitialIdConsumed }: EnterpriseViewProps) {
   const controls = useAnimation();
   const dragControls = useDragControls();
   const [viewState, setViewState] = useState<'hidden' | 'peek' | 'full'>('hidden');
@@ -49,7 +51,19 @@ export default function EnterpriseView({ isVisible, onClose, activeCity }: Enter
     if (isVisible) {
       fetch('/api/enterprises')
         .then(r => r.json())
-        .then(data => setEnterprises(Array.isArray(data) ? data : []))
+        .then(data => {
+          const list = Array.isArray(data) ? data : [];
+          setEnterprises(list);
+          // Deep link: auto-select enterprise by initialId
+          if (initialId) {
+            const match = list.find((e: any) => String(e.id) === String(initialId));
+            if (match) {
+              setSelected(match);
+              setTab('enterprise');
+            }
+            onInitialIdConsumed?.();
+          }
+        })
         .catch(() => {});
     }
   }, [isVisible]);
