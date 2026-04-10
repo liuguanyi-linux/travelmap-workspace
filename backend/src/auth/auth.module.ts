@@ -8,7 +8,7 @@ import { AdminGuard } from './admin.guard';
   imports: [
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'fallback-change-me',
-      signOptions: { expiresIn: '7d' },
+      signOptions: { expiresIn: '30d' },
     }),
   ],
   controllers: [AuthController],
