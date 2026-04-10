@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Phone, Mail, MessageCircle, MapPin, ArrowLeft, Loader2 } from 'lucide-react';
+import { Phone, Mail, MessageCircle, MapPin, ArrowLeft, Loader2, Map, ExternalLink } from 'lucide-react';
 import { getFullImageUrl } from '../utils/image';
 
 export default function AdDetail() {
@@ -37,14 +37,23 @@ export default function AdDetail() {
   const imgUrl = ad.image ? getFullImageUrl(ad.image) : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Header with branding */}
       <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <a href="/" className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
-            <ArrowLeft size={20} className="text-gray-600" />
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <a href="/" className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
+              <ArrowLeft size={20} className="text-gray-600" />
+            </a>
+            <span className="font-semibold text-gray-800 truncate">{ad.title}</span>
+          </div>
+          <a
+            href="/"
+            className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors whitespace-nowrap"
+          >
+            <Map size={14} />
+            진입 지도
           </a>
-          <span className="font-semibold text-gray-800 truncate">{ad.title}</span>
         </div>
       </div>
 
@@ -119,9 +128,38 @@ export default function AdDetail() {
           </div>
         )}
 
+        {/* nihaoboss promotion card */}
+        <a
+          href="https://nihaoboss.com/#/enterpriseInformation-details?id=10047"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block bg-white rounded-2xl p-4 shadow-sm border border-orange-100 hover:border-orange-300 transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-gray-800">니하오보스에서 더 많은 정보 보기</p>
+              <p className="text-xs text-gray-400 mt-1">nihaoboss.com</p>
+            </div>
+            <ExternalLink size={18} className="text-orange-400 shrink-0" />
+          </div>
+        </a>
+
         {/* Footer */}
         <div className="text-center text-xs text-gray-300 pb-4">
           anjenMap · anjen.net
+        </div>
+      </div>
+
+      {/* Bottom floating CTA */}
+      <div className="fixed bottom-0 left-0 right-0 z-20">
+        <div className="max-w-2xl mx-auto px-4 pb-4">
+          <a
+            href="/"
+            className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-3 rounded-2xl shadow-lg transition-all"
+          >
+            <Map size={18} />
+            www.anjen.net 여행지도에서 더 많은 정보 보기
+          </a>
         </div>
       </div>
     </div>
