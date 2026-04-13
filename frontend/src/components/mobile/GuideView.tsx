@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, Search, User, Car, Building2, MapPin, Megaphone, ExternalLink, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Languages, Star, Send, Loader2, Trash2 } from 'lucide-react';
+import { X, ArrowLeft, Search, User, Car, Building2, MapPin, Megaphone, ExternalLink, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Languages, Star, Send, Loader2, Trash2, Share2, Heart } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useFavoritesContext } from '../../contexts/FavoritesContext';
 import { getReviews, createReview, deleteReview } from '../../api';
 
 import { getFullImageUrl } from '../../utils/image';
@@ -73,6 +74,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
   }, [initialId, guides, ads, selectedCategory]);
   const { user } = useAuth();
   const isAdmin = user?.email === 'admin@travelmap.com';
+  const { isFavorite, toggleFavorite, removeFavorite } = useFavoritesContext();
 
   const [reviews, setReviews] = useState<any[]>([]);
   const [newRating, setNewRating] = useState(5);
@@ -314,9 +316,9 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
 
           {selectedGuide ? (
             // Detail View (Full Height Overlay inside Drawer)
-            <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900 h-full relative z-20 animate-in slide-in-from-right duration-300">
+            <div className="absolute inset-0 bg-white dark:bg-gray-900 z-20 animate-in slide-in-from-right duration-300 flex flex-col">
               {/* Header Info */}
-              <div className="px-8 pt-4 pb-6 bg-white dark:bg-gray-900 z-10 shrink-0">
+              <div className="px-8 pt-12 pb-6 bg-white dark:bg-gray-900 z-10 shrink-0">
                 <div className="flex justify-between items-start">
                     <div className="flex-1 mr-4">
                         <button 
@@ -342,7 +344,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
               </div>
 
               {/* Scrollable Content */}
-              <div className="flex-1 bg-gray-50/50 dark:bg-gray-900/50 pb-28">
+              <div className="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-gray-900/50 pb-32">
                   {/* Photos Section */}
                   <div className="mt-4 mb-2">
                       <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
@@ -627,6 +629,60 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                       </div>
                     </div>
                   </div>
+              </div>
+
+              {/* Fixed Bottom Buttons */}
+              <div className="absolute bottom-0 left-0 right-0 p-5 pb-[5.5rem] bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-[10002] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300 rounded-t-[2.5rem]">
+                  <button
+                    onClick={() => {
+                        const url = `${window.location.origin}/?open=guide&id=${selectedGuide.id}`;
+                        navigator.clipboard.writeText(url).then(() => {
+                            import('react-hot-toast').then(({ toast }) => toast.success(t('messages.linkCopied') || '링크가 복사되었습니다!'));
+                        }).catch(err => {
+                            console.error('Copy failed:', err);
+                            const textArea = document.createElement("textarea");
+                            textArea.value = url;
+                            document.body.appendChild(textArea);
+                            textArea.focus();
+                            textArea.select();
+                            try {
+                                document.execCommand('copy');
+                                import('react-hot-toast').then(({ toast }) => toast.success(t('messages.linkCopied') || '링크가 복사되었습니다!'));
+                            } catch (err) {}
+                            document.body.removeChild(textArea);
+                        });
+                    }}
+                    className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-bold text-lg shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
+                  >
+                      <Share2 size={20} />
+                      <span>{t('detail.share') || '공유하기'}</span>
+                  </button>
+
+                  <button 
+                    onClick={async () => {
+                        try {
+                          if (isFavorite(selectedGuide.id, 'poi')) {
+                            await removeFavorite(selectedGuide.id);
+                          } else {
+                            await toggleFavorite({
+                              id: String(selectedGuide.id),
+                              name: selectedGuide.name,
+                              type: 'poi',
+                              imageUrl: selectedGuide.avatar || ''
+                            });
+                          }
+                        } catch (err) {}
+                    }}
+                    className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg shadow-xl shadow-gray-200 dark:shadow-none active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
+                  >
+                      <Heart 
+                        size={20} 
+                        className={isFavorite(selectedGuide.id, 'poi') ? "fill-current" : ""} 
+                      />
+                      <span>
+                        {isFavorite(selectedGuide.id, 'poi') ? (t('detail.saved') || '저장됨') : (t('detail.save') || '저장')}
+                      </span>
+                  </button>
               </div>
             </div>
           ) : (

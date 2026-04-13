@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Phone, Mail, MessageCircle, Globe, MapPin, Building2, ChevronDown, ChevronUp, Languages, User, Car, Heart, MessageSquare, Send, Share2, Star } from 'lucide-react';
+import { X, Phone, Mail, MessageCircle, Globe, MapPin, Building2, ChevronDown, ChevronUp, Languages, User, Car, Heart, MessageSquare, Send, Share2, Star, ChevronLeft, Loader2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { getFullImageUrl } from '../../utils/image';
 import { useData } from '../../contexts/DataContext';
@@ -201,21 +201,18 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
           </div>
 
           {/* Header */}
-          <div className="px-5 pt-12 pb-2 shrink-0 flex items-center justify-between touch-none" onPointerDown={e => dragControls.start(e)}>
-            <div className="flex items-center gap-2">
-              {selected && (
-                <button onClick={() => setSelected(null)} onPointerDown={e => e.stopPropagation()} className="p-1 -ml-1 text-blue-500">
-                  <ChevronDown size={20} className="rotate-90" />
-                </button>
-              )}
-              <h1 className="text-base font-bold text-gray-900 dark:text-white">
-                {selected ? selected.name : tab === 'translator' ? '비즈니스 통역' : '중국기업'}
-              </h1>
+          {!selected && (
+            <div className="px-5 pt-12 pb-2 shrink-0 flex items-center justify-between touch-none" onPointerDown={e => dragControls.start(e)}>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-bold text-gray-900 dark:text-white">
+                  {tab === 'translator' ? '비즈니스 통역' : '중국기업'}
+                </h1>
+              </div>
+              <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
+                <X size={16} />
+              </button>
             </div>
-            <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
-              <X size={16} />
-            </button>
-          </div>
+          )}
 
           {/* Tab switcher (only on list view) */}
           {!selected && (
@@ -239,8 +236,30 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
 
           {selected ? (
             <>
-            /* Detail */
-            <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-3">
+            {/* Detail View (Full Height Overlay inside Drawer) */}
+            <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900 h-full relative z-20 animate-in slide-in-from-right duration-300 pb-32">
+              {/* Header Info */}
+              <div className="px-8 pt-12 pb-6 bg-white dark:bg-gray-900 z-10 shrink-0">
+                <div className="flex justify-between items-start">
+                    <div className="flex-1 mr-4">
+                        <button 
+                          onClick={() => setSelected(null)}
+                          className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
+                        </button>
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white leading-tight mb-3 tracking-tight">{selected.name}</h2>
+                        <div className="flex flex-wrap gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${isTranslatorSelected ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800'}`}>
+                              {isTranslatorSelected ? '비즈니스 통역' : '기업'}
+                          </span>
+                        </div>
+                    </div>
+                </div>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="flex-1 bg-gray-50/50 dark:bg-gray-900/50 pb-28 px-4 pt-4 space-y-4">
               {/* Enterprise detail */}
               {!isTranslatorSelected && <>
                 {selected.image && (
@@ -435,7 +454,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
             </div>
 
             {/* Fixed Bottom Buttons */}
-            <div className="absolute bottom-0 left-0 right-0 p-5 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-[10002] pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300 rounded-t-[2.5rem]">
+            <div className="fixed bottom-0 left-0 right-0 p-5 pb-[5.5rem] bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-[10002] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300 rounded-t-[2.5rem]">
                 <button
                   onClick={handleShare}
                   className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-bold text-lg shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
@@ -456,6 +475,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                       {isFavorite(selected.id, selected._isTranslator ? 'poi' : 'enterprise') ? (t('detail.saved') || '저장됨') : (t('detail.save') || '저장')}
                     </span>
                 </button>
+            </div>
             </div>
           </>
           ) : (
