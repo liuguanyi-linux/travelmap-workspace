@@ -195,7 +195,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
           <AnimatePresence>
             {photoIndex !== null && currentPhotos.length > 0 && (
               <div 
-                className="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-sm flex items-center justify-center touch-none"
+                className="fixed inset-0 z-[10003] bg-black/95 backdrop-blur-sm flex items-center justify-center touch-none"
                 onClick={() => setPhotoIndex(null)}
               >
                 <button 

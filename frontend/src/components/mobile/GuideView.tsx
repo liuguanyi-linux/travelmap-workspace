@@ -215,7 +215,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
         {/* Image Preview Modal */}
         {previewIndex !== null && selectedGuide?.photos && (
             <div 
-              className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4 pointer-events-auto"
+              className="fixed inset-0 z-[10003] bg-black flex items-center justify-center p-4 pointer-events-auto"
               onClick={() => setPreviewIndex(null)}
             >
               <button 
