@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Phone, Mail, MessageCircle, Globe, MapPin, Building2, ChevronDown, ChevronUp, Languages, User, Car, Heart, MessageSquare, Send, Share2, Star, ChevronLeft, ChevronRight, Loader2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { getFullImageUrl } from '../../utils/image';
@@ -203,11 +204,10 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           className={`fixed bottom-0 left-0 right-0 mx-auto ${selected ? 'z-[10001]' : 'z-[100]'} w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[40vh]' : 'h-[75vh]'}`}
         >
-          {/* Photo Viewer */}
-          <AnimatePresence>
-            {photoIndex !== null && currentPhotos.length > 0 && (
-              <div 
-                className="fixed inset-0 z-[10003] bg-black/95 backdrop-blur-sm flex items-center justify-center touch-none"
+          {/* Photo Viewer - portaled to body to escape motion.div transform container */}
+          {photoIndex !== null && currentPhotos.length > 0 && createPortal(
+              <div
+                className="fixed inset-0 z-[999999] bg-black/95 backdrop-blur-sm flex items-center justify-center touch-none"
                 onClick={() => setPhotoIndex(null)}
               >
                 <button 
@@ -271,9 +271,9 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                       }}
                     />
                 </div>
-              </div>
-            )}
-          </AnimatePresence>
+              </div>,
+              document.body
+          )}
 
           {/* Handle */}
           <div
@@ -327,7 +327,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
           {selected ? (
             <>
             {/* Detail View (Full Height Overlay inside Drawer) */}
-            <div className="absolute inset-0 flex flex-col bg-white dark:bg-gray-900 z-20 animate-in slide-in-from-right duration-300">
+            <div className="absolute inset-0 flex flex-col bg-white dark:bg-gray-900 z-20 animate-in slide-in-from-right duration-300 rounded-t-[2.5rem] overflow-hidden">
             <div className="flex-1 overflow-y-auto pb-4">
               {/* Header Info */}
               <div className="px-6 pt-12 pb-2 bg-white dark:bg-gray-900 z-10 shrink-0">

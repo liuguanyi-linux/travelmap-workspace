@@ -21,8 +21,12 @@ function MapPicker({ lng, lat, onChange }: { lng: number; lat: number; onChange:
   const mapInstanceRef = React.useRef<any>(null);
   const placeSearchRef = React.useRef<any>(null);
   const autoCompleteRef = React.useRef<any>(null);
+  const onChangeRef = React.useRef(onChange);
+  const internalUpdateRef = React.useRef(false);
   const [searchKeyword, setSearchKeyword] = React.useState('');
   const [suggestions, setSuggestions] = React.useState<any[]>([]);
+
+  React.useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
   React.useEffect(() => {
     (window as any)._AMapSecurityConfig = { securityJsCode: 'bd6564dfb8d2ace71997d47d2926c604' };
@@ -35,13 +39,17 @@ function MapPicker({ lng, lat, onChange }: { lng: number; lat: number; onChange:
       markerRef.current = marker;
       marker.on('dragend', () => {
         const pos = marker.getPosition();
-        onChange(parseFloat(pos.lng.toFixed(6)), parseFloat(pos.lat.toFixed(6)));
+        const nLng = parseFloat(pos.lng.toFixed(6));
+        const nLat = parseFloat(pos.lat.toFixed(6));
+        internalUpdateRef.current = true;
+        onChangeRef.current(nLng, nLat);
       });
       map.on('click', (e: any) => {
         const newLng = parseFloat(e.lnglat.lng.toFixed(6));
         const newLat = parseFloat(e.lnglat.lat.toFixed(6));
         marker.setPosition([newLng, newLat]);
-        onChange(newLng, newLat);
+        internalUpdateRef.current = true;
+        onChangeRef.current(newLng, newLat);
       });
       placeSearchRef.current = new AMap.PlaceSearch({ map: null, pageSize: 10 });
       autoCompleteRef.current = new AMap.AutoComplete({ city: '全国' });
@@ -50,11 +58,15 @@ function MapPicker({ lng, lat, onChange }: { lng: number; lat: number; onChange:
   }, []);
 
   React.useEffect(() => {
-    if (markerRef.current && mapInstanceRef.current) {
-      markerRef.current.setPosition([lng, lat]);
+    if (!markerRef.current || !mapInstanceRef.current) return;
+    if (internalUpdateRef.current) {
+      internalUpdateRef.current = false;
       markerRef.current.setDraggable(true);
-      mapInstanceRef.current.setCenter([lng, lat]);
+      return;
     }
+    markerRef.current.setPosition([lng, lat]);
+    markerRef.current.setDraggable(true);
+    mapInstanceRef.current.setCenter([lng, lat]);
   }, [lng, lat]);
 
   const handleSearchInput = (value: string) => {
