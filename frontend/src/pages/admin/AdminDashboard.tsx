@@ -19,17 +19,21 @@ function MapPicker({ lng, lat, onChange }: { lng: number; lat: number; onChange:
   const mapRef = React.useRef<HTMLDivElement>(null);
   const markerRef = React.useRef<any>(null);
   const mapInstanceRef = React.useRef<any>(null);
+  const placeSearchRef = React.useRef<any>(null);
+  const autoCompleteRef = React.useRef<any>(null);
+  const [searchKeyword, setSearchKeyword] = React.useState('');
+  const [suggestions, setSuggestions] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     (window as any)._AMapSecurityConfig = { securityJsCode: 'bd6564dfb8d2ace71997d47d2926c604' };
-    AMapLoader.load({ key: '111c8050229fccead3a71df2376ff60a', version: '2.0', plugins: ['AMap.Marker'] }).then((AMap) => {
+    AMapLoader.load({ key: '111c8050229fccead3a71df2376ff60a', version: '2.0', plugins: ['AMap.Marker', 'AMap.PlaceSearch', 'AMap.AutoComplete'] }).then((AMap) => {
       if (!mapRef.current || mapInstanceRef.current) return;
       const map = new AMap.Map(mapRef.current, { zoom: 14, center: [lng, lat] });
       mapInstanceRef.current = map;
       const marker = new AMap.Marker({ position: [lng, lat], draggable: true });
       marker.setMap(map);
       markerRef.current = marker;
-      marker.on('dragend', (e: any) => {
+      marker.on('dragend', () => {
         const pos = marker.getPosition();
         onChange(parseFloat(pos.lng.toFixed(6)), parseFloat(pos.lat.toFixed(6)));
       });
@@ -39,6 +43,8 @@ function MapPicker({ lng, lat, onChange }: { lng: number; lat: number; onChange:
         marker.setPosition([newLng, newLat]);
         onChange(newLng, newLat);
       });
+      placeSearchRef.current = new AMap.PlaceSearch({ map: null, pageSize: 10 });
+      autoCompleteRef.current = new AMap.AutoComplete({ city: '全国' });
     });
     return () => { mapInstanceRef.current?.destroy(); mapInstanceRef.current = null; };
   }, []);
@@ -49,8 +55,73 @@ function MapPicker({ lng, lat, onChange }: { lng: number; lat: number; onChange:
     }
   }, [lng, lat]);
 
+  const handleSearchInput = (value: string) => {
+    setSearchKeyword(value);
+    if (!value.trim() || !autoCompleteRef.current) { setSuggestions([]); return; }
+    autoCompleteRef.current.search(value, (status: string, result: any) => {
+      if (status === 'complete' && result?.tips) {
+        setSuggestions(result.tips.filter((t: any) => t.location).slice(0, 8));
+      } else {
+        setSuggestions([]);
+      }
+    });
+  };
+
+  const handlePickSuggestion = (tip: any) => {
+    if (!tip?.location || !mapInstanceRef.current || !markerRef.current) return;
+    const newLng = parseFloat(tip.location.lng.toFixed(6));
+    const newLat = parseFloat(tip.location.lat.toFixed(6));
+    mapInstanceRef.current.setZoomAndCenter(16, [newLng, newLat]);
+    markerRef.current.setPosition([newLng, newLat]);
+    onChange(newLng, newLat);
+    setSuggestions([]);
+    setSearchKeyword(tip.name || '');
+  };
+
+  const handleSearchSubmit = () => {
+    if (!searchKeyword.trim() || !placeSearchRef.current) return;
+    placeSearchRef.current.search(searchKeyword, (status: string, result: any) => {
+      if (status === 'complete' && result?.poiList?.pois?.length > 0) {
+        const poi = result.poiList.pois[0];
+        handlePickSuggestion({ name: poi.name, location: poi.location });
+      }
+    });
+  };
+
   return (
     <div className="space-y-2">
+      <div className="relative">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={searchKeyword}
+            onChange={(e) => handleSearchInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchSubmit(); } }}
+            placeholder="搜索地点（输入关键字定位）"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="button"
+            onClick={handleSearchSubmit}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+          >搜索</button>
+        </div>
+        {suggestions.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-[100] max-h-60 overflow-y-auto">
+            {suggestions.map((tip: any, idx: number) => (
+              <button
+                type="button"
+                key={idx}
+                onClick={() => handlePickSuggestion(tip)}
+                className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b last:border-b-0 border-gray-100"
+              >
+                <div className="text-sm font-medium text-gray-900">{tip.name}</div>
+                <div className="text-xs text-gray-500 truncate">{tip.district} {tip.address}</div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <div ref={mapRef} style={{ width: '100%', height: '500px', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
       <div className="grid grid-cols-2 gap-2">
         <div className="flex items-center gap-1 px-3 py-2 bg-gray-50 border rounded-lg text-sm text-gray-700">

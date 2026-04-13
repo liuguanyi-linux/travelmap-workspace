@@ -265,14 +265,17 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
 
           {/* Handle */}
           <div
-            className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-30 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-30 shrink-0 absolute top-0 left-0 right-0 h-12 touch-none items-center gap-2"
             onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
-            {viewState === 'full' ? (
-              <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
-            ) : (
-              <ChevronUp className="text-gray-500 dark:text-gray-400" size={24} />
-            )}
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60">
+              {viewState === 'full' ? (
+                <ChevronDown className="text-gray-600 dark:text-gray-300" size={20} />
+              ) : (
+                <ChevronUp className="text-gray-600 dark:text-gray-300" size={20} />
+              )}
+              <span className="text-xs text-gray-600 dark:text-gray-300 font-medium tracking-wide">{t('clickToToggle')}</span>
+            </div>
           </div>
 
           {/* Header */}
@@ -314,164 +317,125 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
             {/* Detail View (Full Height Overlay inside Drawer) */}
             <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900 h-full relative z-20 animate-in slide-in-from-right duration-300 pb-32">
               {/* Header Info */}
-              <div className="px-8 pt-12 pb-6 bg-white dark:bg-gray-900 z-10 shrink-0">
+              <div className="px-6 pt-12 pb-2 bg-white dark:bg-gray-900 z-10 shrink-0">
                 <div className="flex justify-between items-start">
-                    <div className="flex-1 mr-4">
-                        <button 
+                    <div className="flex-1 mr-3">
+                        <button
                           onClick={() => setSelected(null)}
-                          className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                          className="mb-2 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                         >
-                          <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
+                          <ArrowLeft size={18} className="text-gray-600 dark:text-gray-300" />
                         </button>
-                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white leading-tight mb-3 tracking-tight">{selected.name}</h2>
-                        <div className="flex flex-wrap gap-2">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${isTranslatorSelected ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800'}`}>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight mb-2 tracking-tight">{selected.name}</h2>
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${isTranslatorSelected ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800'}`}>
                               {isTranslatorSelected ? '비즈니스 통역' : '기업'}
                           </span>
                         </div>
                     </div>
-                    <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 mt-2">
-                      <X size={20} />
+                    <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 mt-2">
+                      <X size={18} />
                     </button>
                 </div>
               </div>
 
-              {/* Scrollable Content */}
-              <div className="flex-1 bg-gray-50/50 dark:bg-gray-900/50 pb-28 px-4 pt-4 space-y-4">
-              {/* Enterprise detail */}
-              {!isTranslatorSelected && <>
-                {selected.image && (
-                  <img src={getFullImageUrl(selected.image)} alt={selected.name} className="w-full h-44 object-cover rounded-2xl" />
-                )}
-                {selected.city && <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full inline-block">{selected.city}</span>}
-                {selected.description && <p className="text-sm text-gray-500">{selected.description}</p>}
-                {(selected.phone || selected.kakao || selected.wechat || selected.email || selected.website || selected.address) && (
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 space-y-2.5">
-                    {selected.phone && <a href={`tel:${selected.phone}`} className="flex items-center gap-3"><Phone size={14} className="text-blue-500 shrink-0" /><span className="text-sm text-gray-700 dark:text-gray-200">{selected.phone}</span></a>}
-                    {selected.kakao && <div className="flex items-center gap-3"><MessageCircle size={14} className="text-yellow-500 shrink-0" /><span className="text-sm text-gray-700 dark:text-gray-200">카카오: {selected.kakao}</span></div>}
-                    {selected.wechat && <div className="flex items-center gap-3"><MessageCircle size={14} className="text-green-500 shrink-0" /><span className="text-sm text-gray-700 dark:text-gray-200">WeChat: {selected.wechat}</span></div>}
-                    {selected.email && <a href={`mailto:${selected.email}`} className="flex items-center gap-3"><Mail size={14} className="text-purple-500 shrink-0" /><span className="text-sm text-gray-700 dark:text-gray-200">{selected.email}</span></a>}
-                    {selected.website && <a href={selected.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3"><Globe size={14} className="text-blue-500 shrink-0" /><span className="text-sm text-blue-500">{selected.website}</span></a>}
-                    {selected.address && <div className="flex items-center gap-3"><MapPin size={14} className="text-red-500 shrink-0" /><span className="text-sm text-gray-700 dark:text-gray-200">{selected.address}</span></div>}
-                  </div>
-                )}
-                {selected.content && (
-                  <div className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: selected.content }} />
-                )}
-              </>}
-
-              {/* Translator detail (guide data) */}
-              {isTranslatorSelected && <>
-                <div className="mt-4 mb-2 -mx-4">
-                  <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
-                    {[...(Array.isArray(selected.photos) ? selected.photos : typeof selected.photos === 'string' ? [selected.photos] : [])].filter(Boolean).map((photo, index) => (
-                      <div 
-                        key={index} 
-                        className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-700 snap-center shadow-md relative cursor-pointer"
-                        onClick={() => {
-                          setPhotoIndex(index);
-                        }}
+              {/* Photos wall (shared: enterprise or translator) */}
+              {currentPhotos.length > 0 && (
+                <div className="mt-2 mb-2">
+                  <div className="flex gap-2 px-6 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                    {currentPhotos.map((photo, index) => (
+                      <div
+                        key={index}
+                        className="w-32 h-24 shrink-0 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 snap-center shadow-sm relative cursor-pointer"
+                        onClick={() => setPhotoIndex(index)}
                       >
-                        <img 
-                          src={getFullImageUrl(photo as string)} 
-                          alt={selected.name} 
+                        <img
+                          src={getFullImageUrl(photo as string)}
+                          alt={selected.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
                     ))}
                   </div>
                 </div>
+              )}
 
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] mb-4">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('guide.intro')}</h3>
-                  <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm bg-gray-50 dark:bg-gray-800 p-4 rounded-xl prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: selected.intro || selected.content || '' }} />
+              {/* Scrollable Content */}
+              <div className="flex-1 bg-gray-50/50 dark:bg-gray-900/50 pb-28 px-6 pt-2 space-y-2">
+              {/* Enterprise detail */}
+              {!isTranslatorSelected && <>
+                {currentPhotos.length === 0 && selected.image && (
+                  <img src={getFullImageUrl(selected.image)} alt={selected.name} className="w-full h-40 object-cover rounded-xl" />
+                )}
+                {selected.description && (
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('guide.intro')}</h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{selected.description}</p>
+                  </div>
+                )}
+                {selected.content && (
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                    <div className="prose prose-sm max-w-none text-gray-600 dark:text-gray-300 leading-relaxed text-xs" dangerouslySetInnerHTML={{ __html: selected.content }} />
+                  </div>
+                )}
+              </>}
+
+              {/* Translator detail (guide data) */}
+              {isTranslatorSelected && selected.intro && (
+                <div className="bg-white dark:bg-gray-800 p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('guide.intro')}</h3>
+                  <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-xs prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: selected.intro || selected.content || '' }} />
                 </div>
+              )}
 
-                {(selected.phone || selected.kakao || selected.wechat || selected.email) && (
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">연락처 정보</h3>
-                    <div className="space-y-4">
-                      {selected.phone && (
+              {/* Contact Info unified copy-style */}
+              {(selected.phone || selected.kakao || selected.wechat || selected.email || selected.website || selected.address) && (
+                <div className="bg-white dark:bg-gray-800 p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">연락처 정보</h3>
+                  <div className="flex flex-col gap-2">
+                    {([
+                      { key: 'phone', label: '전화번호', value: selected.phone },
+                      { key: 'kakao', label: '카카오톡 ID', value: selected.kakao },
+                      { key: 'wechat', label: '위챗 ID', value: selected.wechat },
+                      { key: 'email', label: '이메일', value: selected.email },
+                      { key: 'website', label: '웹사이트', value: selected.website },
+                      { key: 'address', label: '주소', value: selected.address },
+                    ] as const).filter(f => f.value).map((f, idx, arr) => (
+                      <React.Fragment key={f.key}>
+                        {idx > 0 && <div className="h-px bg-gray-100 dark:bg-gray-700" />}
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="text-[10px] text-gray-500 mb-0.5">전화번호</p>
-                            <p className="font-medium text-gray-700 text-xs truncate">{selected.phone}</p>
+                            <p className="text-[10px] text-gray-500 mb-0.5">{f.label}</p>
+                            <p className="font-medium text-gray-700 dark:text-gray-200 text-xs truncate">{f.value}</p>
                           </div>
-                          <button 
+                          <button
                             onClick={() => {
-                              navigator.clipboard.writeText(selected.phone || '');
+                              const text = String(f.value || '');
+                              if (navigator.clipboard && window.isSecureContext) {
+                                navigator.clipboard.writeText(text);
+                              } else {
+                                const ta = document.createElement('textarea');
+                                ta.value = text;
+                                ta.style.position = 'fixed';
+                                ta.style.left = '-9999px';
+                                document.body.appendChild(ta);
+                                ta.focus();
+                                ta.select();
+                                try { document.execCommand('copy'); } catch {}
+                                document.body.removeChild(ta);
+                              }
                               toast.success('복사됨');
                             }}
-                            className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                            className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 rounded-lg text-xs font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-all shrink-0 active:scale-95"
                           >
                             복사하기
                           </button>
                         </div>
-                      )}
-                      {selected.wechat && (
-                        <>
-                          {selected.phone && <div className="h-px bg-gray-100" />}
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[10px] text-gray-500 mb-0.5">위챗 ID</p>
-                              <p className="font-medium text-gray-700 text-xs truncate">{selected.wechat}</p>
-                            </div>
-                            <button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(selected.wechat || '');
-                                toast.success('복사됨');
-                              }}
-                              className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
-                            >
-                              복사하기
-                            </button>
-                          </div>
-                        </>
-                      )}
-                      {selected.kakao && (
-                        <>
-                          {(selected.phone || selected.wechat) && <div className="h-px bg-gray-100" />}
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[10px] text-gray-500 mb-0.5">카카오톡 ID</p>
-                              <p className="font-medium text-gray-700 text-xs truncate">{selected.kakao}</p>
-                            </div>
-                            <button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(selected.kakao || '');
-                                toast.success('복사됨');
-                              }}
-                              className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
-                            >
-                              복사하기
-                            </button>
-                          </div>
-                        </>
-                      )}
-                      {selected.email && (
-                        <>
-                          {(selected.phone || selected.wechat || selected.kakao) && <div className="h-px bg-gray-100" />}
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[10px] text-gray-500 mb-0.5">이메일</p>
-                              <p className="font-medium text-gray-700 text-xs truncate">{selected.email}</p>
-                            </div>
-                            <button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(selected.email || '');
-                                toast.success('복사됨');
-                              }}
-                              className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
-                            >
-                              복사하기
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                      </React.Fragment>
+                    ))}
                   </div>
-                )}
-              </>}
+                </div>
+              )}
 
               {/* Reviews Preview */}
               <div className="bg-white dark:bg-gray-800 p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] mb-4">
@@ -535,15 +499,15 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
             <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3 z-[10002]">
                 <button
                   onClick={handleShare}
-                  className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700"
+                  className="flex-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-blue-200 dark:border-blue-800"
                 >
                     <Share2 size={16} />
                     <span>{t('detail.share') || '공유하기'}</span>
                 </button>
 
-                <button 
+                <button
                   onClick={handleToggleFavorite}
-                  className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5"
+                  className="flex-1 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-rose-200 dark:border-rose-800"
                 >
                     <Heart 
                       size={16} 

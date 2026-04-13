@@ -127,48 +127,46 @@ export default function AdsWidget({ isOpen, onOpenChange }: { isOpen?: boolean; 
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-gray-900 w-[85%] max-w-[320px] mx-auto rounded-3xl p-5 shadow-2xl relative z-10 pointer-events-auto"
+                className="bg-white dark:bg-gray-900 w-[70%] max-w-[220px] mx-auto rounded-2xl p-3 shadow-2xl relative z-10 pointer-events-auto"
               >
-                <div className="flex justify-between items-center mb-4 px-1">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">추천 광고</h3>
-                  <button 
+                <div className="flex justify-between items-center mb-2 px-1">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">추천 광고</h3>
+                  <button
                     onClick={() => setShowModal(false)}
-                    className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    className="p-1 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <X size={20} />
+                    <X size={14} />
                   </button>
                 </div>
 
                 {/* Horizontal Scroll List */}
-                <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory hide-scrollbar">
+                <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory hide-scrollbar">
                   {displayAds.map((ad) => {
                     return (
-                      <div 
+                      <div
                         key={ad.id}
                         onClick={() => {
                           if (ad.link) {
                             window.open(ad.link, '_blank');
                           } else {
-                            // Dispatch event to open guide view to ads tab
-                            window.dispatchEvent(new CustomEvent('navigate-to-tab', { 
-                              detail: { tab: 'guide', category: 'ad' } 
+                            window.dispatchEvent(new CustomEvent('navigate-to-tab', {
+                              detail: { tab: 'guide', category: 'ad' }
                             }));
                             setShowModal(false);
                           }
                         }}
-                        className={`flex-none w-full min-h-[260px] rounded-2xl p-6 snap-center cursor-pointer transition-transform active:scale-95 border border-gray-100 dark:border-gray-800 shadow-sm bg-gray-50 dark:bg-gray-800 flex flex-col justify-center items-center text-center`}
+                        className="flex-none w-full rounded-xl p-3 snap-center cursor-pointer transition-transform active:scale-95 border border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-800 flex flex-col items-center text-center"
                       >
-                        <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-md border border-gray-200 mb-4 shrink-0">
+                        <div className="w-14 h-14 rounded-xl overflow-hidden shadow-sm border border-gray-200 mb-2 shrink-0">
                            <img src={ad.image} alt={ad.title} className="w-full h-full object-cover" />
                         </div>
-                        <div className="w-full flex-1 flex flex-col justify-center">
-                          <h4 className="font-bold text-gray-900 dark:text-white truncate mb-2 text-lg">{ad.title}</h4>
-                          <p className="text-xs text-gray-500 line-clamp-3 leading-relaxed">{ad.description}</p>
+                        <div className="w-full">
+                          <h4 className="font-bold text-gray-900 dark:text-white truncate text-xs leading-tight">{ad.title}</h4>
+                          <p className="text-[10px] text-gray-500 line-clamp-2 leading-tight mt-0.5">{ad.description}</p>
                         </div>
-                        
-                        <div className="flex items-center text-sm text-blue-600 font-bold mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 w-full justify-center">
+                        <div className="flex items-center text-[11px] text-blue-600 font-bold mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 w-full justify-center">
                           <span>상세 정보</span>
-                          <ExternalLink size={14} className="ml-1" />
+                          <ExternalLink size={11} className="ml-1" />
                         </div>
                       </div>
                     );

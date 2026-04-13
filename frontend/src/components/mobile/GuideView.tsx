@@ -292,26 +292,28 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
         >
           {/* Handle (Click to Toggle) */}
           <div
-            className="w-full flex justify-center pt-3 pb-2 cursor-pointer bg-transparent z-30 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-30 shrink-0 absolute top-0 left-0 right-0 h-12 touch-none items-center gap-2"
             onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
-            {viewState === 'full' ? (
-                <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
-            ) : (
-                <ChevronUp className="text-gray-500 dark:text-gray-400" size={24} />
-            )}
-            <span className="text-xs text-gray-400 font-medium tracking-wide">{t('clickToToggle')}</span>
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60">
+              {viewState === 'full' ? (
+                  <ChevronDown className="text-gray-600 dark:text-gray-300" size={20} />
+              ) : (
+                  <ChevronUp className="text-gray-600 dark:text-gray-300" size={20} />
+              )}
+              <span className="text-xs text-gray-600 dark:text-gray-300 font-medium tracking-wide">{t('clickToToggle')}</span>
+            </div>
           </div>
 
           {/* Spacer for Handle */}
           <div className="h-8 shrink-0" />
 
           {/* Close Button */}
-          <button 
+          <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-black/5 dark:bg-white/10 rounded-full text-gray-500 dark:text-gray-400 z-50 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+            className="absolute top-3 right-3 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-full text-gray-600 dark:text-gray-300 z-50 shadow-sm border border-gray-200/60 dark:border-gray-700/60 hover:bg-white transition-colors"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
 
           {selectedGuide ? (
@@ -320,41 +322,39 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
               {/* Scrollable Content (header scrolls with content) */}
               <div className="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-gray-900/50 pb-32">
                   {/* Header Info */}
-                  <div className="px-8 pt-12 pb-6 bg-white dark:bg-gray-900">
+                  <div className="px-6 pt-12 pb-2 bg-white dark:bg-gray-900">
                       <button
                         onClick={() => setSelectedGuide(null)}
-                        className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="mb-2 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       >
-                        <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
+                        <ArrowLeft size={18} className="text-gray-600 dark:text-gray-300" />
                       </button>
-                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white leading-tight mb-3 tracking-tight">{selectedGuide.name}</h2>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-medium border border-blue-200 dark:border-blue-800">
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight mb-2 tracking-tight">{selectedGuide.name}</h2>
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full text-[10px] font-medium border border-blue-200 dark:border-blue-800">
                             {selectedGuide.category === 'car' ? '렌트카' : selectedGuide.category === 'agency' ? '현지여행사' : '여행가이드'}
                         </span>
                         {getCategories(selectedGuide).includes('translator') && (
-                            <span className="bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-3 py-1 rounded-full text-xs font-medium border border-purple-200 dark:border-purple-800">
+                            <span className="bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full text-[10px] font-medium border border-purple-200 dark:border-purple-800">
                                 비즈니스 통역
                             </span>
                         )}
-                        {selectedGuide.hasCar && <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-xs font-medium border border-green-200 dark:border-green-800">{t('guide.hasCar')}</span>}
+                        {selectedGuide.hasCar && <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full text-[10px] font-medium border border-green-200 dark:border-green-800">{t('guide.hasCar')}</span>}
                       </div>
                   </div>
 
                   {/* Photos Section */}
-                  <div className="mt-4 mb-2">
-                      <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
+                  <div className="mt-2 mb-2">
+                      <div className="flex gap-2 px-6 overflow-x-auto pb-2 scrollbar-hide snap-x">
                           {(Array.isArray(selectedGuide.photos) ? selectedGuide.photos : typeof selectedGuide.photos === 'string' ? [selectedGuide.photos] : []).filter(Boolean).map((photo, index) => (
-                              <div 
-                                key={index} 
-                                className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-700 snap-center shadow-md relative cursor-pointer"
-                                onClick={() => {
-                                    setPreviewIndex(index);
-                                }}
+                              <div
+                                key={index}
+                                className="w-32 h-24 shrink-0 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 snap-center shadow-sm relative cursor-pointer"
+                                onClick={() => { setPreviewIndex(index); }}
                               >
-                                  <img 
-                                    src={photo as string} 
-                                    alt={selectedGuide.name} 
+                                  <img
+                                    src={photo as string}
+                                    alt={selectedGuide.name}
                                     className="w-full h-full object-cover"
                                   />
                               </div>
@@ -363,17 +363,19 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                   </div>
 
                   {/* Detailed Info */}
-                  <div className="px-6 space-y-6">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('guide.intro')}</h3>
-                      <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm bg-gray-50 dark:bg-gray-800 p-4 rounded-xl prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: selectedGuide.intro }} />
-                    </div>
+                  <div className="px-6 space-y-2">
+                    {selectedGuide.intro && (
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                        <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('guide.intro')}</h3>
+                        <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-xs prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: selectedGuide.intro }} />
+                      </div>
+                    )}
 
                     {/* Contact Info (Copied from POI) */}
                     {(selectedGuide.phone || selectedGuide.wechat || selectedGuide.kakao || selectedGuide.email) && (
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">연락처 정보</h3>
-                            <div className="space-y-4">
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">연락처 정보</h3>
+                            <div className="flex flex-col gap-2">
                                 {selectedGuide.phone && (
                                     <>
                                         <div className="flex items-center justify-between gap-3">
@@ -558,9 +560,9 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                     )}
 
                     {selectedGuide.content && (
-                      <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('guide.details')}</h3>
-                          <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: selectedGuide.content }} />
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)]">
+                          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('guide.details')}</h3>
+                          <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 text-xs" dangerouslySetInnerHTML={{ __html: selectedGuide.content }} />
                       </div>
                     )}
 
@@ -648,13 +650,13 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                             document.body.removeChild(textArea);
                         });
                     }}
-                    className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700"
+                    className="flex-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-blue-200 dark:border-blue-800"
                   >
                       <Share2 size={16} />
                       <span>{t('detail.share') || '공유하기'}</span>
                   </button>
 
-                  <button 
+                  <button
                     onClick={async () => {
                         try {
                           if (isFavorite(selectedGuide.id, 'poi')) {
@@ -669,11 +671,11 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                           }
                         } catch (err) {}
                     }}
-                    className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5"
+                    className="flex-1 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-rose-200 dark:border-rose-800"
                   >
-                      <Heart 
-                        size={16} 
-                        className={isFavorite(selectedGuide.id, 'poi') ? "fill-current text-red-500" : ""} 
+                      <Heart
+                        size={16}
+                        className={isFavorite(selectedGuide.id, 'poi') ? "fill-current text-red-500" : ""}
                       />
                       <span>
                         {isFavorite(selectedGuide.id, 'poi') ? (t('detail.saved') || '저장됨') : (t('detail.save') || '저장')}
