@@ -170,7 +170,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
       }
   };
 
-  const cardHeight = viewState === 'peek' ? '50vh' : '75vh';
+  const cardHeight = viewState === 'peek' ? '40vh' : '85vh';
 
   if (!poi) return null;
 
@@ -259,7 +259,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
           animate={{ y: '0%' }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className={`absolute bottom-0 left-0 right-0 mx-auto w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.2)] border-t border-x border-gray-200 dark:border-gray-800 overflow-hidden pointer-events-auto flex flex-col will-change-transform transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[50vh]' : 'h-[75vh]'}`}
+          className={`absolute bottom-0 left-0 right-0 mx-auto w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.2)] border-t border-x border-gray-200 dark:border-gray-800 overflow-hidden pointer-events-auto flex flex-col will-change-transform transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[40vh]' : 'h-[75vh]'}`}
         >
           {/* Drag Handle Area */}
           <div

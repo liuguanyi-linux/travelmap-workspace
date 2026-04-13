@@ -43,7 +43,7 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange, sea
     }
   }, [previewIndex, onLightboxChange]);
 
-  const cardHeight = viewState === 'peek' ? '50vh' : '75vh';
+  const cardHeight = viewState === 'peek' ? '40vh' : '75vh';
 
   const { strategies, strategyCategories = [] } = useData();
 

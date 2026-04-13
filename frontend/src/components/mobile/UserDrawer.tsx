@@ -40,7 +40,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
     }
   }, [isVisible]);
 
-  const cardHeight = viewState === 'peek' ? '50vh' : '75vh';
+  const cardHeight = viewState === 'peek' ? '40vh' : '75vh';
 
   const handleFavoritesClick = () => {
       setContentView('favorites');
