@@ -330,7 +330,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                           <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-medium border border-blue-200 dark:border-blue-800">
                               {selectedGuide.category === 'car' ? '렌트카' : selectedGuide.category === 'agency' ? '현지여행사' : '여행가이드'}
                           </span>
-                          {(selectedGuide as any)._isTranslator && (
+                          {getCategories(selectedGuide).includes('translator') && (
                               <span className="bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-3 py-1 rounded-full text-xs font-medium border border-purple-200 dark:border-purple-800">
                                   비즈니스 통역
                               </span>
@@ -779,7 +779,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                                           <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
                                               {guide.category === 'car' ? '렌트카' : guide.category === 'agency' ? '현지여행사' : '여행가이드'}
                                           </span>
-                                          {(guide as any)._isTranslator && (
+                                          {getCategories(guide).includes('translator') && (
                                               <span className="text-[10px] text-purple-600 dark:text-purple-400 font-bold bg-purple-50 dark:bg-purple-900/30 px-1.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
                                                   비즈니스 통역
                                               </span>
