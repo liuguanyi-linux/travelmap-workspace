@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, PanInfo, useAnimation, useDragControls } from 'framer-motion';
-import { X, Navigation, Star, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2, Navigation2, ChevronLeft, ChevronRight, Image as ImageIcon, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, Navigation, Star, Phone, Clock, MapPin, Heart, Trash2, Send, Loader2, Navigation2, ChevronLeft, ChevronRight, Image as ImageIcon, ChevronUp, ChevronDown, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { getFullImageUrl } from '../../utils/image';
@@ -790,6 +790,29 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
 
           {/* Fixed Bottom Buttons */}
           <div className="absolute bottom-0 left-0 right-0 p-5 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-[10002] pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300">
+              <button
+                onClick={() => {
+                    const url = `${window.location.origin}/?open=spot&id=${poi.id || poi.amapId}`;
+                    if (navigator.share) {
+                        navigator.share({
+                            title: poi.name,
+                            url: url
+                        }).catch((e) => {
+                            console.error(e);
+                            navigator.clipboard.writeText(url);
+                        toast.success(t('messages.linkCopied') || '링크가 복사되었습니다!');
+                    });
+                } else {
+                    navigator.clipboard.writeText(url);
+                    toast.success(t('messages.linkCopied') || '링크가 복사되었습니다!');
+                }
+                }}
+                className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-bold text-lg shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
+              >
+                  <Share2 size={20} />
+                  <span>{t('detail.share') || '공유하기'}</span>
+              </button>
+
               <button 
                 onClick={async () => {
                     if (!user) {
