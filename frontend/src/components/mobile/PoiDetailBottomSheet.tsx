@@ -793,19 +793,25 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
               <button
                 onClick={() => {
                     const url = `${window.location.origin}/?open=spot&id=${poi.id || poi.amapId}`;
-                    if (navigator.share) {
-                        navigator.share({
-                            title: poi.name,
-                            url: url
-                        }).catch((e) => {
-                            console.error(e);
-                            navigator.clipboard.writeText(url);
+                    // 强制使用剪贴板复制，不调用系统原生分享菜单
+                    navigator.clipboard.writeText(url).then(() => {
                         toast.success(t('messages.linkCopied') || '링크가 복사되었습니다!');
+                    }).catch(err => {
+                        console.error('Copy failed:', err);
+                        // 降级处理方案：使用传统 execCommand
+                        const textArea = document.createElement("textarea");
+                        textArea.value = url;
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            toast.success(t('messages.linkCopied') || '링크가 복사되었습니다!');
+                        } catch (err) {
+                            toast.error('Copy failed');
+                        }
+                        document.body.removeChild(textArea);
                     });
-                } else {
-                    navigator.clipboard.writeText(url);
-                    toast.success(t('messages.linkCopied') || '링크가 복사되었습니다!');
-                }
                 }}
                 className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-bold text-lg shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
               >
