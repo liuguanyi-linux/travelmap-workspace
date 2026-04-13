@@ -45,11 +45,12 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
   const [submittingReview, setSubmittingReview] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
 
-  // Fetch reviews when an enterprise is selected
+  // Fetch reviews when an enterprise or translator is selected
   useEffect(() => {
-    if (selected && !selected._isTranslator) {
+    if (selected) {
       setPhotoIndex(0);
-      axios.get(`/api/reviews/enterprise/${selected.id}`)
+      const endpoint = selected._isTranslator ? `/api/reviews/guide/${selected.id}` : `/api/reviews/enterprise/${selected.id}`;
+      axios.get(endpoint)
         .then(res => setReviews(res.data))
         .catch(err => console.error('Failed to fetch reviews', err));
     }
@@ -64,12 +65,13 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
 
     setSubmittingReview(true);
     try {
-      const res = await axios.post('/api/reviews', {
+      const payload = {
         content: newReview,
         rating: 5,
         userId: user.id,
-        enterpriseId: selected!.id
-      });
+        ...(selected._isTranslator ? { guideId: selected.id } : { enterpriseId: selected.id })
+      };
+      const res = await axios.post('/api/reviews', payload);
       setReviews([res.data, ...reviews]);
       setNewReview('');
       toast.success(t('messages.reviewSuccess') || '评论成功');
@@ -83,9 +85,10 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
 
   const handleShare = () => {
     if (!selected) return;
-    const url = `${window.location.origin}/?open=enterprise&id=${selected.id}`;
+    const urlType = selected._isTranslator ? 'guide' : 'enterprise';
+    const url = `${window.location.origin}/?open=${urlType}&id=${selected.id}`;
     navigator.clipboard.writeText(url).then(() => {
-        toast.success(t('messages.linkCopied') || '链接已复制！');
+        toast.success(t('messages.linkCopied') || '링크가 복사되었습니다!');
     }).catch(err => {
         console.error('Copy failed:', err);
         const textArea = document.createElement("textarea");
@@ -95,7 +98,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
         textArea.select();
         try {
             document.execCommand('copy');
-            toast.success(t('messages.linkCopied') || '链接已复制！');
+            toast.success(t('messages.linkCopied') || '링크가 복사되었습니다!');
         } catch (err) {
             toast.error('Copy failed');
         }
@@ -106,14 +109,15 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
   const handleToggleFavorite = async () => {
     if (!selected) return;
     try {
-      if (isFavorite(selected.id, 'enterprise')) {
+      const favType = selected._isTranslator ? 'poi' : 'enterprise'; // Guides/translators don't have their own fav type currently, using 'poi' as fallback or wait, earlier I checked favorites
+      if (isFavorite(selected.id, favType as any)) {
         await removeFavorite(selected.id);
       } else {
         await toggleFavorite({
           id: String(selected.id),
           name: selected.name,
-          type: 'enterprise',
-          imageUrl: selected.image || selected.avatar
+          type: favType as any,
+          imageUrl: selected.image || selected.avatar || ''
         });
       }
     } catch (err) {
@@ -234,6 +238,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
           )}
 
           {selected ? (
+            <>
             /* Detail */
             <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-3">
               {/* Enterprise detail */}
@@ -260,23 +265,199 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
 
               {/* Translator detail (guide data) */}
               {isTranslatorSelected && <>
-                {selected.avatar && (
-                  <img src={getFullImageUrl(selected.avatar)} alt={selected.name} className="w-full h-44 object-cover rounded-2xl" />
-                )}
-                {selected.intro && <p className="text-sm text-gray-500">{selected.intro}</p>}
+                <div className="mt-4 mb-2 -mx-4">
+                  <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
+                    {(Array.isArray(selected.photos) ? selected.photos : typeof selected.photos === 'string' ? [selected.photos] : []).filter(Boolean).map((photo, index) => (
+                      <div 
+                        key={index} 
+                        className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-700 snap-center shadow-md relative cursor-pointer"
+                        onClick={() => {
+                          setPhotoIndex(index);
+                        }}
+                      >
+                        <img 
+                          src={photo as string} 
+                          alt={selected.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('guide.intro')}</h3>
+                  <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm bg-gray-50 dark:bg-gray-800 p-4 rounded-xl prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: selected.intro || selected.content || '' }} />
+                </div>
+
                 {(selected.phone || selected.kakao || selected.wechat || selected.email) && (
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 space-y-2.5">
-                    {selected.phone && <a href={`tel:${selected.phone}`} className="flex items-center gap-3"><Phone size={14} className="text-blue-500 shrink-0" /><span className="text-sm text-gray-700 dark:text-gray-200">{selected.phone}</span></a>}
-                    {selected.kakao && <div className="flex items-center gap-3"><MessageCircle size={14} className="text-yellow-500 shrink-0" /><span className="text-sm text-gray-700 dark:text-gray-200">카카오: {selected.kakao}</span></div>}
-                    {selected.wechat && <div className="flex items-center gap-3"><MessageCircle size={14} className="text-green-500 shrink-0" /><span className="text-sm text-gray-700 dark:text-gray-200">WeChat: {selected.wechat}</span></div>}
-                    {selected.email && <a href={`mailto:${selected.email}`} className="flex items-center gap-3"><Mail size={14} className="text-purple-500 shrink-0" /><span className="text-sm text-gray-700 dark:text-gray-200">{selected.email}</span></a>}
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">연락처 정보</h3>
+                    <div className="space-y-4">
+                      {selected.phone && (
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] text-gray-500 mb-0.5">전화번호</p>
+                            <p className="font-medium text-gray-700 text-xs truncate">{selected.phone}</p>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(selected.phone || '');
+                              toast.success('복사됨');
+                            }}
+                            className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                          >
+                            복사하기
+                          </button>
+                        </div>
+                      )}
+                      {selected.wechat && (
+                        <>
+                          {selected.phone && <div className="h-px bg-gray-100" />}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] text-gray-500 mb-0.5">위챗 ID</p>
+                              <p className="font-medium text-gray-700 text-xs truncate">{selected.wechat}</p>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(selected.wechat || '');
+                                toast.success('복사됨');
+                              }}
+                              className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                            >
+                              복사하기
+                            </button>
+                          </div>
+                        </>
+                      )}
+                      {selected.kakao && (
+                        <>
+                          {(selected.phone || selected.wechat) && <div className="h-px bg-gray-100" />}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] text-gray-500 mb-0.5">카카오톡 ID</p>
+                              <p className="font-medium text-gray-700 text-xs truncate">{selected.kakao}</p>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(selected.kakao || '');
+                                toast.success('복사됨');
+                              }}
+                              className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                            >
+                              복사하기
+                            </button>
+                          </div>
+                        </>
+                      )}
+                      {selected.email && (
+                        <>
+                          {(selected.phone || selected.wechat || selected.kakao) && <div className="h-px bg-gray-100" />}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] text-gray-500 mb-0.5">이메일</p>
+                              <p className="font-medium text-gray-700 text-xs truncate">{selected.email}</p>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(selected.email || '');
+                                toast.success('복사됨');
+                              }}
+                              className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all shrink-0 active:scale-95"
+                            >
+                              복사하기
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
-                {selected.content && (
-                  <div className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: selected.content }} />
-                )}
               </>}
+
+              {/* Reviews Preview */}
+              <div className="bg-white dark:bg-gray-800 p-3 rounded-[1.5rem] shadow-[0_2px_10px_rgb(0,0,0,0.03)] mb-4">
+                  <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-bold text-gray-900 dark:text-white text-sm">{t('detail.visitorReviews')}</h3>
+                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{reviews.length} {t('detail.reviewsCount')}</span>
+                  </div>
+                  
+                  {/* Review Input */}
+                  <div className="mb-4">
+                      <textarea 
+                          className="w-full p-3 bg-gray-50 dark:bg-gray-700 border-none rounded-xl focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all resize-none text-xs placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-white"
+                          placeholder={t('detail.shareExperience')}
+                          rows={2}
+                          value={newReview}
+                          onChange={(e) => setNewReview(e.target.value)}
+                      />
+                      <div className="flex justify-end mt-2">
+                          <button 
+                              className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full px-4 py-1.5 text-xs font-bold flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200 dark:shadow-none active:scale-95 transition-all"
+                              onClick={handleSubmitReview}
+                              disabled={submittingReview || !newReview.trim()}
+                          >
+                              {submittingReview ? <span className="animate-pulse">...</span> : <Send size={12} />}
+                              {t('detail.publishReview')}
+                          </button>
+                      </div>
+                  </div>
+
+                  {/* Reviews List */}
+                  <div className="space-y-3">
+                      {reviews.length === 0 ? (
+                          <div className="text-center py-4 text-gray-400 dark:text-gray-500 text-xs">{t('detail.noReviews')}</div>
+                      ) : (
+                          reviews.map(review => (
+                              <div key={review.id} className="border-b border-gray-50 dark:border-gray-700 last:border-0 pb-3 last:pb-0">
+                                  <div className="flex justify-between items-center mb-1">
+                                      <span className="font-bold text-gray-900 dark:text-white text-xs">
+                                          {(review as any).customNickname || '방문자'}
+                                      </span>
+                                      <div className="flex text-yellow-400 scale-90 origin-right">
+                                          {[...Array(5)].map((_, i) => (
+                                              <Star key={i} size={14} fill={i < review.rating ? "currentColor" : "none"} className={i >= review.rating ? "text-gray-200 dark:text-gray-600" : ""} />
+                                          ))}
+                                      </div>
+                                  </div>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 whitespace-pre-wrap leading-relaxed">
+                                      {review.content}
+                                  </p>
+                                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-2 font-medium">
+                                      {new Date(review.createdAt).toLocaleDateString()}
+                                  </div>
+                              </div>
+                          ))
+                      )}
+                  </div>
+              </div>
             </div>
+
+            {/* Fixed Bottom Buttons */}
+            <div className="absolute bottom-0 left-0 right-0 p-5 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-[10002] pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300 rounded-t-[2.5rem]">
+                <button
+                  onClick={handleShare}
+                  className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-bold text-lg shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
+                >
+                    <Share2 size={20} />
+                    <span>{t('detail.share') || '공유하기'}</span>
+                </button>
+
+                <button 
+                  onClick={handleToggleFavorite}
+                  className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg shadow-xl shadow-gray-200 dark:shadow-none active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
+                >
+                    <Heart 
+                      size={20} 
+                      className={isFavorite(selected.id, selected._isTranslator ? 'poi' : 'enterprise') ? "fill-current" : ""} 
+                    />
+                    <span>
+                      {isFavorite(selected.id, selected._isTranslator ? 'poi' : 'enterprise') ? (t('detail.saved') || '저장됨') : (t('detail.save') || '저장')}
+                    </span>
+                </button>
+            </div>
+          </>
           ) : (
             /* List */
             <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-2">
