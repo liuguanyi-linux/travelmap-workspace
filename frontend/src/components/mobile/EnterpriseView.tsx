@@ -507,6 +507,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                   </div>
               </div>
             </div>
+            </div>
 
             {/* Fixed Bottom Buttons (outside scroll container) */}
             <div className="shrink-0 p-4 pb-6 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3">
@@ -530,7 +531,6 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                       {isFavorite(selected.id, selected._isTranslator ? 'poi' : 'enterprise') ? (t('detail.saved') || '저장됨') : (t('detail.save') || '저장')}
                     </span>
                 </button>
-            </div>
             </div>
             </div>
           </>
