@@ -326,11 +326,16 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                           <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
                         </button>
                         <h2 className="text-3xl font-bold text-gray-900 dark:text-white leading-tight mb-3 tracking-tight">{selectedGuide.name}</h2>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-medium border border-blue-200 dark:border-blue-800">
                               {selectedGuide.category === 'car' ? '렌트카' : selectedGuide.category === 'agency' ? '현지여행사' : '여행가이드'}
                           </span>
-                          {selectedGuide.hasCar && <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-xs font-medium">{t('guide.hasCar')}</span>}
+                          {(selectedGuide as any)._isTranslator && (
+                              <span className="bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-3 py-1 rounded-full text-xs font-medium border border-purple-200 dark:border-purple-800">
+                                  비즈니스 통역
+                              </span>
+                          )}
+                          {selectedGuide.hasCar && <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-xs font-medium border border-green-200 dark:border-green-800">{t('guide.hasCar')}</span>}
                         </div>
                     </div>
                 </div>
