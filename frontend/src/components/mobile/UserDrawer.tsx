@@ -116,15 +116,17 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
         >
           {/* Handle (Click to Toggle) */}
           <div
-            className="w-full flex justify-center pt-3 pb-2 cursor-pointer bg-transparent z-20 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer bg-transparent z-20 shrink-0 absolute top-0 left-0 right-0 h-12 transition-colors touch-none items-center gap-2"
             onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
-            {viewState === 'full' ? (
-                <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
-            ) : (
-                <ChevronUp className="text-gray-500 dark:text-gray-400" size={24} />
-            )}
-            <span className="text-xs text-gray-400 font-medium tracking-wide">{t('clickToToggle')}</span>
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60">
+              {viewState === 'full' ? (
+                  <ChevronDown className="text-gray-600 dark:text-gray-300" size={20} />
+              ) : (
+                  <ChevronUp className="text-gray-600 dark:text-gray-300" size={20} />
+              )}
+              <span className="text-xs text-gray-600 dark:text-gray-300 font-medium tracking-wide">{t('clickToToggle')}</span>
+            </div>
           </div>
 
           {/* Spacer for Handle */}
@@ -134,11 +136,11 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
       <div className="h-8 shrink-0" />
 
       {/* Close Button */}
-      <button 
+      <button
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 bg-black/5 dark:bg-white/10 rounded-full text-gray-500 dark:text-gray-400 z-50 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+        className="absolute top-3 right-4 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 z-50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
-        <X size={20} />
+        <X size={18} />
       </button>
 
       {/* Content */}
