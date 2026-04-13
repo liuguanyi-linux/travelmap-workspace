@@ -45,7 +45,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
   const [submittingReview, setSubmittingReview] = useState(false);
   const [photoIndex, setPhotoIndex] = useState<number | null>(null);
 
-  const currentPhotos = selected ? [selected.avatar, selected.image, ...(Array.isArray(selected.photos) ? selected.photos : typeof selected.photos === 'string' ? [selected.photos] : [])].filter(Boolean) : [];
+  const currentPhotos = selected ? [...(Array.isArray(selected.photos) ? selected.photos : typeof selected.photos === 'string' ? [selected.photos] : [])].filter(Boolean) : [];
 
   // Fetch reviews when an enterprise or translator is selected
   useEffect(() => {
@@ -329,6 +329,9 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                           </span>
                         </div>
                     </div>
+                    <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 mt-2">
+                      <X size={20} />
+                    </button>
                 </div>
               </div>
 
@@ -360,7 +363,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
               {isTranslatorSelected && <>
                 <div className="mt-4 mb-2 -mx-4">
                   <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
-                    {[selected.avatar, selected.image, ...(Array.isArray(selected.photos) ? selected.photos : typeof selected.photos === 'string' ? [selected.photos] : [])].filter(Boolean).map((photo, index) => (
+                    {[...(Array.isArray(selected.photos) ? selected.photos : typeof selected.photos === 'string' ? [selected.photos] : [])].filter(Boolean).map((photo, index) => (
                       <div 
                         key={index} 
                         className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-700 snap-center shadow-md relative cursor-pointer"
@@ -528,7 +531,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
             </div>
 
             {/* Fixed Bottom Buttons */}
-            <div className="absolute bottom-[5.5rem] left-0 right-0 p-4 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.3)] transition-colors duration-300">
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3 z-50">
                 <button
                   onClick={handleShare}
                   className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700"

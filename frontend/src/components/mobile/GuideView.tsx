@@ -340,6 +340,9 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                           {selectedGuide.hasCar && <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-xs font-medium border border-green-200 dark:border-green-800">{t('guide.hasCar')}</span>}
                         </div>
                     </div>
+                    <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 mt-2">
+                      <X size={20} />
+                    </button>
                 </div>
               </div>
 
@@ -632,7 +635,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
               </div>
 
               {/* Fixed Bottom Buttons */}
-              <div className="absolute bottom-[5.5rem] left-0 right-0 p-4 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.3)] transition-colors duration-300">
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3 z-50">
                   <button
                     onClick={() => {
                         const url = `${window.location.origin}/?open=guide&id=${selectedGuide.id}`;
