@@ -26,3 +26,7 @@ frontend/*.zip
 frontend/output.txt
 frontend/surge_list.txt
 frontend/test_deploy/
+
+# SQLite databases - never commit (feedback_deployment.md)
+backend/prisma/*.db
+backend/prisma/*.db-journal

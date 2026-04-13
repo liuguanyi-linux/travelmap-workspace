@@ -11,7 +11,6 @@ set -e
 SERVER_IP="110.42.143.48"
 SERVER_USER="ubuntu"
 SERVER_DIR="/www/travelmap"
-PASSWORD="Huaxi123456～"
 
 echo "=========================================="
 echo "🚀 开始执行一键自动化部署流程"
@@ -46,7 +45,7 @@ echo ""
 # 3. 前端产物上传
 # ------------------------------------------
 echo "📤 [3/4] 正在使用 scp 上传前端产物到服务器..."
-sshpass -p "$PASSWORD" scp -o StrictHostKeyChecking=no -r dist/* $SERVER_USER@$SERVER_IP:$SERVER_DIR/frontend/dist/
+scp -o StrictHostKeyChecking=no -r dist/* $SERVER_USER@$SERVER_IP:$SERVER_DIR/frontend/dist/
 echo "✅ 前端上传成功！"
 echo ""
 
@@ -57,7 +56,7 @@ cd ..
 # ------------------------------------------
 echo "🔄 [4/4] 正在连接服务器更新后端服务..."
 # 在服务器上执行一连串的命令（通过 Here Document 方式）
-sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << EOF
+ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << EOF
   set -e
   echo "⬇️ 进入项目目录并拉取最新代码..."
   cd $SERVER_DIR
