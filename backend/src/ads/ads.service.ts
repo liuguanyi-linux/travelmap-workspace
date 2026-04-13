@@ -19,8 +19,8 @@ export class AdsService {
     }));
   }
 
-  async findOne(id: number) {
-    const ad = await this.prisma.ad.findUnique({ where: { id } });
+  async findOne(id: any) {
+    const ad = await this.prisma.ad.findUnique({ where: { id: BigInt(id) } });
     if (!ad) return null;
     return {
       ...ad,
@@ -29,17 +29,18 @@ export class AdsService {
   }
 
   async create(data: any) {
-    const { photos, ...rest } = data;
+    const { id, photos, ...rest } = data;
     return this.prisma.ad.create({
       data: {
+        id: BigInt(Date.now()),
         ...rest,
         photos: JSON.stringify(photos || [])
       }
     });
   }
 
-  async update(id: number, data: any) {
-    const { photos, ...rest } = data;
+  async update(id: any, data: any) {
+    const { id: _id, photos, ...rest } = data;
     const updateData: any = { ...rest };
     
     if (photos !== undefined) {
@@ -56,11 +57,11 @@ export class AdsService {
       }
     }
     
-    return this.prisma.ad.update({ where: { id }, data: updateData });
+    return this.prisma.ad.update({ where: { id: BigInt(id) }, data: updateData });
   }
 
-  async remove(id: number) {
-    return this.prisma.ad.delete({ where: { id } });
+  async remove(id: any) {
+    return this.prisma.ad.delete({ where: { id: BigInt(id) } });
   }
 
   async incrementView(id: any) {

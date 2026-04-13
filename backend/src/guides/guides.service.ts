@@ -48,7 +48,7 @@ export class GuidesService {
   }
 
   async findOne(id: number) {
-    const guide = await this.prisma.guide.findUnique({ where: { id } });
+    const guide = await this.prisma.guide.findUnique({ where: { id: BigInt(id) } });
     if (!guide) return null;
     return this.transform(guide);
   }

@@ -17,7 +17,7 @@ export class StrategiesService {
   }
 
   async findOne(id: number) {
-    const strategy = await this.prisma.strategy.findUnique({ where: { id } });
+    const strategy = await this.prisma.strategy.findUnique({ where: { id: BigInt(id) } });
     if (!strategy) return null;
     return this.transform(strategy);
   }

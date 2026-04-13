@@ -55,36 +55,45 @@ export class SpotsService {
     return spots.map(s => this.transform(s));
   }
 
-  async findOne(id: number) {
-    const spot = await this.prisma.spot.findUnique({ where: { id } });
+  async findOne(id: any) {
+    const spot = await this.prisma.spot.findUnique({ where: { id: BigInt(id) } });
     if (!spot) return null;
     return this.transform(spot);
   }
 
   async create(data: any) {
-    const { tags, photos, reviews, location, lng, lat, videos, ...rest } = data;
-    const finalLng = location?.lng ?? lng;
-    const finalLat = location?.lat ?? lat;
-    const serialize = (val: any) => {
-      const result = typeof val === 'string' ? val : JSON.stringify(val || []);
-      return result;
-    };
+    const serialize = (val: any) => typeof val === 'string' ? val : JSON.stringify(val || []);
+    const finalLng = data.location?.lng ?? data.lng;
+    const finalLat = data.location?.lat ?? data.lat;
 
     const spot = await this.prisma.spot.create({
       data: {
-        ...rest,
-        
-        tags: serialize(tags),
-        photos: serialize(photos),
+        id: BigInt(Date.now()),
+        name: data.name,
+        cnName: data.cnName || null,
+        city: data.city,
+        address: data.address || null,
         lng: finalLng,
-        lat: finalLat
+        lat: finalLat,
+        photos: serialize(data.photos),
+        tags: serialize(data.tags),
+        intro: data.intro || null,
+        content: data.content || null,
+        rank: data.rank ?? 99,
+        isTop: data.isTop ?? false,
+        isActive: data.isActive ?? true,
+        phone: data.phone || null,
+        wechat: data.wechat || null,
+        kakao: data.kakao || null,
+        email: data.email || null,
+        expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
       }
     });
     return this.transform(spot);
   }
 
-  async update(id: number, data: any) {
-    const { tags, photos, reviews, location, lng, lat, videos, ...rest } = data;
+  async update(id: any, data: any) {
+    const { id: _id, tags, photos, reviews, location, lng, lat, videos, ...rest } = data;
     const updateData: any = { ...rest };
     const serialize = (val: any) => typeof val === 'string' ? val : JSON.stringify(val || []);
 
@@ -100,14 +109,14 @@ export class SpotsService {
     }
 
     const spot = await this.prisma.spot.update({
-      where: { id },
+      where: { id: BigInt(id) },
       data: updateData
     });
     return this.transform(spot);
   }
 
-  async remove(id: number) {
-    return this.prisma.spot.delete({ where: { id } });
+  async remove(id: any) {
+    return this.prisma.spot.delete({ where: { id: BigInt(id) } });
   }
 
   async updateStatus(id: number | string, isActive: boolean) {

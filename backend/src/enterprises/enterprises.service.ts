@@ -14,13 +14,23 @@ export class EnterprisesService {
   }
 
   create(data: any) {
-    const { id, ...rest } = data;
-    return this.prisma.enterprise.create({ data: { ...rest, id: id ? BigInt(id) : undefined } });
+    const { id, photos, ...rest } = data;
+    return this.prisma.enterprise.create({
+      data: {
+        ...rest,
+        id: BigInt(Date.now()),
+        photos: Array.isArray(photos) ? JSON.stringify(photos) : (photos || null),
+      }
+    });
   }
 
   update(id: number, data: any) {
-    const { id: _id, ...rest } = data;
-    return this.prisma.enterprise.update({ where: { id: BigInt(id) }, data: rest });
+    const { id: _id, photos, ...rest } = data;
+    const updateData: any = { ...rest };
+    if (photos !== undefined) {
+      updateData.photos = Array.isArray(photos) ? JSON.stringify(photos) : (photos || null);
+    }
+    return this.prisma.enterprise.update({ where: { id: BigInt(id) }, data: updateData });
   }
 
   remove(id: number) {
