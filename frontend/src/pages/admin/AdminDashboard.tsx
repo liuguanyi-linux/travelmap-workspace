@@ -52,6 +52,8 @@ function MapPicker({ lng, lat, onChange }: { lng: number; lat: number; onChange:
   React.useEffect(() => {
     if (markerRef.current && mapInstanceRef.current) {
       markerRef.current.setPosition([lng, lat]);
+      markerRef.current.setDraggable(true);
+      mapInstanceRef.current.setCenter([lng, lat]);
     }
   }, [lng, lat]);
 
@@ -1744,7 +1746,7 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
             reviews: initialData.reviews || []
         }));
     }
-  }, [initialData]);
+  }, [initialData?.id]);
 
   useEffect(() => {
      if (isRail && !initialData) {

@@ -127,15 +127,15 @@ export default function AdsWidget({ isOpen, onOpenChange }: { isOpen?: boolean; 
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-gray-900 w-[70%] max-w-[220px] mx-auto rounded-2xl p-3 shadow-2xl relative z-10 pointer-events-auto"
+                className="bg-white dark:bg-gray-900 w-[45%] max-w-[160px] mx-auto rounded-2xl p-2.5 shadow-2xl relative z-10 pointer-events-auto"
               >
-                <div className="flex justify-between items-center mb-2 px-1">
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">추천 광고</h3>
+                <div className="flex justify-between items-center mb-2 px-0.5">
+                  <h3 className="text-xs font-bold text-gray-900 dark:text-white">추천 광고</h3>
                   <button
                     onClick={() => setShowModal(false)}
-                    className="p-1 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    className="p-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <X size={14} />
+                    <X size={12} />
                   </button>
                 </div>
 

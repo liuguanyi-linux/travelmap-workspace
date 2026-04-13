@@ -266,12 +266,14 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
             className="w-full flex justify-center pt-3 pb-2 cursor-pointer bg-transparent z-20 shrink-0 touch-none items-center gap-2"
             onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
-            {viewState === 'full' ? (
-                <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
-            ) : (
-                <ChevronUp className="text-gray-500 dark:text-gray-400" size={24} />
-            )}
-            <span className="text-xs text-gray-400 font-medium tracking-wide">{t('clickToToggle')}</span>
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60">
+              {viewState === 'full' ? (
+                  <ChevronDown className="text-gray-600 dark:text-gray-300" size={20} />
+              ) : (
+                  <ChevronUp className="text-gray-600 dark:text-gray-300" size={20} />
+              )}
+              <span className="text-xs text-gray-600 dark:text-gray-300 font-medium tracking-wide">{t('clickToToggle')}</span>
+            </div>
           </div>
 
           {/* Content Container */}
@@ -309,12 +311,12 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
                     </div>
                     {/* Action Buttons */}
                     <div className="flex flex-col gap-2 shrink-0">
-                        <button 
-                            onClick={onClose} 
+                        <button
+                            onClick={onClose}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className="p-1.5 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors self-end"
+                            className="p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60 text-gray-600 dark:text-gray-300 hover:bg-white transition-colors self-end"
                         >
-                            <X size={16} className="text-gray-400" />
+                            <X size={18} />
                         </button>
                     </div>
                 </div>
@@ -813,7 +815,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
                         document.body.removeChild(textArea);
                     });
                 }}
-                className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700"
+                className="flex-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-blue-200 dark:border-blue-800"
               >
                   <Share2 size={16} />
                   <span>{t('detail.share') || '공유하기'}</span>
@@ -845,7 +847,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
                         // Error handled in context
                     }
                 }}
-                className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5"
+                className="flex-1 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-rose-200 dark:border-rose-800"
               >
                   <Heart size={16} fill={isFav ? "currentColor" : "none"} className={isFav ? "text-red-500" : ""} />
                   <span>{isFav ? t('detail.saved') : t('detail.save')}</span>

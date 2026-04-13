@@ -46,7 +46,19 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
   const [submittingReview, setSubmittingReview] = useState(false);
   const [photoIndex, setPhotoIndex] = useState<number | null>(null);
 
-  const currentPhotos = selected ? [...(Array.isArray(selected.photos) ? selected.photos : typeof selected.photos === 'string' ? [selected.photos] : [])].filter(Boolean) : [];
+  const parsePhotos = (p: any): string[] => {
+    if (!p) return [];
+    if (Array.isArray(p)) return p.filter(Boolean);
+    if (typeof p === 'string') {
+      const trimmed = p.trim();
+      if (trimmed.startsWith('[')) {
+        try { const arr = JSON.parse(trimmed); return Array.isArray(arr) ? arr.filter(Boolean) : []; } catch { return []; }
+      }
+      return [trimmed];
+    }
+    return [];
+  };
+  const currentPhotos = selected ? parsePhotos(selected.photos) : [];
 
   // Fetch reviews when an enterprise or translator is selected
   useEffect(() => {
@@ -315,7 +327,8 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
           {selected ? (
             <>
             {/* Detail View (Full Height Overlay inside Drawer) */}
-            <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900 h-full relative z-20 animate-in slide-in-from-right duration-300 pb-32">
+            <div className="absolute inset-0 flex flex-col bg-white dark:bg-gray-900 z-20 animate-in slide-in-from-right duration-300">
+            <div className="flex-1 overflow-y-auto pb-4">
               {/* Header Info */}
               <div className="px-6 pt-12 pb-2 bg-white dark:bg-gray-900 z-10 shrink-0">
                 <div className="flex justify-between items-start">
@@ -495,8 +508,8 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
               </div>
             </div>
 
-            {/* Fixed Bottom Buttons */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3 z-[10002]">
+            {/* Fixed Bottom Buttons (outside scroll container) */}
+            <div className="shrink-0 p-4 pb-6 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3">
                 <button
                   onClick={handleShare}
                   className="flex-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-blue-200 dark:border-blue-800"
@@ -517,6 +530,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                       {isFavorite(selected.id, selected._isTranslator ? 'poi' : 'enterprise') ? (t('detail.saved') || '저장됨') : (t('detail.save') || '저장')}
                     </span>
                 </button>
+            </div>
             </div>
             </div>
           </>
