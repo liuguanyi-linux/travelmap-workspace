@@ -789,7 +789,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
           </div>
 
           {/* Fixed Bottom Buttons */}
-          <div className="absolute bottom-0 left-0 right-0 p-5 pb-[5.5rem] bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-[10002] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300">
+          <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3 z-[10002] shadow-[0_-5px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.3)] transition-colors duration-300">
               <button
                 onClick={() => {
                     const url = `${window.location.origin}/?open=spot&id=${poi.id || poi.amapId}`;
@@ -813,9 +813,9 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
                         document.body.removeChild(textArea);
                     });
                 }}
-                className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-bold text-lg shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
+                className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700"
               >
-                  <Share2 size={20} />
+                  <Share2 size={16} />
                   <span>{t('detail.share') || '공유하기'}</span>
               </button>
 
@@ -845,9 +845,9 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
                         // Error handled in context
                     }
                 }}
-                className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg shadow-xl shadow-gray-200 dark:shadow-none active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
+                className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5"
               >
-                  <Heart size={20} fill={isFav ? "currentColor" : "none"} className={isFav ? "text-red-500" : ""} />
+                  <Heart size={16} fill={isFav ? "currentColor" : "none"} className={isFav ? "text-red-500" : ""} />
                   <span>{isFav ? t('detail.saved') : t('detail.save')}</span>
               </button>
           </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Phone, Mail, MessageCircle, Globe, MapPin, Building2, ChevronDown, ChevronUp, Languages, User, Car, Heart, MessageSquare, Send, Share2, Star, ChevronLeft, Loader2, ArrowLeft } from 'lucide-react';
+import { X, Phone, Mail, MessageCircle, Globe, MapPin, Building2, ChevronDown, ChevronUp, Languages, User, Car, Heart, MessageSquare, Send, Share2, Star, ChevronLeft, ChevronRight, Loader2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { getFullImageUrl } from '../../utils/image';
 import { useData } from '../../contexts/DataContext';
@@ -43,12 +43,14 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
   const [reviews, setReviews] = useState<Review[]>([]);
   const [newReview, setNewReview] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
-  const [photoIndex, setPhotoIndex] = useState(0);
+  const [photoIndex, setPhotoIndex] = useState<number | null>(null);
+
+  const currentPhotos = selected ? [selected.avatar, selected.image, ...(Array.isArray(selected.photos) ? selected.photos : typeof selected.photos === 'string' ? [selected.photos] : [])].filter(Boolean) : [];
 
   // Fetch reviews when an enterprise or translator is selected
   useEffect(() => {
     if (selected) {
-      setPhotoIndex(0);
+      setPhotoIndex(null);
       const endpoint = selected._isTranslator ? `/api/reviews/guide/${selected.id}` : `/api/reviews/enterprise/${selected.id}`;
       axios.get(endpoint)
         .then(res => setReviews(res.data))
@@ -188,9 +190,81 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           className={`fixed bottom-0 left-0 right-0 mx-auto z-[100] w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[40vh]' : 'h-[75vh]'}`}
         >
+          {/* Photo Viewer */}
+          <AnimatePresence>
+            {photoIndex !== null && currentPhotos.length > 0 && (
+              <div 
+                className="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-sm flex items-center justify-center touch-none"
+                onClick={() => setPhotoIndex(null)}
+              >
+                <button 
+                  className="absolute top-4 right-4 p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-colors z-50"
+                  onClick={(e) => { e.stopPropagation(); setPhotoIndex(null); }}
+                >
+                  <X size={24} />
+                </button>
+                
+                {currentPhotos.length > 1 && (
+                  <>
+                    {/* Previous Button */}
+                    <button 
+                      className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full z-50 hover:bg-black/70 transition-colors"
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          setPhotoIndex((prev) => (prev !== null ? (prev - 1 + currentPhotos.length) % currentPhotos.length : 0));
+                      }}
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+
+                    {/* Next Button */}
+                    <button 
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full z-50 hover:bg-black/70 transition-colors"
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          setPhotoIndex((prev) => (prev !== null ? (prev + 1) % currentPhotos.length : 0));
+                      }}
+                    >
+                      <ChevronRight size={24} />
+                    </button>
+                    
+                    {/* Counter */}
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-black/50 backdrop-blur-md rounded-full text-white text-sm font-medium z-20">
+                      {photoIndex + 1} / {currentPhotos.length}
+                    </div>
+                  </>
+                )}
+
+                <div className="relative w-full h-full flex items-center justify-center">
+                    <motion.img 
+                      key={photoIndex}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      src={getFullImageUrl(currentPhotos[photoIndex] as string)}
+                      alt="Preview" 
+                      className="max-w-full max-h-full object-contain rounded-lg select-none shadow-2xl"
+                      onClick={(e) => e.stopPropagation()}
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.2}
+                      onDragEnd={(e, { offset, velocity }) => {
+                        const swipe = offset.x;
+                        if (swipe < -50) {
+                           setPhotoIndex((prev) => (prev !== null ? (prev + 1) % currentPhotos.length : 0));
+                        } else if (swipe > 50) {
+                           setPhotoIndex((prev) => (prev !== null ? (prev - 1 + currentPhotos.length) % currentPhotos.length : 0));
+                        }
+                      }}
+                    />
+                </div>
+              </div>
+            )}
+          </AnimatePresence>
+
           {/* Handle */}
           <div
-            className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-20 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-30 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
             onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
             {viewState === 'full' ? (
@@ -286,7 +360,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
               {isTranslatorSelected && <>
                 <div className="mt-4 mb-2 -mx-4">
                   <div className="flex gap-4 px-8 overflow-x-auto pb-4 scrollbar-hide snap-x">
-                    {(Array.isArray(selected.photos) ? selected.photos : typeof selected.photos === 'string' ? [selected.photos] : []).filter(Boolean).map((photo, index) => (
+                    {[selected.avatar, selected.image, ...(Array.isArray(selected.photos) ? selected.photos : typeof selected.photos === 'string' ? [selected.photos] : [])].filter(Boolean).map((photo, index) => (
                       <div 
                         key={index} 
                         className="w-44 h-32 shrink-0 rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-700 snap-center shadow-md relative cursor-pointer"
@@ -295,7 +369,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                         }}
                       >
                         <img 
-                          src={photo as string} 
+                          src={getFullImageUrl(photo as string)} 
                           alt={selected.name} 
                           className="w-full h-full object-cover"
                         />
@@ -454,22 +528,22 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
             </div>
 
             {/* Fixed Bottom Buttons */}
-            <div className="fixed bottom-0 left-0 right-0 p-5 pb-[5.5rem] bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-[10002] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300 rounded-t-[2.5rem]">
+            <div className="absolute bottom-[5.5rem] left-0 right-0 p-4 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.3)] transition-colors duration-300">
                 <button
                   onClick={handleShare}
-                  className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-bold text-lg shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
+                  className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700"
                 >
-                    <Share2 size={20} />
+                    <Share2 size={16} />
                     <span>{t('detail.share') || '공유하기'}</span>
                 </button>
 
                 <button 
                   onClick={handleToggleFavorite}
-                  className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg shadow-xl shadow-gray-200 dark:shadow-none active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
+                  className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5"
                 >
                     <Heart 
-                      size={20} 
-                      className={isFavorite(selected.id, selected._isTranslator ? 'poi' : 'enterprise') ? "fill-current" : ""} 
+                      size={16} 
+                      className={isFavorite(selected.id, selected._isTranslator ? 'poi' : 'enterprise') ? "fill-current text-red-500" : ""} 
                     />
                     <span>
                       {isFavorite(selected.id, selected._isTranslator ? 'poi' : 'enterprise') ? (t('detail.saved') || '저장됨') : (t('detail.save') || '저장')}
@@ -506,7 +580,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                             <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800 mt-1 inline-block">{item.city}</span>
                           )}
                         </div>
-                        {item.description && <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">{item.description}</p>}
+                        {item.description && <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">{item.description.replace(/<[^>]*>?/gm, '')}</p>}
                       </div>
                     </div>
                   </div>
@@ -536,7 +610,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                           <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{item.name}</h3>
                           <span className="text-[10px] text-violet-600 dark:text-violet-400 font-bold bg-violet-50 dark:bg-violet-900/30 px-1.5 py-0.5 rounded-full border border-violet-200 dark:border-violet-800 mt-1 inline-block">비즈니스 통역</span>
                         </div>
-                        {item.intro && <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">{item.intro}</p>}
+                        {item.intro && <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">{item.intro.replace(/<[^>]*>?/gm, '')}</p>}
                       </div>
                     </div>
                   </div>

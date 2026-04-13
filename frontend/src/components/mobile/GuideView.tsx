@@ -292,7 +292,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
         >
           {/* Handle (Click to Toggle) */}
           <div
-            className="w-full flex justify-center pt-3 pb-2 cursor-pointer bg-transparent z-20 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer bg-transparent z-30 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
             onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
             {viewState === 'full' ? (
@@ -632,7 +632,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
               </div>
 
               {/* Fixed Bottom Buttons */}
-              <div className="absolute bottom-0 left-0 right-0 p-5 pb-[5.5rem] bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex gap-4 z-[10002] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transition-colors duration-300 rounded-t-[2.5rem]">
+              <div className="absolute bottom-[5.5rem] left-0 right-0 p-4 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.3)] transition-colors duration-300">
                   <button
                     onClick={() => {
                         const url = `${window.location.origin}/?open=guide&id=${selectedGuide.id}`;
@@ -652,9 +652,9 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                             document.body.removeChild(textArea);
                         });
                     }}
-                    className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-bold text-lg shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
+                    className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700"
                   >
-                      <Share2 size={20} />
+                      <Share2 size={16} />
                       <span>{t('detail.share') || '공유하기'}</span>
                   </button>
 
@@ -673,11 +673,11 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                           }
                         } catch (err) {}
                     }}
-                    className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg shadow-xl shadow-gray-200 dark:shadow-none active:scale-95 transition-transform flex items-center justify-center gap-3 py-3"
+                    className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5"
                   >
                       <Heart 
-                        size={20} 
-                        className={isFavorite(selectedGuide.id, 'poi') ? "fill-current" : ""} 
+                        size={16} 
+                        className={isFavorite(selectedGuide.id, 'poi') ? "fill-current text-red-500" : ""} 
                       />
                       <span>
                         {isFavorite(selectedGuide.id, 'poi') ? (t('detail.saved') || '저장됨') : (t('detail.save') || '저장')}
