@@ -205,7 +205,7 @@ export default function AdminDashboard() {
 
 
   const handleExport = () => {
-    const data = { guides, strategies, spots, ads };
+    const data = { guides, strategies, spots, ads, enterprises };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
