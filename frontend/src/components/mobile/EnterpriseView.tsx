@@ -1,8 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { X, Phone, Mail, MessageCircle, Globe, MapPin, Building2, ChevronDown, ChevronUp, Languages, User, Car } from 'lucide-react';
+import { X, Phone, Mail, MessageCircle, Globe, MapPin, Building2, ChevronDown, ChevronUp, Languages, User, Car, Heart, MessageSquare, Send, Share2, Star } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { getFullImageUrl } from '../../utils/image';
 import { useData } from '../../contexts/DataContext';
+import { useFavoritesContext } from '../../contexts/FavoritesContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+
+interface Review {
+  id: string;
+  content: string;
+  rating: number;
+  userId: string;
+  enterpriseId: string;
+  createdAt: string;
+}
 
 interface EnterpriseViewProps {
   isVisible: boolean;
@@ -21,6 +35,92 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
   const [tab, setTab] = useState<'enterprise' | 'translator'>('enterprise');
 
   const { guides } = useData();
+  const { user } = useAuth();
+  const { isFavorite, toggleFavorite, removeFavorite } = useFavoritesContext();
+  const { t } = useLanguage();
+
+  // Review state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [newReview, setNewReview] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  // Fetch reviews when an enterprise is selected
+  useEffect(() => {
+    if (selected && !selected._isTranslator) {
+      setPhotoIndex(0);
+      axios.get(`/api/reviews/enterprise/${selected.id}`)
+        .then(res => setReviews(res.data))
+        .catch(err => console.error('Failed to fetch reviews', err));
+    }
+  }, [selected]);
+
+  const handleSubmitReview = async () => {
+    if (!user) {
+      toast.error(t('auth.loginRequired') || '请先登录');
+      return;
+    }
+    if (!newReview.trim()) return;
+
+    setSubmittingReview(true);
+    try {
+      const res = await axios.post('/api/reviews', {
+        content: newReview,
+        rating: 5,
+        userId: user.id,
+        enterpriseId: selected!.id
+      });
+      setReviews([res.data, ...reviews]);
+      setNewReview('');
+      toast.success(t('messages.reviewSuccess') || '评论成功');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleShare = () => {
+    if (!selected) return;
+    const url = `${window.location.origin}/?open=enterprise&id=${selected.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+        toast.success(t('messages.linkCopied') || '链接已复制！');
+    }).catch(err => {
+        console.error('Copy failed:', err);
+        const textArea = document.createElement("textarea");
+        textArea.value = url;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            toast.success(t('messages.linkCopied') || '链接已复制！');
+        } catch (err) {
+            toast.error('Copy failed');
+        }
+        document.body.removeChild(textArea);
+    });
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!selected) return;
+    try {
+      if (isFavorite(selected.id, 'enterprise')) {
+        await removeFavorite(selected.id);
+      } else {
+        await toggleFavorite({
+          id: String(selected.id),
+          name: selected.name,
+          type: 'enterprise',
+          imageUrl: selected.image || selected.avatar
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
 
   // Translators from guides data
   const getCategories = (g: any): string[] => {
