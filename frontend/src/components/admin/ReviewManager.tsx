@@ -20,6 +20,11 @@ export function ReviewManager({ targetId, targetType }: ReviewManagerProps) {
       .catch(console.error);
   }, [targetId, targetType]);
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('admin_token');
+    return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  };
+
   const handleAdd = async () => {
     if (!newReview.content.trim() || !targetId) return;
     try {
@@ -29,12 +34,12 @@ export function ReviewManager({ targetId, targetType }: ReviewManagerProps) {
         customNickname: newReview.username,
         isAdmin: true, // Tell backend this is from admin
       };
-      
+
       body[`${targetType}Id`] = targetId;
-      
+
       const res = await fetch('/api/reviews', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(body)
       });
       
@@ -51,7 +56,7 @@ export function ReviewManager({ targetId, targetType }: ReviewManagerProps) {
     try {
       const res = await fetch('/api/reviews/batch-generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ targetType, targetId })
       });
       if (res.ok) {
@@ -66,7 +71,7 @@ export function ReviewManager({ targetId, targetType }: ReviewManagerProps) {
     try {
       const res = await fetch('/api/reviews/batch-clear', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ targetType, targetId })
       });
       if (res.ok) {
@@ -78,8 +83,12 @@ export function ReviewManager({ targetId, targetType }: ReviewManagerProps) {
   const handleDelete = async (id: number) => {
     if (!confirm('确定删除这条评论吗？')) return;
     try {
-      await fetch(`/api/reviews/${id}`, { method: 'DELETE' });
-      setReviews(reviews.filter(r => r.id !== id));
+      const res = await fetch(`/api/reviews/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+      if (res.ok) {
+        setReviews(reviews.filter(r => r.id !== id));
+      } else {
+        alert('删除失败');
+      }
     } catch (e) { console.error(e); }
   };
 

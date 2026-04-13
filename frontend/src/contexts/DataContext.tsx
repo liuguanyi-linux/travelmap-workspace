@@ -204,7 +204,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('[前端外发] 准备送往后端的 Guide 数据:', JSON.stringify(guide).substring(0, 100));
       const updated = await guideService.update(String(guide.id), guide);
-      setGuides(prev => prev.map(item => item.id === guide.id ? updated : item));
+      setGuides(prev => prev.map(item => String(item.id) === String(guide.id) ? updated : item));
     } catch (error) {
       console.error("Failed to update guide", error);
       throw error;
@@ -214,7 +214,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const deleteGuide = async (id: string) => {
     try {
       await guideService.delete(id);
-      setGuides(prev => prev.filter(item => item.id !== id));
+      setGuides(prev => prev.filter(item => String(item.id) !== String(id)));
     } catch (error) {
       console.error("Failed to delete guide", error);
       throw error;
@@ -236,7 +236,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       try {
           console.log('[前端外发] 准备送往后端的 Strategy 数据:', JSON.stringify(strategy).substring(0, 100));
           const updated = await strategyService.update(String(strategy.id), strategy);
-          setStrategies(prev => prev.map(item => item.id === strategy.id ? updated : item));
+          setStrategies(prev => prev.map(item => String(item.id) === String(strategy.id) ? updated : item));
       } catch (error) {
           console.error("Failed to update strategy", error);
           throw error;
@@ -246,7 +246,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const deleteStrategy = async (id: string) => {
       try {
           await strategyService.delete(id);
-          setStrategies(prev => prev.filter(item => item.id !== id));
+          setStrategies(prev => prev.filter(item => String(item.id) !== String(id)));
       } catch (error) {
           console.error("Failed to delete strategy", error);
           throw error;
@@ -269,7 +269,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const updateSpot = async (spot: Spot) => {
       try {
           const updated = await spotService.update(spot.id as number, spot);
-          setSpots(prev => prev.map(item => item.id === spot.id ? updated : item));
+          setSpots(prev => prev.map(item => String(item.id) === String(spot.id) ? updated : item));
       } catch (error) {
           console.error("Failed to update spot", error);
           throw error;
@@ -281,7 +281,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           console.log(`[DataContext] Updating spot status: id=${id}, isActive=${isActive}`);
           const updated = await spotService.updateStatus(id, isActive);
           console.log(`[DataContext] Update response:`, updated);
-          setSpots(prev => prev.map(item => item.id === id ? { ...item, isActive } : item));
+          setSpots(prev => prev.map(item => String(item.id) === String(id) ? { ...item, isActive } : item));
       } catch (error) {
           console.error("Failed to update spot status", error);
           throw error;
@@ -291,7 +291,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const deleteSpot = async (id: number | string) => {
       try {
           await spotService.delete(id);
-          setSpots(prev => prev.filter(item => item.id !== id));
+          setSpots(prev => prev.filter(item => String(item.id) !== String(id)));
       } catch (error) {
           console.error("Failed to delete spot", error);
           throw error;
@@ -310,7 +310,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const updateAd = async (ad: AdSlot) => {
     try {
       const updated = await adService.update(Number(ad.id), ad);
-      setAds(prev => prev.map(item => item.id === ad.id ? updated : item));
+      setAds(prev => prev.map(item => String(item.id) === String(ad.id) ? updated : item));
     } catch (error) {
       console.error("Failed to update ad:", error);
     }
@@ -319,7 +319,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const deleteAd = async (id: number) => {
     try {
       await adService.delete(id);
-      setAds(prev => prev.filter(a => a.id !== id));
+      setAds(prev => prev.filter(a => String(a.id) !== String(id)));
     } catch (error) {
       console.error("Failed to delete ad:", error);
     }

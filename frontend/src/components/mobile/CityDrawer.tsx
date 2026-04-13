@@ -48,6 +48,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
   
   const controls = useAnimation();
   const dragControls = useDragControls();
+  const [viewState, setViewState] = useState<'hidden' | 'peek' | 'full'>('hidden');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -79,33 +80,21 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
   // Reset view and position when drawer closes/opens
   useEffect(() => {
     if (isVisible) {
-      controls.start({ y: 0 });
-      // FORCE city selection mode every time the drawer is opened via tab
-      // This overrides any previous state to ensure "click city tab -> see city list"
+      setViewState('full');
       setViewMode('city_selection');
-      // If a city is technically "active" in the background, we might want to clear it or keep it
-      // But the view MUST be selection.
-      
-      // Reset height to initial
-      setDrawerMode('initial');
     } else {
-      // Force hide when not visible
-      controls.start({ y: '100%' });
+      setViewState('hidden');
     }
-  }, [isVisible, controls]); // Removed selectedCity/activeCityName dependencies to prevent auto-switching back
+  }, [isVisible]);
 
   const handleCityClick = (city: City) => {
-      // Logic handled by FilterBar in parent, but kept for internal consistency if needed
       if (!city || !city.name) return;
-      
       setSelectedCity(city.name);
       onSelectCity({ name: city.name, center: [city.lng || 0, city.lat || 0], zoom: city.zoom || 13 });
-      
       setViewMode('category_list');
       setSelectedCategory('spot');
       onSelectCategory('spot');
-      
-      controls.start({ y: 0 });
+      setViewState('full');
   };
 
   const handleBackToCitySelection = () => {
@@ -127,66 +116,11 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
     onSelectCategory(category);
   };
 
-  const handleDragEnd = (event: any, info: PanInfo) => {
-    const { offset, velocity } = info;
-    const isDraggingDown = offset.y > 0;
-    const isFast = Math.abs(velocity.y) > 500;
-
-    if (isDraggingDown) {
-        if (drawerMode === 'full') {
-            if (offset.y > 100 || isFast) {
-                setDrawerMode('initial');
-            } else {
-                controls.start({ y: 0 });
-            }
-        } else {
-            // At initial height, drag down closes drawer OR goes back to cities?
-            // If in category_list mode, dragging down at peek height could go back to cities?
-            // Or just close/minimize. 
-            // Let's stick to minimizing or snapping back.
-            // Closing is handled by parent activeTab usually.
-            // If we want to support "drag to close", we need an onClose prop that clears activeTab.
-            // But activeTab='city' keeps it open.
-            // So we just snap back for now.
-            controls.start({ y: 'calc(100% - 180px)' }); // Snap to peek
-        }
-    } else {
-        // Dragging up
-        if (drawerMode === 'initial') {
-            if (offset.y < -50 || Math.abs(velocity.y) > 300) {
-                setDrawerMode('full');
-            } else {
-                // Snap back to peek
-                // handled by variants
-            }
-        } else {
-            controls.start({ y: 0 });
-        }
-    }
-  };
-
-  const [drawerMode, setDrawerMode] = useState<'initial' | 'full'>('initial');
-
   useEffect(() => {
-      // When switching views, reset to initial height
-      setDrawerMode('initial');
+      setViewState('full');
   }, [viewMode]);
 
-  // Header area (drag handle + close + back button/title): ~50px
-  // Categories area: ~40px
-  // Card area: ~80px
-  // Total visible needed: ~170px + safe area padding
-  // Increasing to 240px to definitely show the first card fully.
-  
-  const drawerVariants: any = {
-      hidden: { y: '100%' },
-      visible: { 
-          y: drawerMode === 'initial'
-              ? 'calc(100% - 200px)' 
-              : 0,
-          transition: { type: 'spring', damping: 25, stiffness: 200 }
-      }
-  };
+  const cardHeight = viewState === 'peek' ? '50vh' : '75vh';
 
   // ... (keep categories generation logic, but move it inside component or use memo)
   // Ensure categories filter logic is robust
@@ -275,29 +209,19 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
     <AnimatePresence mode="wait">
       {isVisible && (
         <motion.div
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={drawerVariants}
-          drag="y"
-          dragControls={dragControls}
-          dragListener={false}
-          dragConstraints={{ top: 0, bottom: 0 }} 
-          dragElastic={0.2}
-          onDragEnd={handleDragEnd}
+          initial={{ y: '100%' }}
+          animate={{ y: '0%' }}
+          exit={{ y: '100%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          style={{ height: cardHeight, transition: 'height 0.35s ease-in-out' }}
           className="fixed bottom-0 left-0 right-0 mx-auto z-[60] w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-3xl shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col will-change-transform"
-          style={{ 
-              height: '66vh', 
-              maxHeight: '66vh'
-          }}
         >
           {/* Drag Handle (Click to Toggle) */}
-          <div 
-            className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-10 shrink-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors touch-none items-center gap-2" 
-            onPointerDown={(e) => dragControls.start(e)}
-            onClick={() => setDrawerMode(prev => prev === 'initial' ? 'full' : 'initial')}
+          <div
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-10 shrink-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors touch-none items-center gap-2"
+            onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
-            {drawerMode === 'full' ? (
+            {viewState === 'full' ? (
                 <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
             ) : (
                 <ChevronUp className="text-gray-500 dark:text-gray-400" size={24} />
@@ -325,9 +249,8 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
 
           {/* Header with Back Button (Only in Category List mode) */}
           {viewMode === 'category_list' && (
-              <div 
-                className="px-4 pb-0 flex items-center gap-1 shrink-0 touch-none z-[110] relative min-h-[28px]"
-                onPointerDown={(e) => dragControls.start(e)}
+              <div
+                className="px-4 pb-0 flex items-center gap-1 shrink-0 z-[110] relative min-h-[28px]"
               >
                   <button 
                     onClick={handleBackToCitySelection}
@@ -349,8 +272,8 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                 overscrollBehavior: 'contain', 
                 touchAction: 'pan-y',
                 WebkitOverflowScrolling: 'touch',
-                paddingBottom: (viewMode === 'category_list' && drawerMode === 'initial') 
-                    ? 'calc(96vh - 400px + 6rem)' 
+                paddingBottom: (viewMode === 'category_list' && viewState === 'peek')
+                    ? 'calc(96vh - 400px + 6rem)'
                     : undefined
             }}
             onPointerDown={(e) => e.stopPropagation()}

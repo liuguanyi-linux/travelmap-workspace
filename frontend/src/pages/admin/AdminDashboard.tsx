@@ -163,18 +163,24 @@ export default function AdminDashboard() {
   React.useEffect(() => {
     fetch('/api/enterprises').then(r => r.json()).then(setEnterprises).catch(() => {});
   }, []);
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('admin_token');
+    return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  };
   const addEnterprise = async (data: any) => {
-    const res = await fetch('/api/enterprises', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const res = await fetch('/api/enterprises', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`Request failed with status code ${res.status}`);
     const item = await res.json();
     setEnterprises(prev => [item, ...prev]);
   };
   const updateEnterprise = async (data: any) => {
-    const res = await fetch(`/api/enterprises/${data.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const res = await fetch(`/api/enterprises/${data.id}`, { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`Request failed with status code ${res.status}`);
     const item = await res.json();
     setEnterprises(prev => prev.map(e => String(e.id) === String(item.id) ? item : e));
   };
   const deleteEnterprise = async (id: any) => {
-    await fetch(`/api/enterprises/${id}`, { method: 'DELETE' });
+    await fetch(`/api/enterprises/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
     setEnterprises(prev => prev.filter(e => String(e.id) !== String(id)));
   };
 
@@ -2201,33 +2207,79 @@ function EnterprisesList({ data, onDelete, onEdit }: { data: any[], onDelete: (i
 }
 
 function EnterpriseForm({ initialData, onSave }: { initialData?: any, onSave: (data: any) => void }) {
-  const [formData, setFormData] = useState(initialData || { name: '', description: '', city: '', address: '', phone: '', wechat: '', kakao: '', email: '', website: '', content: '', image: '', rank: 99 });
+  const defaultData = { name: '', description: '', city: '', address: '', phone: '', wechat: '', kakao: '', email: '', website: '', content: '', image: '', photos: [], rank: 99, isTop: false, isActive: true };
+  const [formData, setFormData] = useState({ ...defaultData, ...initialData });
   const { cities } = useData();
+
+  useEffect(() => {
+    if (initialData) {
+      const photos = initialData.photos
+        ? (typeof initialData.photos === 'string' ? (() => { try { return JSON.parse(initialData.photos); } catch { return []; } })() : initialData.photos)
+        : [];
+      setFormData({ ...defaultData, ...initialData, photos });
+    } else {
+      setFormData({ ...defaultData });
+    }
+  }, [initialData?.id]);
+
+  const update = (field: string, value: any) => setFormData((prev: any) => ({ ...prev, [field]: value }));
+
   return (
     <form onSubmit={e => { e.preventDefault(); onSave(formData); }} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">企业名称</label>
-        <input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
+        <input value={formData.name || ''} onChange={e => update('name', e.target.value)} className="w-full px-3 py-2 border rounded-lg" required />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">简介</label>
-        <input value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
+        <input value={formData.description || ''} onChange={e => update('description', e.target.value)} className="w-full px-3 py-2 border rounded-lg" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">封面图片</label>
-        <ImageUploader value={formData.image} onChange={(url: string) => setFormData({...formData, image: url})} />
+        <label className="block text-sm font-medium text-gray-700 mb-1">所在城市</label>
+        <select value={formData.city || ''} onChange={e => update('city', e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+          <option value="">选择城市</option>
+          {cities.map((c: any) => <option key={c.name} value={c.name}>{c.name}</option>)}
+        </select>
+      </div>
+      <div>
+        <ImageUploader
+          label="封面图片"
+          images={formData.image ? [formData.image] : []}
+          onChange={(images) => update('image', images[0] || '')}
+          single={true}
+        />
+      </div>
+      <div>
+        <ImageUploader
+          label="照片墙"
+          images={formData.photos || []}
+          onChange={(images) => update('photos', images)}
+          maxImages={9}
+        />
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium text-gray-700 mb-1">电话</label><input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-3 py-2 border rounded-lg" /></div>
-        <div><label className="block text-sm font-medium text-gray-700 mb-1">微信</label><input value={formData.wechat} onChange={e => setFormData({...formData, wechat: e.target.value})} className="w-full px-3 py-2 border rounded-lg" /></div>
-        <div><label className="block text-sm font-medium text-gray-700 mb-1">KakaoTalk</label><input value={formData.kakao} onChange={e => setFormData({...formData, kakao: e.target.value})} className="w-full px-3 py-2 border rounded-lg" /></div>
-        <div><label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label><input value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-3 py-2 border rounded-lg" /></div>
+        <div><label className="block text-sm font-medium text-gray-700 mb-1">电话</label><input value={formData.phone || ''} onChange={e => update('phone', e.target.value)} className="w-full px-3 py-2 border rounded-lg" /></div>
+        <div><label className="block text-sm font-medium text-gray-700 mb-1">微信</label><input value={formData.wechat || ''} onChange={e => update('wechat', e.target.value)} className="w-full px-3 py-2 border rounded-lg" /></div>
+        <div><label className="block text-sm font-medium text-gray-700 mb-1">KakaoTalk</label><input value={formData.kakao || ''} onChange={e => update('kakao', e.target.value)} className="w-full px-3 py-2 border rounded-lg" /></div>
+        <div><label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label><input value={formData.email || ''} onChange={e => update('email', e.target.value)} className="w-full px-3 py-2 border rounded-lg" /></div>
       </div>
-      <div><label className="block text-sm font-medium text-gray-700 mb-1">详细地址</label><input value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-3 py-2 border rounded-lg" /></div>
-      <div><label className="block text-sm font-medium text-gray-700 mb-1">官网</label><input value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="https://" /></div>
+      <div><label className="block text-sm font-medium text-gray-700 mb-1">详细地址</label><input value={formData.address || ''} onChange={e => update('address', e.target.value)} className="w-full px-3 py-2 border rounded-lg" /></div>
+      <div><label className="block text-sm font-medium text-gray-700 mb-1">官网</label><input value={formData.website || ''} onChange={e => update('website', e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="https://" /></div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">排序权重 (越小越靠前)</label>
+          <input type="number" value={formData.rank ?? 99} onChange={e => update('rank', parseInt(e.target.value) || 99)} className="w-full px-3 py-2 border rounded-lg" />
+        </div>
+        <div className="flex items-end gap-4 pb-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={formData.isTop || false} onChange={e => update('isTop', e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
+            <span className="text-sm text-gray-700">置顶</span>
+          </label>
+        </div>
+      </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">详细介绍</label>
-        <RichTextEditor value={formData.content || ''} onChange={(val: string) => setFormData({...formData, content: val})} />
+        <RichTextEditor value={formData.content || ''} onChange={(val: string) => update('content', val)} />
       </div>
       <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">保存</button>
     </form>

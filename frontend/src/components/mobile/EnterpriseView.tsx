@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Phone, Mail, MessageCircle, Globe, MapPin, Building2, ChevronDown, Languages, User, Car } from 'lucide-react';
+import { X, Phone, Mail, MessageCircle, Globe, MapPin, Building2, ChevronDown, ChevronUp, Languages, User, Car } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { getFullImageUrl } from '../../utils/image';
 import { useData } from '../../contexts/DataContext';
@@ -41,12 +41,6 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
     return true;
   });
 
-  const variants = {
-    hidden: { y: '100%' },
-    peek: { y: 'calc(100% - 300px)' },
-    full: { y: '0%' },
-  };
-
   useEffect(() => {
     if (isVisible) {
       fetch('/api/enterprises')
@@ -54,7 +48,6 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
         .then(data => {
           const list = Array.isArray(data) ? data : [];
           setEnterprises(list);
-          // Deep link: auto-select enterprise by initialId
           if (initialId) {
             const match = list.find((e: any) => String(e.id) === String(initialId));
             if (match) {
@@ -70,49 +63,14 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
 
   useEffect(() => {
     if (isVisible) {
-      setViewState('peek');
-      controls.start('peek');
+      setViewState('full');
     } else {
       setViewState('hidden');
-      controls.start('hidden');
       setSelected(null);
     }
-  }, [isVisible, controls]);
+  }, [isVisible]);
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    const offset = info.offset.y;
-    const velocity = info.velocity.y;
-    const threshold = 50;
-    const isDraggingDown = offset > 0;
-
-    if (viewState === 'full') {
-      if (isDraggingDown && (offset > threshold || velocity > 500)) {
-        setViewState('peek');
-        controls.start('peek');
-      } else {
-        controls.start('full');
-      }
-    } else {
-      if (!isDraggingDown && (Math.abs(offset) > threshold || velocity < -500)) {
-        setViewState('full');
-        controls.start('full');
-      } else if (isDraggingDown && (offset > threshold || velocity > 500)) {
-        onClose();
-      } else {
-        controls.start('peek');
-      }
-    }
-  };
-
-  const handleHandleClick = () => {
-    if (viewState === 'peek') {
-      setViewState('full');
-      controls.start('full');
-    } else {
-      setViewState('peek');
-      controls.start('peek');
-    }
-  };
+  const cardHeight = viewState === 'peek' ? '50vh' : '75vh';
 
   const isTranslatorSelected = selected && selected._isTranslator;
 
@@ -120,25 +78,23 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial="hidden"
-          animate={controls}
-          variants={variants}
+          initial={{ y: '100%' }}
+          animate={{ y: '0%' }}
+          exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          drag="y"
-          dragControls={dragControls}
-          dragListener={false}
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.2}
-          onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 mx-auto z-[100] w-[96%] max-w-[500px] h-[75vh] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden"
+          style={{ height: cardHeight, transition: 'height 0.35s ease-in-out' }}
+          className="fixed bottom-0 left-0 right-0 mx-auto z-[100] w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden"
         >
           {/* Handle */}
           <div
             className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-20 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
-            onPointerDown={e => dragControls.start(e)}
-            onClick={handleHandleClick}
+            onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
-            <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+            {viewState === 'full' ? (
+              <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
+            ) : (
+              <ChevronUp className="text-gray-500 dark:text-gray-400" size={24} />
+            )}
           </div>
 
           {/* Header */}

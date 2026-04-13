@@ -104,22 +104,19 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
 
   useEffect(() => {
     if (isOpen) {
-      setViewState('peek');
-      controls.start('peek');
+      setViewState('full');
       if (poi) {
-          setNewRating(5); // Reset rating
+          setNewRating(5);
           const targetId = poi.id || poi.amapId;
           if (targetId) {
               fetchReviewsInternal(targetId);
           }
-          // Track view for custom spots (have numeric db id, not amap id)
           if (poi.id && !poi.amapId) {
               fetch('/api/spots/' + poi.id + '/view', { method: 'POST' });
           }
       }
     } else {
       setViewState('hidden');
-      controls.start('hidden');
     }
   }, [isOpen, poi]);
 
@@ -173,41 +170,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
       }
   };
 
-  const variants = {
-    hidden: { y: '100%' },
-    peek: { y: 'calc(100% - 280px)' }, // Adjusted to ~280px (lower) as requested, to avoid blocking map
-    full: { y: '0%' }   // Full screen
-  };
-
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    const { offset, velocity } = info;
-    
-    // Current visual position (roughly) can be inferred from state + offset
-    // But easier to just use logic based on direction and distance
-    
-    if (offset.y < -50 || (velocity.y < -500 && offset.y < 0)) {
-        // Dragging UP
-        if (viewState === 'peek') {
-            setViewState('full');
-            controls.start('full');
-        } else {
-            // Already full, snap back to full
-            controls.start('full');
-        }
-    } else if (offset.y > 50 || (velocity.y > 500 && offset.y > 0)) {
-        // Dragging DOWN
-        if (viewState === 'full') {
-            setViewState('peek');
-            controls.start('peek');
-        } else if (viewState === 'peek') {
-            // Close
-            onClose();
-        }
-    } else {
-        // Revert to current state
-        controls.start(viewState);
-    }
-  };
+  const cardHeight = viewState === 'peek' ? '50vh' : '75vh';
 
   if (!poi) return null;
 
@@ -292,31 +255,17 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
         )}
         
         <motion.div
-          initial="hidden"
-          animate={controls}
-          variants={variants}
+          initial={{ y: '100%' }}
+          animate={{ y: '0%' }}
+          exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          drag="y"
-          dragControls={dragControls}
-          dragListener={false} // Only drag via handle or header
-          dragConstraints={{ top: 0 }}
-          dragElastic={0.1}
-          onDragEnd={handleDragEnd}
-          className="absolute bottom-0 left-0 right-0 mx-auto w-[96%] max-w-[500px] h-[75vh] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.2)] border-t border-x border-gray-200 dark:border-gray-800 overflow-hidden pointer-events-auto flex flex-col will-change-transform"
+          style={{ height: cardHeight, transition: 'height 0.35s ease-in-out' }}
+          className="absolute bottom-0 left-0 right-0 mx-auto w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-md rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.2)] border-t border-x border-gray-200 dark:border-gray-800 overflow-hidden pointer-events-auto flex flex-col will-change-transform"
         >
-          {/* Drag Handle Area - Active Drag Zone */}
-          <div 
-            className="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing bg-transparent z-20 shrink-0 touch-none items-center gap-2"
-            onPointerDown={(e) => dragControls.start(e)}
-            onClick={() => {
-                if (viewState === 'peek') {
-                    setViewState('full');
-                    controls.start('full');
-                } else {
-                    setViewState('peek');
-                    controls.start('peek');
-                }
-            }}
+          {/* Drag Handle Area */}
+          <div
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer bg-transparent z-20 shrink-0 touch-none items-center gap-2"
+            onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
             {viewState === 'full' ? (
                 <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
@@ -330,9 +279,8 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
           <div className="flex-1 flex flex-col overflow-hidden relative">
               
               {/* Header Info (Always visible) - Also Draggable */}
-              <div 
-                className="px-6 pb-1 bg-transparent z-10 shrink-0 touch-none"
-                onPointerDown={(e) => dragControls.start(e)}
+              <div
+                className="px-6 pb-1 bg-transparent z-10 shrink-0"
               >
                 <div className="flex justify-between items-start">
                     <div className="flex-1 mr-2">

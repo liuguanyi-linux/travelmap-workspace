@@ -30,15 +30,12 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange, sea
 
   React.useEffect(() => {
     if (isVisible) {
-      setViewState('peek');
-      controls.start('peek');
+      setViewState('full');
     } else {
       setViewState('hidden');
-      controls.start('hidden');
-      // Reset selection when closing
       setTimeout(() => setSelectedStrategy(null), 300);
     }
-  }, [isVisible, controls]);
+  }, [isVisible]);
 
   React.useEffect(() => {
     if (onLightboxChange) {
@@ -46,33 +43,7 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange, sea
     }
   }, [previewIndex, onLightboxChange]);
 
-  const variants = {
-    hidden: { y: '100%' },
-    peek: { y: 'calc(100% - 300px)' }, 
-    full: { y: '0%' }   // Full 66vh
-  };
-
-  const handleDragEnd = (event: any, info: PanInfo) => {
-    const { offset, velocity } = info;
-    const isDraggingDown = offset.y > 0;
-    const threshold = 100;
-
-    if (viewState === 'full') {
-       if (isDraggingDown && (offset.y > threshold || velocity.y > 500)) {
-           setViewState('peek');
-           controls.start('peek');
-       } else {
-           controls.start('full');
-       }
-    } else {
-       if (!isDraggingDown && (offset.y < -threshold || velocity.y < -500)) {
-           setViewState('full');
-           controls.start('full');
-       } else {
-           controls.start('peek');
-       }
-    }
-  };
+  const cardHeight = viewState === 'peek' ? '50vh' : '75vh';
 
   const { strategies, strategyCategories = [] } = useData();
 
@@ -238,31 +209,17 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange, sea
           )}
         
         <motion.div
-          initial="hidden"
-          animate={controls}
-          variants={variants}
+          initial={{ y: '100%' }}
+          animate={{ y: '0%' }}
+          exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          drag="y"
-          dragControls={dragControls}
-          dragListener={false}
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.2}
-          onDragEnd={handleDragEnd}
-          className="fixed bottom-0 left-0 right-0 mx-auto z-40 w-[96%] max-w-[500px] h-[75vh] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col pointer-events-auto touch-manipulation transition-colors duration-300 overflow-hidden will-change-transform"
+          style={{ height: cardHeight, transition: 'height 0.35s ease-in-out' }}
+          className="fixed bottom-0 left-0 right-0 mx-auto z-40 w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col pointer-events-auto touch-manipulation overflow-hidden will-change-transform"
         >
           {/* Handle (Click to Toggle) */}
-          <div 
+          <div
             className="w-full flex justify-center pt-3 pb-2 cursor-pointer bg-transparent z-20 shrink-0 absolute top-0 left-0 right-0 h-12 hover:bg-black/5 transition-colors touch-none items-center gap-2"
-            onPointerDown={(e) => dragControls.start(e)}
-            onClick={() => {
-                if (viewState === 'peek') {
-                    setViewState('full');
-                    controls.start('full');
-                } else {
-                    setViewState('peek');
-                    controls.start('peek');
-                }
-            }}
+            onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
             {viewState === 'full' ? (
                 <ChevronDown className="text-gray-500 dark:text-gray-400" size={24} />
