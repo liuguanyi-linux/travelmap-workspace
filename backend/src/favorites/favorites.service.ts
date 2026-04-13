@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma.service';
 export class FavoritesService {
   constructor(private prisma: PrismaService) {}
 
-  async toggle(userId: number, targetId: string | number, type: 'poi' | 'strategy', itemData?: any) {
+  async toggle(userId: number, targetId: string | number, type: 'poi' | 'strategy' | 'enterprise', itemData?: any) {
     try {
       if (type === 'poi') {
         let poiId = Number(targetId);
@@ -84,6 +84,21 @@ export class FavoritesService {
         return await this.prisma.favorite.create({
           data: { userId, strategyId },
         });
+      } else if (type === 'enterprise') {
+        const enterpriseId = BigInt(targetId);
+        const existing = await this.prisma.favorite.findFirst({
+          where: { userId, enterpriseId },
+        });
+
+        if (existing) {
+          return await this.prisma.favorite.delete({
+            where: { id: existing.id },
+          });
+        }
+
+        return await this.prisma.favorite.create({
+          data: { userId, enterpriseId },
+        });
       }
     } catch (error: any) {
       console.error("🔥 [Backend] FavoritesService toggle error:", error);
@@ -100,7 +115,8 @@ export class FavoritesService {
       where: { userId },
       include: { 
         poi: true,
-        strategy: true
+        strategy: true,
+        enterprise: true
       },
       orderBy: { createdAt: 'desc' }
     });

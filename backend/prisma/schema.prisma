@@ -8,14 +8,14 @@ datasource db {
 }
 
 model User {
-  id         Int         @id @default(autoincrement())
-  email      String      @unique
-  nickname   String?
-  reviews    Review[]
-  favorites  Favorite[]
-  bookings   Booking[]
-  loginLogs  LoginLog[]
-  createdAt  DateTime    @default(now())
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  nickname  String?
+  reviews   Review[]
+  favorites Favorite[]
+  bookings  Booking[]
+  loginLogs LoginLog[]
+  createdAt DateTime   @default(now())
 }
 
 model LoginLog {
@@ -53,43 +53,50 @@ model Poi {
 }
 
 model Review {
-  id        Int      @id @default(autoincrement())
-  rating    Int
-  content   String?
-  images    String?
-  
-  type      String   @default("REAL") // REAL, ADMIN_MOCK, SYSTEM_MOCK
+  id      Int     @id @default(autoincrement())
+  rating  Int
+  content String?
+  images  String?
+
+  type           String  @default("REAL") // REAL, ADMIN_MOCK, SYSTEM_MOCK
   customNickname String?
 
-  userId    Int?
-  user      User?    @relation(fields: [userId], references: [id])
-  
-  nickname  String?  // Legacy field, keeping for safety but we will use customNickname
-  avatar    String?  // For bot/guest reviews
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
 
-  poiId     Int?
-  poi       Poi?     @relation(fields: [poiId], references: [id])
+  nickname String? // Legacy field, keeping for safety but we will use customNickname
+  avatar   String? // For bot/guest reviews
 
-  spotId    BigInt?
-  spot      Spot?    @relation(fields: [spotId], references: [id])
+  poiId Int?
+  poi   Poi? @relation(fields: [poiId], references: [id])
 
-  guideId   BigInt?
-  guide     Guide?   @relation(fields: [guideId], references: [id])
+  spotId BigInt?
+  spot   Spot?   @relation(fields: [spotId], references: [id])
+
+  guideId BigInt?
+  guide   Guide?  @relation(fields: [guideId], references: [id])
 
   strategyId BigInt?
   strategy   Strategy? @relation(fields: [strategyId], references: [id])
+
+  enterpriseId BigInt?
+  enterprise   Enterprise? @relation(fields: [enterpriseId], references: [id])
 
   createdAt DateTime @default(now())
 }
 
 model Favorite {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  poiId     Int?
-  poi       Poi?     @relation(fields: [poiId], references: [id])
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
+  poiId      Int?
+  poi        Poi?      @relation(fields: [poiId], references: [id])
   strategyId BigInt?
-  strategy  Strategy? @relation(fields: [strategyId], references: [id])
+  strategy   Strategy? @relation(fields: [strategyId], references: [id])
+
+  enterpriseId BigInt?
+  enterprise   Enterprise? @relation(fields: [enterpriseId], references: [id])
+
   createdAt DateTime @default(now())
 
   // Removed unique constraint to allow logic-level deduplication or create composite unique if needed.
@@ -111,31 +118,31 @@ model Booking {
 // Admin Dashboard Models
 
 model Guide {
-  id        BigInt   @id @default(autoincrement())
-  name      String
-  gender    String   // 'male' | 'female'
-  hasCar    Boolean  @default(false)
-  title     String
-  avatar    String
-  intro     String
-  cities    String   // JSON string
-  rank      Int      @default(99)
-  isTop     Boolean  @default(false)
-  isGlobal  Boolean  @default(false)
-  category  String   @default("guide") // 'guide' | 'car' | 'agency'
-  content   String?
-  photos    String?  // JSON string
-  
-  phone     String?
-  wechat    String?
-  kakao     String?
-  email     String?
+  id       BigInt  @id @default(autoincrement())
+  name     String
+  gender   String // 'male' | 'female'
+  hasCar   Boolean @default(false)
+  title    String
+  avatar   String
+  intro    String
+  cities   String // JSON string
+  rank     Int     @default(99)
+  isTop    Boolean @default(false)
+  isGlobal Boolean @default(false)
+  category String  @default("guide") // 'guide' | 'car' | 'agency'
+  content  String?
+  photos   String? // JSON string
 
-  viewCount Int      @default(0)
+  phone  String?
+  wechat String?
+  kakao  String?
+  email  String?
+
+  viewCount  Int       @default(0)
   expiryDate DateTime? // Expiration date for auto-removal
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  reviews   Review[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  reviews    Review[]
 }
 
 model City {
@@ -151,59 +158,59 @@ model City {
 }
 
 model Spot {
-  id        BigInt   @id @default(autoincrement())
-  name      String
-  cnName    String?  // Chinese Name for detail view
-  city      String
-  address   String?
-  lng       Float?
-  lat       Float?
-  photos    String?  // JSON string
-  videos    String?  // JSON string
-  intro     String?
-  content   String?
-  tags      String   // JSON string
-  rank      Int      @default(99)
-  isTop     Boolean  @default(false)
-  isActive  Boolean  @default(true)
-  
-  phone     String?
-  wechat    String?
-  kakao     String?
-  email     String?
+  id       BigInt  @id @default(autoincrement())
+  name     String
+  cnName   String? // Chinese Name for detail view
+  city     String
+  address  String?
+  lng      Float?
+  lat      Float?
+  photos   String? // JSON string
+  videos   String? // JSON string
+  intro    String?
+  content  String?
+  tags     String // JSON string
+  rank     Int     @default(99)
+  isTop    Boolean @default(false)
+  isActive Boolean @default(true)
 
-  viewCount Int      @default(0)
+  phone  String?
+  wechat String?
+  kakao  String?
+  email  String?
+
+  viewCount  Int       @default(0)
   expiryDate DateTime? // Expiration date for auto-removal
-  reviews   Review[] // Relation to Review table
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  reviews    Review[] // Relation to Review table
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Strategy {
-  id        BigInt   @id @default(autoincrement())
-  title     String
-  city      String?
-  category  String
-  days      String
-  spots     String   // JSON string
-  image     String   // Cover image
-  tags      String   // JSON string
-  rank      Int      @default(99)
-  content   String?
-  photos    String?  // JSON string - Additional photos
-  videos    String?  // JSON string
+  id       BigInt  @id @default(autoincrement())
+  title    String
+  city     String?
+  category String
+  days     String
+  spots    String // JSON string
+  image    String // Cover image
+  tags     String // JSON string
+  rank     Int     @default(99)
+  content  String?
+  photos   String? // JSON string - Additional photos
+  videos   String? // JSON string
 
-  phone     String?
-  wechat    String?
-  kakao     String?
-  email     String?
+  phone  String?
+  wechat String?
+  kakao  String?
+  email  String?
 
-  viewCount Int      @default(0)
+  viewCount  Int        @default(0)
   expiryDate DateTime? // Expiration date for auto-removal
-  reviews   Review[]
-  favorites Favorite[] // Added reverse relation for favorites
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  reviews    Review[]
+  favorites  Favorite[] // Added reverse relation for favorites
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 }
 
 model StrategyCategory {
@@ -213,25 +220,25 @@ model StrategyCategory {
 }
 
 model Ad {
-  id          BigInt   @id @default(autoincrement())
+  id          BigInt  @id @default(autoincrement())
   title       String
   description String?
-  content     String?  // Rich text detail
+  content     String? // Rich text detail
   image       String
-  photos      String?  // JSON string for additional photos
+  photos      String? // JSON string for additional photos
   address     String?
   link        String?
-  layout      String?  // 'standard' | 'full'
+  layout      String? // 'standard' | 'full'
 
-  phone       String?
-  wechat      String?
-  kakao       String?
-  email       String?
+  phone  String?
+  wechat String?
+  kakao  String?
+  email  String?
 
-  viewCount   Int       @default(0)
-  expiryDate  DateTime? // Expiration date for auto-removal
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  viewCount  Int       @default(0)
+  expiryDate DateTime? // Expiration date for auto-removal
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model ContactInfo {
@@ -249,7 +256,7 @@ model SpotCategory {
   id        Int      @id @default(autoincrement())
   name      String
   key       String   @unique // e.g. "dining" - used as tag
-  icon      String   // e.g. "Utensils" - lucide icon name
+  icon      String // e.g. "Utensils" - lucide icon name
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -276,6 +283,9 @@ model Enterprise {
   expiryDate  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  reviews   Review[]
+  favorites Favorite[]
 }
 
 model UsageGuide {

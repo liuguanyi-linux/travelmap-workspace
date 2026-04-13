@@ -86,7 +86,7 @@ export default function BottomSpotList({ spots, activeSpotId, onSpotFocus, onSpo
         style={{ scrollPaddingLeft: '5vw', scrollPaddingRight: '5vw' }}
       >
         {spots.map((spot) => {
-          const targetIdForFav = String(spot.id || spot.amapId);
+          const targetIdForFav = String(spot.id || (spot as any).amapId || spot.name);
           return (
           <motion.div
             key={spot.id}

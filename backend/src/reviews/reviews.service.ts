@@ -11,11 +11,11 @@ export class ReviewsService {
     const reviewData = rest as any;
     
     // Ensure at least one target is present
-    if (!reviewData.poiId && !reviewData.spotId && !reviewData.guideId && !reviewData.strategyId) {
+    if (!reviewData.poiId && !reviewData.spotId && !reviewData.guideId && !reviewData.strategyId && !reviewData.enterpriseId) {
         // Fallback for extreme cases where ID is missing but we still want to save it somewhere
         // We will default it to spotId = 1 if it exists, or just log error.
         // Actually, we shouldn't throw 500 here without handling it.
-        throw new Error('Review must be associated with a target (POI, Spot, Guide, or Strategy)');
+        throw new Error('Review must be associated with a target (POI, Spot, Guide, Strategy, or Enterprise)');
     }
 
     const safeUserId = (typeof reviewData.userId === 'number' && reviewData.userId > 0 && reviewData.userId < 2147483647) 
@@ -124,6 +124,14 @@ export class ReviewsService {
   async findAllByStrategyId(strategyId: number) {
     return this.prisma.review.findMany({
       where: { strategyId },
+      include: { user: true },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async findAllByEnterpriseId(enterpriseId: number) {
+    return this.prisma.review.findMany({
+      where: { enterpriseId },
       include: { user: true },
       orderBy: { createdAt: 'desc' }
     });

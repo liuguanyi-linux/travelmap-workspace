@@ -729,7 +729,7 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
                 </div>
             )}
             <div className="text-gray-500 text-sm mb-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: guide.intro || '' }} />
-            <div className="text-xs text-gray-400 mt-1">点击量：{guide.viewCount || 0}</div>
+            <div className="text-xs text-gray-400 mt-1">点击量：{(guide as any).viewCount || 0}</div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
             <button
@@ -1565,7 +1565,7 @@ function SpotsList({ data, onDelete, onEdit, onToggleStatus }: { data: Spot[], o
                 </div>
             )}
             <div className="text-gray-500 text-sm mb-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: item.intro || item.content || item.address || '暂无介绍' }} />
-            <div className="text-xs text-gray-400 mt-1">点击量：{item.viewCount || 0}</div>
+            <div className="text-xs text-gray-400 mt-1">点击量：{(item as any).viewCount || 0}</div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
             <button
@@ -1968,7 +1968,7 @@ function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: nu
             <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm hover:underline block truncate">
                 {item.link}
             </a>
-            <div className="text-xs text-gray-400 mt-1">点击量：{item.viewCount || 0}</div>
+            <div className="text-xs text-gray-400 mt-1">点击量：{(item as any).viewCount || 0}</div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
             <button

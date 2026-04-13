@@ -82,7 +82,7 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange, sea
     
     const shareData = {
       title: selectedStrategy.title,
-      text: selectedStrategy.description || '',
+      text: (selectedStrategy as any).description || '',
       url: window.location.href,
     };
 
@@ -121,11 +121,11 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange, sea
         toast.success(t('detail.unsaved') || '저장 취소되었습니다');
       } else {
         const payload = {
-          id: selectedStrategy.id,
-          name: selectedStrategy.title,
-          type: 'strategy',
-          imageUrl: selectedStrategy.image
-        };
+        id: String(selectedStrategy.id),
+        name: selectedStrategy.title,
+        type: 'strategy',
+        imageUrl: selectedStrategy.image
+      };
         console.log("👉 1. Clicked (StrategyDetail)! Ready to send Payload:", payload);
         await toggleFavorite(payload);
         toast.success(t('detail.saved') || '저장되었습니다');
@@ -343,8 +343,8 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange, sea
                         onClick={handleFavoriteClick}
                         className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                       >
-                        <Heart size={20} className={isFavorite(selectedStrategy.id) ? "fill-current" : ""} />
-                        <span className="font-bold">{isFavorite(selectedStrategy.id) ? (t('detail.saved') || '저장됨') : (t('detail.save') || '저장')}</span>
+                        <Heart size={20} className={isFavorite(selectedStrategy.id, 'strategy') ? "fill-current" : ""} />
+                        <span className="font-bold">{isFavorite(selectedStrategy.id, 'strategy') ? (t('detail.saved') || '저장됨') : (t('detail.save') || '저장')}</span>
                       </button>
                   </div>
                   </div>
@@ -410,7 +410,7 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange, sea
                                   toast.success(t('detail.unsaved') || '저장 취소되었습니다');
                                 } else {
                                   const payload = {
-                                    id: route.id,
+                                    id: String(route.id),
                                     name: route.title,
                                     type: 'strategy',
                                     imageUrl: route.image

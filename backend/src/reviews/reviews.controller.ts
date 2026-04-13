@@ -74,4 +74,9 @@ export class ReviewsController {
   async findAllByStrategyId(@Param('strategyId', ParseIntPipe) strategyId: number) {
     return this.reviewsService.findAllByStrategyId(strategyId);
   }
+
+  @Get('enterprise/:enterpriseId')
+  async findAllByEnterpriseId(@Param('enterpriseId', ParseIntPipe) enterpriseId: number) {
+    return this.reviewsService.findAllByEnterpriseId(enterpriseId);
+  }
 }

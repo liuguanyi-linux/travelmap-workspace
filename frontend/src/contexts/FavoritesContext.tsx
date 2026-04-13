@@ -16,8 +16,8 @@ export interface FavoriteItem {
 interface FavoritesContextType {
   favorites: FavoriteItem[];
   addFavorite: (item: Omit<FavoriteItem, 'timestamp'>) => Promise<void>;
-  removeFavorite: (id: string) => Promise<void>;
-  isFavorite: (id: string | number, type: 'poi' | 'strategy') => boolean;
+  removeFavorite: (id: string | number) => Promise<void>;
+  isFavorite: (id: string | number, type: 'poi' | 'strategy' | 'enterprise') => boolean;
   toggleFavorite: (item: Omit<FavoriteItem, 'timestamp'>) => Promise<void>;
   moveFavorite: (index: number, direction: 'up' | 'down') => void;
   refreshFavorites: () => Promise<void>;
@@ -100,7 +100,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const removeFavorite = async (id: string) => {
+  const removeFavorite = async (id: string | number) => {
     if (!user) return;
     
     const favToRemove = favorites.find(f => f.id === String(id));
@@ -119,7 +119,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isFavorite = (id: string | number, type: 'poi' | 'strategy') => {
+  const isFavorite = (id: string | number, type: 'poi' | 'strategy' | 'enterprise') => {
     const isFav = favorites.some(fav => fav.id === String(id) && fav.type === type);
     // console.log(`🔍 Checking isFavorite: target[${id}](${typeof id}) vs state[${favorites.map(f=>f.id).join(',')}] -> ${isFav}`);
     return isFav;

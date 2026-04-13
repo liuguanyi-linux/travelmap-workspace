@@ -6,7 +6,7 @@ export class FavoritesController {
   constructor(private readonly favoritesService: FavoritesService) {}
 
   @Post('toggle')
-  toggle(@Body() body: { userId: number; targetId: string | number; type: 'poi' | 'strategy'; itemData?: any }) {
+  toggle(@Body() body: { userId: number; targetId: string | number; type: 'poi' | 'strategy' | 'enterprise'; itemData?: any }) {
     return this.favoritesService.toggle(body.userId, body.targetId, body.type, body.itemData);
   }
 
