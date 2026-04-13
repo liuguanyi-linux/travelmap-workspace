@@ -104,6 +104,8 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
       { code: 'ko-KR', label: '한국어' }
   ];
 
+  if (!isVisible) return null;
+
   return (
         <motion.div
           initial={{ y: '100%' }}
