@@ -46,7 +46,7 @@ echo ""
 # 3. 前端产物上传
 # ------------------------------------------
 echo "📤 [3/4] 正在使用 scp 上传前端产物到服务器..."
-sshpass -p "$PASSWORD" scp -o StrictHostKeyChecking=no -r dist/* $SERVER_USER@$SERVER_IP:$SERVER_DIR/frontend/
+sshpass -p "$PASSWORD" scp -o StrictHostKeyChecking=no -r dist/* $SERVER_USER@$SERVER_IP:$SERVER_DIR/frontend/dist/
 echo "✅ 前端上传成功！"
 echo ""
 
