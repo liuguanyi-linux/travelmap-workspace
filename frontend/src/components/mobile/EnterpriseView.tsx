@@ -24,9 +24,10 @@ interface EnterpriseViewProps {
   activeCity?: string;
   initialId?: string;
   onInitialIdConsumed?: () => void;
+  onOpenGuide?: (id: string) => void;
 }
 
-export default function EnterpriseView({ isVisible, onClose, activeCity, initialId, onInitialIdConsumed }: EnterpriseViewProps) {
+export default function EnterpriseView({ isVisible, onClose, activeCity, initialId, onInitialIdConsumed, onOpenGuide }: EnterpriseViewProps) {
   const controls = useAnimation();
   const dragControls = useDragControls();
   const [viewState, setViewState] = useState<'hidden' | 'peek' | 'full'>('hidden');
@@ -531,7 +532,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
             </div>
 
             {/* Fixed Bottom Buttons */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3 z-50">
+            <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 bg-slate-50/95 dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-800 flex gap-3 z-[10002]">
                 <button
                   onClick={handleShare}
                   className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700"
@@ -597,7 +598,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                   </div>
                 )}
                 {translators.map(item => (
-                  <div key={item.id} onClick={() => setSelected({ ...item, _isTranslator: true })}
+                  <div key={item.id} onClick={() => onOpenGuide?.(String(item.id))}
                     className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-300 dark:border-slate-500 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200"
                   >
                     <div className="flex gap-3">

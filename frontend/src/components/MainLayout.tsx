@@ -548,6 +548,10 @@ export default function MainLayout() {
         activeCity={activeCity}
         initialId={enterpriseInitialId}
         onInitialIdConsumed={() => setEnterpriseInitialId(undefined)}
+        onOpenGuide={(id) => {
+          setActiveTab('guide');
+          setGuideInitialId(id);
+        }}
       />
 
       <GuideView
