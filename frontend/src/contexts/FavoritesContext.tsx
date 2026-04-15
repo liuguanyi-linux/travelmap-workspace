@@ -126,35 +126,40 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleFavorite = async (item: Omit<FavoriteItem, 'timestamp'>) => {
-    console.log("🚀 [Context] Inside toggleFavorite, received item:", item);
-    
     if (!user) {
-      console.warn("⛔ [Context] Not authenticated, aborting.");
       toast.error('请先登录 / 로그인이 필요합니다');
       window.dispatchEvent(new CustomEvent('open-login-modal'));
-      throw new Error("User not authenticated"); // 必须抛出错误，阻止外层弹出假成功
+      throw new Error("User not authenticated");
+    }
+
+    const targetId = String(item.id);
+    const apiType = item.type === 'strategy' ? 'strategy' : 'poi';
+    const alreadyFav = favorites.some(f => f.id === targetId && f.type === apiType);
+
+    // Optimistic update — flip UI immediately
+    const snapshot = favorites;
+    if (alreadyFav) {
+      setFavorites(prev => prev.filter(f => !(f.id === targetId && f.type === apiType)));
+    } else {
+      setFavorites(prev => [
+        { id: targetId, name: item.name, type: apiType, address: item.address, location: item.location, imageUrl: item.imageUrl, timestamp: Date.now() },
+        ...prev
+      ]);
     }
 
     try {
-      const payload = {
+      await axios.post(`${API_URL}/favorites/toggle`, {
         userId: user.id,
-        targetId: String(item.id),
-        type: item.type === 'strategy' ? 'strategy' : 'poi',
-        itemData: item // 传递给后端用于自动落库
-      };
-      console.log("🌐 [Context] Calling API POST /favorites/toggle with payload:", payload);
-
-      // 必须带上 await 发送真实请求
-      const response = await axios.post(`${API_URL}/favorites/toggle`, payload);
-      
-      console.log("✅ [Context] API Success! Response:", response.data);
-      
-      // 强制刷新列表状态
-      await refreshFavorites();
-      return response.data; // 正常结束
+        targetId,
+        type: apiType,
+        itemData: item
+      });
+      // Background reconcile — don't await, don't block UI
+      refreshFavorites().catch(() => {});
     } catch (error: any) {
       console.error("🔥 [Context] API Error:", error.response?.data || error.message);
-      // 把后端的真实错误抛给外层组件
+      // Rollback on failure
+      setFavorites(snapshot);
       throw error;
     }
   };
