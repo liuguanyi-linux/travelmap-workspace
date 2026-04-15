@@ -141,6 +141,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
       setViewState('full');
     } else {
       setViewState('hidden');
+      setSelectedGuide(null);
     }
   }, [isVisible]);
 
