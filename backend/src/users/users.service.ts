@@ -94,6 +94,24 @@ export class UsersService {
     return user;
   }
 
+  async logAdminLogin(ip?: string, userAgent?: string) {
+    const geo = await this.geoIp(ip || '');
+    const device = this.parseDevice(userAgent || '');
+    await this.prisma.loginLog.create({
+      data: {
+        userId: null,
+        email: 'admin',
+        ip: ip || null,
+        country: geo.country,
+        region: geo.region,
+        city: geo.city,
+        isp: geo.isp,
+        device,
+        userAgent: userAgent ? userAgent.slice(0, 300) : null,
+      },
+    });
+  }
+
   async findAll() {
     return this.prisma.user.findMany({ orderBy: { createdAt: 'desc' } });
   }
