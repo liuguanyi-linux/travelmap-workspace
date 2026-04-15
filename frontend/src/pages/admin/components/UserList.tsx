@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Mail, Calendar, User, Monitor, Smartphone, Tablet, MapPin, Wifi } from 'lucide-react';
+import { Loader2, Mail, Calendar, User, Monitor, Smartphone, Tablet, MapPin, Wifi, Download } from 'lucide-react';
 import api, { userService } from "../../../services/api";
 
 interface UserData {
@@ -58,6 +58,39 @@ export default function UserList() {
   const isKorea = (country: string) => {
     const c = (country || '').toLowerCase();
     return c === '韩国' || c.includes('korea') || c.includes('한국');
+  };
+
+  const exportLogsCsv = () => {
+    if (logs.length === 0) {
+      alert('暂无登录记录可导出');
+      return;
+    }
+    const headers = ['邮箱', '登录时间', '设备', 'IP', '国家', '地区', '城市', '运营商'];
+    const escape = (v: any) => {
+      const s = (v ?? '').toString().replace(/"/g, '""');
+      return /[",\n]/.test(s) ? `"${s}"` : s;
+    };
+    const rows = logs.map(log => [
+      log.email,
+      new Date(log.loginAt).toLocaleString('zh-CN'),
+      log.device || '',
+      log.ip || '',
+      log.country || '',
+      log.region || '',
+      log.city || '',
+      log.isp || '',
+    ].map(escape).join(','));
+    const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    a.download = `login-logs-${ts}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const dayStats: DayStat[] = React.useMemo(() => {
@@ -153,9 +186,18 @@ export default function UserList() {
 
       {tab === 'logs' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="text-base font-bold text-gray-800">最近 200 条登录记录</h2>
-            <p className="text-xs text-gray-400 mt-0.5">韩国 IP 行已高亮显示</p>
+          <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-gray-800">最近 200 条登录记录</h2>
+              <p className="text-xs text-gray-400 mt-0.5">韩国 IP 行已高亮显示</p>
+            </div>
+            <button
+              onClick={exportLogsCsv}
+              className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors shrink-0"
+            >
+              <Download size={16} />
+              导出 CSV
+            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
