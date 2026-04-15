@@ -856,14 +856,23 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                                           <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{guide.name}</h3>
                                       </div>
                                       <div className="flex flex-wrap gap-1 mt-1">
-                                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
-                                              {guide.category === 'car' ? '렌트카' : guide.category === 'agency' ? '현지여행사' : '여행가이드'}
-                                          </span>
-                                          {getCategories(guide).includes('translator') && (
-                                              <span className="text-[10px] text-purple-600 dark:text-purple-400 font-bold bg-purple-50 dark:bg-purple-900/30 px-1.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
-                                                  비즈니스 통역
-                                              </span>
-                                          )}
+                                          {(() => {
+                                            const cats = getCategories(guide);
+                                            return <>
+                                              {cats.includes('guide') && (
+                                                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">여행가이드</span>
+                                              )}
+                                              {cats.includes('car') && (
+                                                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">렌트카</span>
+                                              )}
+                                              {cats.includes('agency') && (
+                                                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">현지여행사</span>
+                                              )}
+                                              {cats.includes('translator') && (
+                                                <span className="text-[10px] text-purple-600 dark:text-purple-400 font-bold bg-purple-50 dark:bg-purple-900/30 px-1.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">비즈니스 통역</span>
+                                              )}
+                                            </>;
+                                          })()}
                                           {guide.hasCar && <span className="text-[10px] text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-1.5 py-0.5 rounded-full">{t('guide.hasCar')}</span>}
                                       </div>
                                   </div>
