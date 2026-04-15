@@ -781,6 +781,15 @@ function GuidesList({ data, onDelete, onEdit }: { data: Guide[], onDelete: (id: 
           <div className="flex-1 w-full">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
               <h3 className="text-lg font-bold">{guide.name}</h3>
+              {(() => {
+                const cityList = Array.isArray(guide.cities) ? guide.cities : (typeof guide.cities === 'string' ? (() => { try { return JSON.parse(guide.cities); } catch { return []; } })() : []);
+                const hasCity = guide.isGlobal || (cityList && cityList.length > 0);
+                return (
+                  <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${hasCity ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600 animate-pulse'}`}>
+                    {guide.isGlobal ? '🌐 全城' : cityList.length > 0 ? `📍 ${cityList.join('、')}` : '⚠ 未设城市'}
+                  </span>
+                );
+              })()}
               <span className={`px-2 py-0.5 text-xs rounded-full border ${
                   guide.category === 'car' ? 'bg-green-50 text-green-600 border-green-200' :
                   guide.category === 'agency' ? 'bg-orange-50 text-orange-600 border-orange-200' :
@@ -1295,7 +1304,7 @@ function StrategyForm({ initialData, onSave, isSaving }: { initialData?: Strateg
     photos: parsedPhotos
   } : {
     title: '',
-    city: '青岛',
+    city: '',
     category: strategyCategories.length > 0 ? strategyCategories[0].name : '',
     days: '1天',
     spots: [] as string[],
@@ -1355,12 +1364,14 @@ function StrategyForm({ initialData, onSave, isSaving }: { initialData?: Strateg
       />
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">所属城市</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">所属城市 <span className="text-red-500">*</span></label>
         <select
-          value={formData.city || '青岛'}
+          value={formData.city || ''}
           onChange={e => setFormData({...formData, city: e.target.value})}
-          className="w-full px-3 py-2 border rounded-lg"
+          className={`w-full px-3 py-2 border rounded-lg ${!formData.city ? 'border-red-400 bg-red-50' : ''}`}
+          required
         >
+          <option value="" disabled>⚠ 请选择城市</option>
           {cities.map(city => (
             <option key={city.name} value={city.name}>{city.name}</option>
           ))}
@@ -1623,6 +1634,9 @@ function SpotsList({ data, onDelete, onEdit, onToggleStatus }: { data: Spot[], o
           <div className="flex-1 w-full">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
               <h3 className="text-lg font-bold">{item.name}</h3>
+              <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${item.city ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600 animate-pulse'}`}>
+                {item.city ? `📍 ${item.city}` : '⚠ 未设城市'}
+              </span>
               {item.isTop && <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-bold">置顶</span>}
               <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">排序:{item.rank || 99}</span>
               <div className="flex gap-1">
@@ -1721,7 +1735,7 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
   } : {
     name: '',
     cnName: '',
-    city: '青岛',
+    city: '',
     address: '',
     location: { lng: 120.38, lat: 36.06 },
     photos: [],
@@ -1817,20 +1831,21 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">所属城市</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">所属城市 <span className="text-red-500">*</span></label>
         <select
-          value={formData.city || '青岛'}
+          value={formData.city || ''}
           onChange={e => {
             const city = cities.find(c => c.name === e.target.value);
             setFormData({
-                ...formData, 
+                ...formData,
                 city: e.target.value,
-                // Optional: Auto-update map center if new item
                 location: !initialData && city ? { lng: city.lng, lat: city.lat } : formData.location
             });
           }}
-          className="w-full px-3 py-2 border rounded-lg"
+          className={`w-full px-3 py-2 border rounded-lg ${!formData.city ? 'border-red-400 bg-red-50' : ''}`}
+          required
         >
+          <option value="" disabled>⚠ 请选择城市</option>
           {cities.map(city => (
             <option key={city.name} value={city.name}>{city.name}</option>
           ))}
@@ -2272,7 +2287,6 @@ function EnterprisesList({ data, onDelete, onEdit }: { data: any[], onDelete: (i
           {item.image && <img src={item.image.startsWith('/') ? `${window.location.origin.replace(':5173','')}/api${item.image}` : item.image} alt={item.name} className="w-20 h-20 rounded-lg object-cover shrink-0" onError={e => (e.currentTarget.style.display='none')} />}
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-gray-900">{item.name}</h3>
-            {item.city && <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{item.city}</span>}
             {item.description && <p className="text-sm text-gray-500 mt-1">{item.description}</p>}
             <div className="text-xs text-gray-400 mt-1">点击量：{item.viewCount || 0}</div>
           </div>

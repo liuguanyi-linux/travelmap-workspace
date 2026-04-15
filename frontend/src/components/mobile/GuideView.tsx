@@ -351,13 +351,13 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                           {(Array.isArray(selectedGuide.photos) ? selectedGuide.photos : typeof selectedGuide.photos === 'string' ? [selectedGuide.photos] : []).filter(Boolean).map((photo, index) => (
                               <div
                                 key={index}
-                                className="w-32 h-24 shrink-0 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 snap-center shadow-sm relative cursor-pointer"
+                                className="h-28 shrink-0 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 snap-center shadow-sm relative cursor-pointer"
                                 onClick={() => { setPreviewIndex(index); }}
                               >
                                   <img
                                     src={photo as string}
                                     alt={selectedGuide.name}
-                                    className="w-full h-full object-cover"
+                                    className="h-full w-auto object-contain"
                                   />
                               </div>
                           ))}
