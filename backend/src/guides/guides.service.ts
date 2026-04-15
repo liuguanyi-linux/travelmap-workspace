@@ -41,7 +41,7 @@ export class GuidesService {
       orderBy: [
         { isTop: 'desc' }, // Top items first
         { rank: 'asc' },   // Lower rank number = higher priority
-        { createdAt: 'desc' }
+        { createdAt: 'asc' }
       ]
     });
     return guides.map(g => this.transform(g));
