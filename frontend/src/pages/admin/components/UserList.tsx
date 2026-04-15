@@ -60,25 +60,21 @@ export default function UserList() {
     return c === '韩国' || c.includes('korea') || c.includes('한국');
   };
 
-  const exportLogsCsv = () => {
-    if (logs.length === 0) {
-      alert('暂无登录记录可导出');
+  const exportUsersCsv = () => {
+    if (users.length === 0) {
+      alert('暂无用户可导出');
       return;
     }
-    const headers = ['邮箱', '登录时间', '设备', 'IP', '国家', '地区', '城市', '运营商'];
+    const headers = ['ID', '邮箱', '昵称', '注册时间'];
     const escape = (v: any) => {
       const s = (v ?? '').toString().replace(/"/g, '""');
       return /[",\n]/.test(s) ? `"${s}"` : s;
     };
-    const rows = logs.map(log => [
-      log.email,
-      new Date(log.loginAt).toLocaleString('zh-CN'),
-      log.device || '',
-      log.ip || '',
-      log.country || '',
-      log.region || '',
-      log.city || '',
-      log.isp || '',
+    const rows = users.map(u => [
+      u.id,
+      u.email,
+      u.nickname || '',
+      new Date(u.createdAt).toLocaleString('zh-CN'),
     ].map(escape).join(','));
     const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -86,7 +82,7 @@ export default function UserList() {
     const a = document.createElement('a');
     a.href = url;
     const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-    a.download = `login-logs-${ts}.csv`;
+    a.download = `users-${ts}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -186,18 +182,9 @@ export default function UserList() {
 
       {tab === 'logs' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-bold text-gray-800">最近 200 条登录记录</h2>
-              <p className="text-xs text-gray-400 mt-0.5">韩国 IP 行已高亮显示</p>
-            </div>
-            <button
-              onClick={exportLogsCsv}
-              className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors shrink-0"
-            >
-              <Download size={16} />
-              导出 CSV
-            </button>
+          <div className="p-4 border-b border-gray-100">
+            <h2 className="text-base font-bold text-gray-800">最近 200 条登录记录</h2>
+            <p className="text-xs text-gray-400 mt-0.5">韩国 IP 行已高亮显示</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -253,8 +240,15 @@ export default function UserList() {
 
       {tab === 'users' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-4 border-b border-gray-100">
+          <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-3">
             <h2 className="text-base font-bold text-gray-800">注册用户 ({users.length})</h2>
+            <button
+              onClick={exportUsersCsv}
+              className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors shrink-0"
+            >
+              <Download size={16} />
+              导出 CSV
+            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
