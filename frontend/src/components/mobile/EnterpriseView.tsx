@@ -544,7 +544,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                   </div>
                 )}
                 {enterprises.map(item => {
-                  const entFav = isFavorite(String(item.id), 'enterprise');
+                  const entFav = isFavorite(String(item.id), 'poi');
                   return (
                   <div key={item.id} onClick={() => setSelected(item)}
                     className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-300 dark:border-slate-500 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 relative"
@@ -561,7 +561,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                             await toggleFavorite({
                               id: String(item.id),
                               name: item.name,
-                              type: 'enterprise',
+                              type: 'poi',
                               imageUrl: item.image || ''
                             });
                             toast.success('즐겨찾기에 추가되었습니다.');
