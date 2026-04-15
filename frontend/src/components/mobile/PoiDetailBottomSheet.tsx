@@ -847,7 +847,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
                         // Error handled in context
                     }
                 }}
-                className="flex-1 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-rose-200 dark:border-rose-800"
+                className="flex-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-blue-200 dark:border-blue-800"
               >
                   <Heart size={16} fill={isFav ? "currentColor" : "none"} className={isFav ? "text-red-500" : ""} />
                   <span>{isFav ? t('detail.saved') : t('detail.save')}</span>

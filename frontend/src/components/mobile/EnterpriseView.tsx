@@ -521,7 +521,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
 
                 <button
                   onClick={handleToggleFavorite}
-                  className="flex-1 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-rose-200 dark:border-rose-800"
+                  className="flex-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-2xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 py-2.5 border border-blue-200 dark:border-blue-800"
                 >
                     <Heart 
                       size={16} 
@@ -543,10 +543,35 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                     <p className="text-sm">등록된 기업이 없습니다</p>
                   </div>
                 )}
-                {enterprises.map(item => (
+                {enterprises.map(item => {
+                  const entFav = isFavorite(String(item.id), 'enterprise');
+                  return (
                   <div key={item.id} onClick={() => setSelected(item)}
-                    className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-300 dark:border-slate-500 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200"
+                    className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-300 dark:border-slate-500 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 relative"
                   >
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!user) { toast.error('로그인이 필요합니다.'); return; }
+                        try {
+                          if (entFav) {
+                            await removeFavorite(String(item.id));
+                            toast.success('즐겨찾기에서 제거되었습니다.');
+                          } else {
+                            await toggleFavorite({
+                              id: String(item.id),
+                              name: item.name,
+                              type: 'enterprise',
+                              imageUrl: item.image || ''
+                            });
+                            toast.success('즐겨찾기에 추가되었습니다.');
+                          }
+                        } catch {}
+                      }}
+                      className="absolute top-2 right-2 p-1.5 bg-white/80 dark:bg-black/20 backdrop-blur-sm rounded-full hover:bg-red-50 transition-colors z-10"
+                    >
+                      <Heart size={16} className={entFav ? "text-red-500 fill-red-500" : "text-gray-400"} />
+                    </button>
                     <div className="flex gap-3">
                       <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm bg-gray-100 dark:bg-gray-700">
                         {item.image ? (
@@ -566,7 +591,8 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </>}
 
               {tab === 'translator' && <>
@@ -575,10 +601,35 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                     <p className="text-sm">등록된 통역사가 없습니다</p>
                   </div>
                 )}
-                {translators.map(item => (
+                {translators.map(item => {
+                  const trFav = isFavorite(String(item.id), 'poi');
+                  return (
                   <div key={item.id} onClick={() => onOpenGuide?.(String(item.id))}
-                    className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-300 dark:border-slate-500 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200"
+                    className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-300 dark:border-slate-500 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 relative"
                   >
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!user) { toast.error('로그인이 필요합니다.'); return; }
+                        try {
+                          if (trFav) {
+                            await removeFavorite(String(item.id));
+                            toast.success('즐겨찾기에서 제거되었습니다.');
+                          } else {
+                            await toggleFavorite({
+                              id: String(item.id),
+                              name: item.name,
+                              type: 'poi',
+                              imageUrl: item.avatar || ''
+                            });
+                            toast.success('즐겨찾기에 추가되었습니다.');
+                          }
+                        } catch {}
+                      }}
+                      className="absolute top-2 right-2 p-1.5 bg-white/80 dark:bg-black/20 backdrop-blur-sm rounded-full hover:bg-red-50 transition-colors z-10"
+                    >
+                      <Heart size={16} className={trFav ? "text-red-500 fill-red-500" : "text-gray-400"} />
+                    </button>
                     <div className="flex gap-3">
                       <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm bg-gray-100 dark:bg-gray-700">
                         {item.avatar ? (
@@ -596,7 +647,8 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </>}
             </div>
           )}
