@@ -46,7 +46,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       const mappedFavorites: FavoriteItem[] = data.map((fav: any) => {
         if (fav.poi) {
           return {
-            id: String(fav.poi.id || fav.poi.amapId),
+            id: String(fav.poi.amapId || fav.poi.id),
             name: fav.poi.name,
             type: 'poi',
             address: fav.poi.address,
