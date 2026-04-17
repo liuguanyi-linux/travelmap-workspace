@@ -108,6 +108,7 @@ export interface City {
   lng: number;
   lat: number;
   zoom: number;
+  rank?: number;
 }
 
 export interface StrategyCategory {

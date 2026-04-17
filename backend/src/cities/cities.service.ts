@@ -15,7 +15,7 @@ export class CitiesService {
 
   findAll() {
     return this.prisma.city.findMany({
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ rank: 'asc' }, { createdAt: 'asc' }],
     });
   }
 

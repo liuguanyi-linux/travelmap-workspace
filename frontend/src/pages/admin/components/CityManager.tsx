@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../../../contexts/DataContext';
-import { Trash2, Plus, MapPin, Navigation, Search, Loader2, Map as MapIcon, Crosshair, Edit2 } from 'lucide-react';
+import { Trash2, Plus, MapPin, Navigation, Search, Loader2, Map as MapIcon, Crosshair, Edit2, ArrowUp, ArrowDown } from 'lucide-react';
 import { City } from '../../../types/data';
 import AMapLoader from '@amap/amap-jsapi-loader';
 
@@ -16,7 +16,8 @@ export default function CityManager() {
     nameKo: '',
     lng: 120.38,
     lat: 36.06,
-    zoom: 12
+    zoom: 12,
+    rank: 99
   });
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -233,7 +234,8 @@ export default function CityManager() {
             nameKo: city.nameKo,
             lng: city.lng,
             lat: city.lat,
-            zoom: city.zoom
+            zoom: city.zoom,
+            rank: (city as any).rank ?? 99
         });
         setEditingId(Number(city.id));
         setIsAdding(true);
@@ -252,10 +254,10 @@ export default function CityManager() {
             if (isAdding) {
                 setIsAdding(false);
                 setEditingId(null);
-                setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12 });
+                setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12, rank: 99 });
             } else {
                 setEditingId(null);
-                setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12 });
+                setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12, rank: 99 });
                 // Small timeout to ensure clean state
                 setTimeout(() => setIsAdding(true), 50);
             }
@@ -426,56 +428,71 @@ export default function CityManager() {
         </form>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {cities.map(city => (
-          <div key={city.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 group hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex items-center gap-2">
-                <div className="bg-blue-50 p-2 rounded-lg text-blue-600">
-                  <MapPin size={20} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-lg text-gray-800">{city.name}</h4>
-                  <div className="flex flex-col gap-0.5 mt-1">
-                    {city.nameEn && <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded w-fit">En: {city.nameEn}</span>}
-                    {city.nameKo && <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded w-fit">Ko: {city.nameKo}</span>}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">ID: {city.id}</div>
-                </div>
-              </div>
-              <div className="flex gap-1">
-                <button
-                    onClick={() => city.id && handleEdit(city)}
-                    className="text-gray-400 hover:text-blue-500 p-2 rounded-lg hover:bg-blue-50 transition-colors"
-                    title="编辑城市"
-                >
-                    <Edit2 size={18} />
-                </button>
-                <button
-                    onClick={() => {
-                      if (city.id) {
-                        if (window.confirm(`确定要删除城市 "${city.name}" 吗？`)) {
-                          deleteCity(city.id);
-                        }
-                      }
-                    }}
-                    className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                    title="删除城市"
-                >
-                    <Trash2 size={18} />
-                </button>
-              </div>
+      <div className="space-y-2">
+        {cities.map((city, index) => (
+          <div key={city.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="flex flex-col items-center gap-1 shrink-0">
+              <button
+                onClick={() => {
+                  if (index === 0 || !city.id) return;
+                  const prevCity = cities[index - 1];
+                  const myRank = (city as any).rank ?? 99;
+                  const prevRank = (prevCity as any).rank ?? 99;
+                  updateCity(Number(city.id), { rank: prevRank > 0 ? prevRank - 1 : 0 } as any);
+                  updateCity(Number(prevCity.id), { rank: myRank } as any);
+                }}
+                disabled={index === 0}
+                className={`p-1 rounded ${index === 0 ? 'text-gray-200' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                title="上移"
+              >
+                <ArrowUp size={16} />
+              </button>
+              <span className="text-sm font-bold text-blue-600 w-6 text-center">{index + 1}</span>
+              <button
+                onClick={() => {
+                  if (index === cities.length - 1 || !city.id) return;
+                  const nextCity = cities[index + 1];
+                  const myRank = (city as any).rank ?? 99;
+                  const nextRank = (nextCity as any).rank ?? 99;
+                  updateCity(Number(city.id), { rank: nextRank + 1 } as any);
+                  updateCity(Number(nextCity.id), { rank: myRank } as any);
+                }}
+                disabled={index === cities.length - 1}
+                className={`p-1 rounded ${index === cities.length - 1 ? 'text-gray-200' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                title="下移"
+              >
+                <ArrowDown size={16} />
+              </button>
             </div>
-            
-            <div className="space-y-2 mt-3 text-sm text-gray-600">
-              <div className="flex items-center gap-2 bg-gray-50 p-2 rounded">
-                <Crosshair size={14} className="text-gray-400" />
-                <span className="font-mono text-xs">{city.lng.toFixed(4)}, {city.lat.toFixed(4)}</span>
+            <div className="bg-blue-50 p-2 rounded-lg text-blue-600 shrink-0">
+              <MapPin size={20} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-bold text-lg text-gray-800">{city.name}</h4>
+                {city.nameKo && <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{city.nameKo}</span>}
               </div>
-              <div className="flex items-center gap-2 bg-gray-50 p-2 rounded">
-                <Search size={14} className="text-gray-400" />
-                <span>缩放: {city.zoom}</span>
-              </div>
+              <div className="text-xs text-gray-400 mt-0.5 font-mono">{city.lng.toFixed(4)}, {city.lat.toFixed(4)} · zoom: {city.zoom}</div>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <button
+                onClick={() => city.id && handleEdit(city)}
+                className="text-gray-400 hover:text-blue-500 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                title="编辑城市"
+              >
+                <Edit2 size={18} />
+              </button>
+              <button
+                onClick={() => {
+                  if (city.id && window.confirm(`确定要删除城市 "${city.name}" 吗？`)) {
+                    deleteCity(city.id);
+                  }
+                }}
+                className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                title="删除城市"
+              >
+                <Trash2 size={18} />
+              </button>
             </div>
           </div>
         ))}

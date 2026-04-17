@@ -5,4 +5,5 @@ export class CreateCityDto {
   lng: number;
   lat: number;
   zoom?: number;
+  rank?: number;
 }
