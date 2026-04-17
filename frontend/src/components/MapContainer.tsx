@@ -8,7 +8,7 @@ import { useData } from '../contexts/DataContext';
 
 import { Banknote } from 'lucide-react';
 
-import { DEFAULT_CITY } from '../config/cityConfig';
+import { DEFAULT_CITY, CHINA_OVERVIEW } from '../config/cityConfig';
 
 interface MapContainerProps {
   disableFitView?: boolean;
@@ -217,8 +217,8 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
 
         const map = new AMap.Map(mapRef.current, {
           viewMode: "2D",
-          zoom: DEFAULT_CITY.zoom,
-          center: DEFAULT_CITY.center, // Use configured default
+          zoom: CHINA_OVERVIEW.zoom,
+          center: CHINA_OVERVIEW.center,
           lang: language === 'zh-CN' ? 'zh_cn' : 'en',
           mapStyle: theme === 'dark' ? 'amap://styles/dark' : 'amap://styles/normal',
         });

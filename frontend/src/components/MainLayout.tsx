@@ -22,7 +22,7 @@ import GlobalViewButton from './mobile/GlobalViewButton';
 // import TopNavBar from './mobile/TopNavBar'; // Deprecated
 // import FilterBar from './mobile/FilterBar'; // Deprecated
 // import BottomSpotList from './mobile/BottomSpotList'; // Deprecated
-import { DEFAULT_CITY } from '../config/cityConfig';
+import { DEFAULT_CITY, CHINA_OVERVIEW } from '../config/cityConfig';
 import { toast } from 'sonner';
 
 export default function MainLayout() {
@@ -42,7 +42,7 @@ export default function MainLayout() {
   const [activeTab, setActiveTab] = useState(''); // 'strategy', 'guide', 'me', '' (for home/map view)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [isSearchListOpen, setIsSearchListOpen] = useState(false);
-  const [activeCity, setActiveCity] = useState(DEFAULT_CITY.name); 
+  const [activeCity, setActiveCity] = useState('');
   const [activeCategory, setActiveCategory] = useState(''); // 'spot', 'dining', etc.
   const [searchKeyword, setSearchKeyword] = useState('');
   const [unifiedSearchResults, setUnifiedSearchResults] = useState<SearchResultItem[]>([]);
@@ -461,11 +461,11 @@ export default function MainLayout() {
 
   const handleGlobalView = () => {
     if (mapInstance) {
-      mapInstance.setZoomAndCenter(DEFAULT_CITY.zoom, DEFAULT_CITY.center);
-      setActiveTab(''); 
+      mapInstance.setZoomAndCenter(CHINA_OVERVIEW.zoom, CHINA_OVERVIEW.center);
+      setActiveTab('');
       setIsBottomSheetOpen(false);
-      setActiveCity(DEFAULT_CITY.name);
-      setActiveCategory(''); // Clear category
+      setActiveCity('');
+      setActiveCategory('');
     }
   };
 
