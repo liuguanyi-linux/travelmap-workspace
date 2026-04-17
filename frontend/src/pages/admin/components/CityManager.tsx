@@ -2,10 +2,32 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../../../contexts/DataContext';
 import { Trash2, Plus, MapPin, Navigation, Search, Loader2, Map as MapIcon, Crosshair, Edit2, ArrowUp, ArrowDown } from 'lucide-react';
 import { City } from '../../../types/data';
+import { cityService } from '../../../services/api';
 import AMapLoader from '@amap/amap-jsapi-loader';
 
 export default function CityManager() {
-  const { cities, addCity, updateCity, deleteCity } = useData();
+  const { cities, addCity, updateCity, deleteCity, refreshData } = useData();
+  const [swapping, setSwapping] = useState(false);
+
+  const swapCityRank = async (indexA: number, indexB: number) => {
+    if (swapping) return;
+    const a = cities[indexA];
+    const b = cities[indexB];
+    if (!a?.id || !b?.id) return;
+    setSwapping(true);
+    const rankA = (a as any).rank ?? 99;
+    const rankB = (b as any).rank ?? 99;
+    try {
+      await Promise.all([
+        cityService.update(Number(a.id), { rank: rankB } as any),
+        cityService.update(Number(b.id), { rank: rankA } as any),
+      ]);
+      await refreshData();
+    } catch (e) {
+      console.error('Swap failed:', e);
+    }
+    setSwapping(false);
+  };
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isLocating, setIsLocating] = useState(false);
@@ -433,32 +455,18 @@ export default function CityManager() {
           <div key={city.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
             <div className="flex flex-col items-center gap-1 shrink-0">
               <button
-                onClick={() => {
-                  if (index === 0 || !city.id) return;
-                  const prevCity = cities[index - 1];
-                  const myRank = (city as any).rank ?? 99;
-                  const prevRank = (prevCity as any).rank ?? 99;
-                  updateCity(Number(city.id), { rank: prevRank > 0 ? prevRank - 1 : 0 } as any);
-                  updateCity(Number(prevCity.id), { rank: myRank } as any);
-                }}
-                disabled={index === 0}
-                className={`p-1 rounded ${index === 0 ? 'text-gray-200' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                onClick={() => swapCityRank(index, index - 1)}
+                disabled={index === 0 || swapping}
+                className={`p-1 rounded ${index === 0 || swapping ? 'text-gray-200' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}
                 title="上移"
               >
                 <ArrowUp size={16} />
               </button>
               <span className="text-sm font-bold text-blue-600 w-6 text-center">{index + 1}</span>
               <button
-                onClick={() => {
-                  if (index === cities.length - 1 || !city.id) return;
-                  const nextCity = cities[index + 1];
-                  const myRank = (city as any).rank ?? 99;
-                  const nextRank = (nextCity as any).rank ?? 99;
-                  updateCity(Number(city.id), { rank: nextRank + 1 } as any);
-                  updateCity(Number(nextCity.id), { rank: myRank } as any);
-                }}
-                disabled={index === cities.length - 1}
-                className={`p-1 rounded ${index === cities.length - 1 ? 'text-gray-200' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                onClick={() => swapCityRank(index, index + 1)}
+                disabled={index === cities.length - 1 || swapping}
+                className={`p-1 rounded ${index === cities.length - 1 || swapping ? 'text-gray-200' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}
                 title="下移"
               >
                 <ArrowDown size={16} />
