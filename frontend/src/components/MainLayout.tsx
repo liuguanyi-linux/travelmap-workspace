@@ -392,12 +392,12 @@ export default function MainLayout() {
 
   // Initialize with all spots when data is loaded
   useEffect(() => {
-    // Check if activeCity is valid (exists in available cities)
+    // Empty string = national overview, skip validation
+    if (activeCity === '') return;
     if (cities && cities.length > 0) {
         const isCityValid = cities.some(c => c.name === activeCity);
         if (!isCityValid) {
-            console.log(`[MainLayout] Active city "${activeCity}" not found in available cities. Switching to "${cities[0].name}".`);
-            setActiveCity(cities[0].name);
+            setActiveCity('');
         }
     }
   }, [cities, activeCity]);
