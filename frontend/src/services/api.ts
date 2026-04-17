@@ -36,10 +36,15 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for global error handling
+// Response interceptor: auto-redirect to login on 401
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 401 && localStorage.getItem('admin_token')) {
+      localStorage.removeItem('admin_token');
+      alert('登录已过期，请重新登录');
+      window.location.href = '/admin/login';
+    }
     console.error('API Error:', error.response?.data || error.message);
     return Promise.reject(error);
   }
