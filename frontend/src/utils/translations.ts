@@ -412,7 +412,7 @@ export const TRANSLATIONS: any = {
       car: '렌터카', agency: '여행사', ad: '광고'
     },
     tabs: {
-      city: '도시', strategy: '가이드북', guide: '가이드', me: '내 정보'
+      city: '관광지', strategy: '가이드북', guide: '가이드', me: '내 정보'
     },
     user: {
       name: '사용자 8866',

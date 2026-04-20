@@ -37,6 +37,6 @@ export const DEFAULT_CITY = CITIES.find(c => c.name === '青岛') || CITIES[0];
 
 // Initial view: overview of entire China
 export const CHINA_OVERVIEW = {
-  center: [110.0, 35.5] as [number, number],
-  zoom: 5.0,
+  center: [121.473701, 31.230416] as [number, number],
+  zoom: 10,
 };
