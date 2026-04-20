@@ -483,16 +483,7 @@ export default function MainLayout() {
         />
       </div>
 
-      {/* Floating Search Bar (Top) */}
-      <FloatingSearchBar 
-        onSearch={(kw) => {
-            console.log('Search:', kw);
-            setSearchKeyword(kw);
-        }}
-        onCategorySelect={setActiveCategory}
-        // MapToggle moved to UserDrawer -> Favorites
-        // rightAction removed
-      />
+      {/* Search bar moved into CityDrawer */}
 
       {/* Widgets Layer - Highest Z-Index (except Portals/Overlays) */}
       {!isBottomSheetOpen && (
@@ -540,6 +531,7 @@ export default function MainLayout() {
         onPoiClick={handleMarkerClick}
         activeCityName={activeCity}
         onClose={() => setActiveTab('')}
+        onSearch={(kw) => setSearchKeyword(kw)}
       />
 
       <EnterpriseView

@@ -247,21 +247,45 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
             </button>
           </div>
 
-          {/* Header with Back Button (Only in Category List mode) */}
+          {/* Header with Back Button and Search (Only in Category List mode) */}
           {viewMode === 'category_list' && (
-              <div
-                className="px-4 pb-0 flex items-center gap-1 shrink-0 z-[110] relative min-h-[28px]"
-              >
-                  <button 
-                    onClick={handleBackToCitySelection}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    className="p-0.5 -ml-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors"
-                  >
-                      <ChevronLeft size={24} className="text-gray-600 dark:text-gray-300" />
-                  </button>
-                  <span className="text-lg font-bold text-gray-800 dark:text-white">
-                      {getCityDisplayNameByName(selectedCity || activeCityName || '')}
-                  </span>
+              <div className="px-4 pb-1 shrink-0 z-[110] relative">
+                  <div className="flex items-center gap-1 min-h-[28px]">
+                      <button
+                        onClick={handleBackToCitySelection}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="p-0.5 -ml-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors"
+                      >
+                          <ChevronLeft size={24} className="text-gray-600 dark:text-gray-300" />
+                      </button>
+                      <span className="text-lg font-bold text-gray-800 dark:text-white">
+                          {getCityDisplayNameByName(selectedCity || activeCityName || '')}
+                      </span>
+                      <div className="flex-1 relative ml-2">
+                        <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
+                          <Search className="h-3.5 w-3.5 text-gray-400" />
+                        </div>
+                        <input
+                          type="text"
+                          value={searchKeyword}
+                          placeholder={t('searchPlaceholder')}
+                          className="w-full h-8 pl-8 pr-7 bg-white dark:bg-gray-800 rounded-full border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 text-gray-900 dark:text-white placeholder-gray-400 text-xs"
+                          onChange={(e) => {
+                            const kw = e.target.value;
+                            setSearchKeyword(kw);
+                            if (onSearch) onSearch(kw);
+                          }}
+                        />
+                        {searchKeyword && (
+                          <button
+                            onClick={() => { setSearchKeyword(''); if (onSearch) onSearch(''); }}
+                            className="absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                  </div>
               </div>
           )}
           
