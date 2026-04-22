@@ -18,7 +18,7 @@ import AtmWidget from './mobile/AtmWidget';
 import PoiDetailBottomSheet from './mobile/PoiDetailBottomSheet';
 import MapToggle from './mobile/MapToggle';
 import SearchResultsDrawer, { SearchResultItem } from './mobile/SearchResultsDrawer';
-import GlobalViewButton from './mobile/GlobalViewButton';
+import MyLocationButton, { Toggle2DButton } from './mobile/GlobalViewButton';
 // import TopNavBar from './mobile/TopNavBar'; // Deprecated
 // import FilterBar from './mobile/FilterBar'; // Deprecated
 // import BottomSpotList from './mobile/BottomSpotList'; // Deprecated
@@ -51,6 +51,7 @@ export default function MainLayout() {
   const [focusedSpotId, setFocusedSpotId] = useState<string | number | null>(null);
   const [viewMode, setViewMode] = useState<'all' | 'favorites'>('all');
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [is3D, setIs3D] = useState(false);
 
   const { spots = [], spotCategories = [], cities = [], guides = [], strategies = [] } = useData();
   const { favorites } = useFavorites();
@@ -459,13 +460,112 @@ export default function MainLayout() {
     setIsBottomSheetOpen(false);
   };
 
-  const handleGlobalView = () => {
-    if (mapInstance) {
-      mapInstance.setZoomAndCenter(CHINA_OVERVIEW.zoom, CHINA_OVERVIEW.center);
-      setActiveTab('');
-      setIsBottomSheetOpen(false);
-      setActiveCity('');
-      setActiveCategory('');
+  const geolocationRef = useRef<any>(null);
+  const locationMarkerRef = useRef<any>(null);
+
+  const showLocationOnMap = (lng: number, lat: number) => {
+    if (lng < 73 || lng > 136 || lat < 3 || lat > 54) {
+      toast.error('定位结果异常，请检查定位权限');
+      return;
+    }
+    if (locationMarkerRef.current) {
+      locationMarkerRef.current.setMap(null);
+    }
+    locationMarkerRef.current = new aMap.Marker({
+      position: [lng, lat],
+      content: '<div style="width:20px;height:20px;border-radius:50%;background:#4285f4;border:3px solid white;box-shadow:0 0 8px rgba(66,133,244,0.6);"></div>',
+      offset: new aMap.Pixel(-10, -10),
+      zIndex: 200,
+    });
+    locationMarkerRef.current.setMap(mapInstance);
+    mapInstance.setZoomAndCenter(13, [lng, lat]);
+  };
+
+  const isInChina = (lng: number, lat: number) => lng >= 73 && lng <= 136 && lat >= 3 && lat <= 54;
+
+  const handleMyLocation = () => {
+    if (!mapInstance || !aMap) return;
+    setIsLocating(true);
+
+    const doIpFallback = () => {
+      console.log('[Location] Falling back to IP location...');
+      aMap.plugin('AMap.Geolocation', () => {
+        const ipGeo = new aMap.Geolocation({
+          enableHighAccuracy: false,
+          timeout: 10000,
+          needAddress: false,
+          showButton: false,
+          showMarker: false,
+          showCircle: false,
+          panToLocation: false,
+          zoomToAccuracy: false,
+        });
+        ipGeo.getCityInfo((status: string, result: any) => {
+          console.log('[Location] IP getCityInfo status:', status, 'result:', JSON.stringify(result));
+          setIsLocating(false);
+          const pos = result.position || result.center;
+          if (status === 'complete' && pos) {
+            let lng: number, lat: number;
+            if (Array.isArray(pos)) {
+              [lng, lat] = pos;
+            } else if (typeof pos === 'string') {
+              const parts = pos.split(',');
+              lng = parseFloat(parts[0]);
+              lat = parseFloat(parts[1]);
+            } else {
+              lng = pos.lng;
+              lat = pos.lat;
+            }
+            console.log('[Location] IP parsed position:', lng, lat);
+            showLocationOnMap(lng, lat);
+            toast.info('已通过IP定位到您所在城市');
+          } else {
+            toast.error('定位失败，请稍后重试');
+          }
+        });
+      });
+    };
+
+    console.log('[Location] Starting...');
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lng = pos.coords.longitude;
+          const lat = pos.coords.latitude;
+          console.log('[Location] Browser GPS:', lng, lat);
+          if (!isInChina(lng, lat)) {
+            console.log('[Location] Not in China, falling back to IP');
+            doIpFallback();
+            return;
+          }
+          aMap.convertFrom([lng, lat], 'gps', (_s: string, res: any) => {
+            setIsLocating(false);
+            if (res && res.locations && res.locations.length > 0) {
+              showLocationOnMap(res.locations[0].lng, res.locations[0].lat);
+            } else {
+              showLocationOnMap(lng, lat);
+            }
+          });
+        },
+        (err) => {
+          console.log('[Location] Browser GPS failed:', err.message);
+          doIpFallback();
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    } else {
+      doIpFallback();
+    }
+  };
+
+  const handleToggle3D = () => {
+    if (!mapInstance) return;
+    if (is3D) {
+      mapInstance.setPitch(0);
+      setIs3D(false);
+    } else {
+      mapInstance.setPitch(60);
+      setIs3D(true);
     }
   };
 
@@ -500,9 +600,22 @@ export default function MainLayout() {
 
       {/* Map View Toggle - Moved to FloatingSearchBar */}
       
-      {/* Global View Button - Repositioned */}
-      <div className="absolute top-[265px] right-4 z-30">
-        <GlobalViewButton onClick={handleGlobalView} />
+      {/* My Location, 2D/3D Toggle, Zoom +/- */}
+      <div className="absolute top-[265px] right-4 z-30 flex flex-col gap-2">
+        <MyLocationButton onClick={handleMyLocation} isLocating={isLocating} />
+        <Toggle2DButton is3D={is3D} onClick={handleToggle3D} />
+        <button
+          onClick={() => mapInstance?.zoomIn()}
+          className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 flex items-center justify-center w-[50px] h-[50px] text-gray-600 hover:text-blue-600 active:scale-95 transition-all"
+        >
+          <span className="text-2xl font-bold leading-none">+</span>
+        </button>
+        <button
+          onClick={() => mapInstance?.zoomOut()}
+          className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 flex items-center justify-center w-[50px] h-[50px] text-gray-600 hover:text-blue-600 active:scale-95 transition-all"
+        >
+          <span className="text-2xl font-bold leading-none">−</span>
+        </button>
       </div>
       {/* Unified Search Results Drawer */}
       <SearchResultsDrawer

@@ -216,7 +216,9 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         if (!mapRef.current) return;
 
         const map = new AMap.Map(mapRef.current, {
-          viewMode: "2D",
+          viewMode: "3D",
+          pitch: 0,
+          pitchEnable: true,
           zoom: CHINA_OVERVIEW.zoom,
           center: CHINA_OVERVIEW.center,
           lang: language === 'zh-CN' ? 'zh_cn' : 'en',
@@ -605,41 +607,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
     return (
         <div className="w-full h-full relative bg-white dark:bg-gray-900 transition-colors duration-300">
             {/* Custom Zoom Controls */}
-            {/* User Request: Move +/- buttons to below ATM. */}
-            {/* ATM is at top-[265px] in MainLayout. Height 50px. Ends ~315px. */}
-            {/* Let's place Zoom Controls at top-[330px] to be safe. */}
-            <div className="absolute right-5 top-[330px] flex flex-col gap-2 z-[70]">
-                <button 
-                    className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 flex items-center justify-center text-gray-600 hover:text-blue-600 active:scale-95 transition-transform"
-                    onClick={() => {
-                        const map = mapInstanceRef.current;
-                        if (!map) return;
-                        if (selectedPoi && selectedPoi.location) {
-                            map.setCenter([selectedPoi.location.lng, selectedPoi.location.lat]);
-                            map.zoomIn();
-                        } else {
-                            map.zoomIn();
-                        }
-                    }}
-                >
-                    <LucideIcons.Plus size={24} />
-                </button>
-                <button 
-                    className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 flex items-center justify-center text-gray-600 hover:text-blue-600 active:scale-95 transition-transform"
-                    onClick={() => {
-                        const map = mapInstanceRef.current;
-                        if (!map) return;
-                        if (selectedPoi && selectedPoi.location) {
-                            map.setCenter([selectedPoi.location.lng, selectedPoi.location.lat]);
-                            map.zoomOut();
-                        } else {
-                            map.zoomOut();
-                        }
-                    }}
-                >
-                    <LucideIcons.Minus size={24} />
-                </button>
-            </div>
+            {/* Zoom +/- buttons removed from here, now in MainLayout */}
 
             <style>{`
                 /* Hide AMap default labels by default to prevent ghosting */
