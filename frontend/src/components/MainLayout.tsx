@@ -56,10 +56,13 @@ export default function MainLayout() {
   const { spots = [], spotCategories = [], cities = [], guides = [], strategies = [] } = useData();
   const { favorites } = useFavorites();
   
-  // Close bottom sheet when tab changes to avoid conflicts
+  // Close bottom sheet and reset favorites view when tab changes
   useEffect(() => {
     if (isBottomSheetOpen) {
         setIsBottomSheetOpen(false);
+    }
+    if (activeTab !== 'me' && viewMode === 'favorites') {
+        setViewMode('all');
     }
   }, [activeTab]);
 
@@ -670,10 +673,11 @@ export default function MainLayout() {
         searchKeyword={searchKeyword}
       />
 
-      <UserDrawer 
+      <UserDrawer
         isVisible={activeTab === 'me'}
-        onClose={() => setActiveTab('')}
+        onClose={() => { setActiveTab(''); setViewMode('all'); }}
         onPoiClick={handleMarkerClick}
+        onFavoritesViewChange={(isOpen) => setViewMode(isOpen ? 'favorites' : 'all')}
       />
 
       {/* POI Detail Bottom Sheet (Full View) */}

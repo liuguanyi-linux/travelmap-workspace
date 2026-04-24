@@ -14,11 +14,12 @@ interface UserDrawerProps {
   isVisible: boolean;
   onClose: () => void;
   onPoiClick?: (poi: any) => void;
+  onFavoritesViewChange?: (isOpen: boolean) => void;
 }
 
 type ViewState = 'menu' | 'favorites' | 'settings' | 'contact' | 'login' | 'notifications';
 
-export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawerProps) {
+export default function UserDrawer({ isVisible, onClose, onPoiClick, onFavoritesViewChange }: UserDrawerProps) {
   const controls = useAnimation();
   const dragControls = useDragControls();
   const [viewState, setViewState] = useState<'hidden' | 'peek' | 'full'>('hidden');
@@ -41,6 +42,10 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick }: UserDrawe
   }, [isVisible]);
 
   const cardHeight = viewState === 'peek' ? '40vh' : '75vh';
+
+  useEffect(() => {
+    onFavoritesViewChange?.(contentView === 'favorites');
+  }, [contentView]);
 
   const handleFavoritesClick = () => {
       setContentView('favorites');
