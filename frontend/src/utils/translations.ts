@@ -183,7 +183,8 @@ export const TRANSLATIONS: any = {
       favorites: '只看收藏',
       noFavorites: '您还没有收藏任何景点'
     },
-    clickToToggle: '点击展开',
+    clickToExpand: '点击展开',
+    clickToCollapse: '点击收起',
     toast: {
       saved: '已保存地点', removed: '已从保存列表中移除',
       failed: '操作失败，请重试', reviewPublished: '评价已发布',
@@ -378,7 +379,8 @@ export const TRANSLATIONS: any = {
       favorites: 'Favorites Only',
       noFavorites: 'You have no favorite places yet'
     },
-    clickToToggle: 'Click to toggle',
+    clickToExpand: 'Click to expand',
+    clickToCollapse: 'Click to collapse',
     toast: {
       saved: 'Place saved', removed: 'Removed from saved list',
       failed: 'Operation failed, please try again', reviewPublished: 'Review posted',
@@ -580,7 +582,8 @@ export const TRANSLATIONS: any = {
       favorites: '즐겨찾기만',
       noFavorites: '즐겨찾기한 장소가 없습니다'
     },
-    clickToToggle: '클릭 하세요',
+    clickToExpand: '크게',
+    clickToCollapse: '작게',
     toast: {
       saved: '장소가 저장되었습니다', removed: '저장 목록에서 제거되었습니다',
       failed: '작업 실패, 다시 시도하세요', reviewPublished: '리뷰가 게시되었습니다',
