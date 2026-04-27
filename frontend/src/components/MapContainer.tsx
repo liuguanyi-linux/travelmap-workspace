@@ -116,7 +116,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
   useEffect(() => {
     const initMap = async () => {
       try {
-        setOptions({ apiKey: GOOGLE_MAPS_API_KEY, version: 'weekly' });
+        setOptions({ key: GOOGLE_MAPS_API_KEY, v: 'weekly' });
         const { Map } = await importLibrary('maps') as google.maps.MapsLibrary;
         await importLibrary('marker');
 
