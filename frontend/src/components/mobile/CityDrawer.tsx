@@ -405,6 +405,12 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                     return hasTag(selectedCategory);
                                 });
 
+                                filteredResults.sort((a, b) => {
+                                    if (a.isTop && !b.isTop) return -1;
+                                    if (!a.isTop && b.isTop) return 1;
+                                    return (a.sortOrder || 999) - (b.sortOrder || 999);
+                                });
+
                                 if (filteredResults.length === 0) {
                                     return (
                                         <div className="flex flex-col items-center justify-center py-12 text-gray-400">
