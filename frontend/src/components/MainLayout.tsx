@@ -23,6 +23,7 @@ import MyLocationButton, { Toggle2DButton } from './mobile/GlobalViewButton';
 // import FilterBar from './mobile/FilterBar'; // Deprecated
 // import BottomSpotList from './mobile/BottomSpotList'; // Deprecated
 import { DEFAULT_CITY, CHINA_OVERVIEW } from '../config/cityConfig';
+import { gcj02ToWgs84 } from '../utils/coordTransform';
 import { toast } from 'sonner';
 
 export default function MainLayout() {
@@ -349,49 +350,15 @@ export default function MainLayout() {
   }, [searchKeyword, spots, guides, strategies]);
 
   // --- ATM Search Logic ---
+  // ATM search via AMap PlaceSearch is no longer available with Google Maps
+  // ATM markers will be cleared when toggled
   useEffect(() => {
-      if (!mapInstance || !aMap) return;
-
       if (isAtmActive) {
-          // Trigger AMap PlaceSearch for ATMs near center
-          const center = mapInstance.getCenter();
-          
-          aMap.plugin(["AMap.PlaceSearch"], function() {
-              const placeSearch = new aMap.PlaceSearch({
-                  type: 'ATM|银行|自动提款机',
-                  pageSize: 20,
-                  pageIndex: 1,
-                  extensions: 'base',
-                  city: activeCity || '全国', // Restrict to city if possible
-                  map: null // Don't auto-add to map, we want to control markers
-              });
-              
-              placeSearch.searchNearBy('', center, 2000, (status: any, result: any) => {
-                  if (status === 'complete' && result.info === 'OK') {
-                      const pois = result.poiList.pois;
-                      const newAtmMarkers = pois.map((p: any) => ({
-                          id: p.id,
-                          name: p.name,
-                          location: { lng: p.location.lng, lat: p.location.lat },
-                          address: p.address,
-                          type: 'atm;bank', // Tag it so map renderer uses ATM icon
-                          tags: ['atm', 'bank'],
-                          photos: [],
-                          biz_ext: { rating: 4.5 }
-                      }));
-                      
-                      setAtmMarkers(newAtmMarkers);
-                  } else {
-                      console.log('ATM Search failed or no results:', status, result);
-                      setAtmMarkers([]);
-                  }
-              });
-          });
-      } else {
-          // Clear ATM markers
-          setAtmMarkers([]);
+          toast.info('ATM搜索功能暂不可用');
+          setIsAtmActive(false);
       }
-  }, [isAtmActive, mapInstance, aMap, activeCity]); // Removed searchResults dependency
+      setAtmMarkers([]);
+  }, [isAtmActive]);
 
 
   // Initialize with all spots when data is loaded
@@ -406,9 +373,9 @@ export default function MainLayout() {
     }
   }, [cities, activeCity]);
 
-  const handleMapReady = (map: any, AMap: any) => {
+  const handleMapReady = (map: any, google: any) => {
     setMapInstance(map);
-    setAMap(AMap);
+    setAMap(google);
   };
 
   const handleLocationAllow = () => {
@@ -426,8 +393,8 @@ export default function MainLayout() {
     setFocusedSpotId(spot.id);
     
     if (mapInstance && spot.location) {
-        // Pan to spot
-        mapInstance.panTo([spot.location.lng, spot.location.lat]);
+        const [wgsLng, wgsLat] = gcj02ToWgs84(spot.location.lng, spot.location.lat);
+        mapInstance.panTo({ lat: wgsLat, lng: wgsLng });
         setSelectedPoi(spot);
     }
   };
@@ -453,7 +420,10 @@ export default function MainLayout() {
     setActiveCity(city.name);
     // Map will update via useEffect
     if (mapInstance) {
-        mapInstance.setZoomAndCenter(city.zoom || 12, city.center || [120.38, 36.06]);
+        const center = city.center || [120.38, 36.06];
+        const [wgsLng, wgsLat] = gcj02ToWgs84(center[0], center[1]);
+        mapInstance.setZoom(city.zoom || 12);
+        mapInstance.panTo({ lat: wgsLat, lng: wgsLng });
     }
   };
 
@@ -472,16 +442,19 @@ export default function MainLayout() {
       return;
     }
     if (locationMarkerRef.current) {
-      locationMarkerRef.current.setMap(null);
+      locationMarkerRef.current.map = null;
     }
-    locationMarkerRef.current = new aMap.Marker({
-      position: [lng, lat],
-      content: '<div style="width:20px;height:20px;border-radius:50%;background:#4285f4;border:3px solid white;box-shadow:0 0 8px rgba(66,133,244,0.6);"></div>',
-      offset: new aMap.Pixel(-10, -10),
+    const [wgsLng, wgsLat] = gcj02ToWgs84(lng, lat);
+    const dot = document.createElement('div');
+    dot.style.cssText = 'width:20px;height:20px;border-radius:50%;background:#4285f4;border:3px solid white;box-shadow:0 0 8px rgba(66,133,244,0.6);';
+    locationMarkerRef.current = new aMap.maps.marker.AdvancedMarkerElement({
+      position: { lat: wgsLat, lng: wgsLng },
+      map: mapInstance,
+      content: dot,
       zIndex: 200,
     });
-    locationMarkerRef.current.setMap(mapInstance);
-    mapInstance.setZoomAndCenter(13, [lng, lat]);
+    mapInstance.setZoom(13);
+    mapInstance.panTo({ lat: wgsLat, lng: wgsLng });
   };
 
   const isInChina = (lng: number, lat: number) => lng >= 73 && lng <= 136 && lat >= 3 && lat <= 54;
@@ -490,84 +463,52 @@ export default function MainLayout() {
     if (!mapInstance || !aMap) return;
     setIsLocating(true);
 
-    const doIpFallback = () => {
-      console.log('[Location] Falling back to IP location...');
-      aMap.plugin('AMap.Geolocation', () => {
-        const ipGeo = new aMap.Geolocation({
-          enableHighAccuracy: false,
-          timeout: 10000,
-          needAddress: false,
-          showButton: false,
-          showMarker: false,
-          showCircle: false,
-          panToLocation: false,
-          zoomToAccuracy: false,
-        });
-        ipGeo.getCityInfo((status: string, result: any) => {
-          console.log('[Location] IP getCityInfo status:', status, 'result:', JSON.stringify(result));
-          setIsLocating(false);
-          const pos = result.position || result.center;
-          if (status === 'complete' && pos) {
-            let lng: number, lat: number;
-            if (Array.isArray(pos)) {
-              [lng, lat] = pos;
-            } else if (typeof pos === 'string') {
-              const parts = pos.split(',');
-              lng = parseFloat(parts[0]);
-              lat = parseFloat(parts[1]);
-            } else {
-              lng = pos.lng;
-              lat = pos.lat;
-            }
-            console.log('[Location] IP parsed position:', lng, lat);
-            showLocationOnMap(lng, lat);
-            toast.info('已通过IP定位到您所在城市');
-          } else {
-            toast.error('定位失败，请稍后重试');
-          }
-        });
-      });
-    };
-
     console.log('[Location] Starting...');
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          setIsLocating(false);
           const lng = pos.coords.longitude;
           const lat = pos.coords.latitude;
           console.log('[Location] Browser GPS:', lng, lat);
-          if (!isInChina(lng, lat)) {
-            console.log('[Location] Not in China, falling back to IP');
-            doIpFallback();
-            return;
+          // Browser returns WGS-84, need to convert to GCJ-02 for showLocationOnMap
+          // which then converts back to WGS-84 for Google Maps display
+          // Simpler: directly show on map using WGS-84
+          if (locationMarkerRef.current) {
+            locationMarkerRef.current.map = null;
           }
-          aMap.convertFrom([lng, lat], 'gps', (_s: string, res: any) => {
-            setIsLocating(false);
-            if (res && res.locations && res.locations.length > 0) {
-              showLocationOnMap(res.locations[0].lng, res.locations[0].lat);
-            } else {
-              showLocationOnMap(lng, lat);
-            }
+          const dot = document.createElement('div');
+          dot.style.cssText = 'width:20px;height:20px;border-radius:50%;background:#4285f4;border:3px solid white;box-shadow:0 0 8px rgba(66,133,244,0.6);';
+          locationMarkerRef.current = new aMap.maps.marker.AdvancedMarkerElement({
+            position: { lat, lng },
+            map: mapInstance,
+            content: dot,
+            zIndex: 200,
           });
+          mapInstance.setZoom(15);
+          mapInstance.panTo({ lat, lng });
+          toast.info('已定位到您的位置');
         },
         (err) => {
+          setIsLocating(false);
           console.log('[Location] Browser GPS failed:', err.message);
-          doIpFallback();
+          toast.error('定位失败，请检查浏览器定位权限');
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
-      doIpFallback();
+      setIsLocating(false);
+      toast.error('您的浏览器不支持定位功能');
     }
   };
 
   const handleToggle3D = () => {
     if (!mapInstance) return;
     if (is3D) {
-      mapInstance.setPitch(0);
+      mapInstance.setTilt(0);
       setIs3D(false);
     } else {
-      mapInstance.setPitch(60);
+      mapInstance.setTilt(60);
       setIs3D(true);
     }
   };
@@ -608,13 +549,13 @@ export default function MainLayout() {
         <MyLocationButton onClick={handleMyLocation} isLocating={isLocating} />
         <Toggle2DButton is3D={is3D} onClick={handleToggle3D} />
         <button
-          onClick={() => mapInstance?.zoomIn()}
+          onClick={() => mapInstance && mapInstance.setZoom((mapInstance.getZoom() || 10) + 1)}
           className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 flex items-center justify-center w-[50px] h-[50px] text-gray-600 hover:text-blue-600 active:scale-95 transition-all"
         >
           <span className="text-2xl font-bold leading-none">+</span>
         </button>
         <button
-          onClick={() => mapInstance?.zoomOut()}
+          onClick={() => mapInstance && mapInstance.setZoom((mapInstance.getZoom() || 10) - 1)}
           className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 flex items-center justify-center w-[50px] h-[50px] text-gray-600 hover:text-blue-600 active:scale-95 transition-all"
         >
           <span className="text-2xl font-bold leading-none">−</span>
