@@ -272,7 +272,7 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
               ) : (
                   <ChevronUp className="text-gray-600 dark:text-gray-300" size={20} />
               )}
-              <span className="text-xs text-gray-600 dark:text-gray-300 font-medium tracking-wide">{t('clickToToggle')}</span>
+              <span className="text-xs text-gray-600 dark:text-gray-300 font-medium tracking-wide">{viewState === 'full' ? t('clickToCollapse') : t('clickToExpand')}</span>
             </div>
           </div>
 

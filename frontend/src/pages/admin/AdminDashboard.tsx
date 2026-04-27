@@ -396,9 +396,9 @@ export default function AdminDashboard() {
           </TabButton>
           
           {spotCategories
-            .filter(cat => ['spot', 'dining', 'accommodation', 'shopping', 'golf'].includes(cat.key))
+            .filter(cat => ['spot', 'dining', 'shopping', 'golf'].includes(cat.key))
             .sort((a, b) => {
-              const order = { spot: 1, dining: 2, accommodation: 3, shopping: 4, golf: 5 };
+              const order = { spot: 1, dining: 2, shopping: 3, golf: 4 };
               return (order[a.key as keyof typeof order] || 99) - (order[b.key as keyof typeof order] || 99);
             })
             .map(cat => {
@@ -1439,7 +1439,7 @@ function StrategyForm({ initialData, onSave, isSaving }: { initialData?: Strateg
                   .filter(spot => {
                     // Only show items that are 'spot' or generic, excluding specific other categories
                     return spot.tags.includes('spot') || 
-                           (!spot.tags.includes('dining') && !spot.tags.includes('accommodation') && !spot.tags.includes('transport'));
+                           (!spot.tags.includes('dining') && !spot.tags.includes('transport'));
                   })
                   .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
                   .map(spot => (
@@ -1644,7 +1644,6 @@ function SpotsList({ data, onDelete, onEdit, onToggleStatus }: { data: Spot[], o
                     <span key={t} className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">
                         {t === 'spot' && '景点'}
                         {t === 'dining' && '美食'}
-                        {t === 'accommodation' && '酒店'}
                         {t === 'shopping' && '购物'}
                         {t === 'golf' && '高尔夫'}
                         {t === 'rail' && '高铁'}
@@ -1881,7 +1880,6 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
             <>
                 <option value="spot">景点</option>
                 <option value="dining">美食</option>
-                <option value="accommodation">酒店</option>
                 <option value="shopping">购物</option>
                 <option value="golf">高尔夫</option>
                 <option value="rail">高铁</option>

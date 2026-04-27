@@ -12,8 +12,7 @@ export class SpotCategoriesService implements OnModuleInit {
       const defaults = [
         { name: '景点', key: 'spot', icon: 'MapPin', sortOrder: 1 },
         { name: '美食', key: 'dining', icon: 'Utensils', sortOrder: 2 },
-        { name: '酒店', key: 'accommodation', icon: 'Hotel', sortOrder: 3 },
-        { name: '购物', key: 'shopping', icon: 'ShoppingBag', sortOrder: 4 },
+        { name: '购物', key: 'shopping', icon: 'ShoppingBag', sortOrder: 3 },
       ];
 
       for (const cat of defaults) {
@@ -25,8 +24,7 @@ export class SpotCategoriesService implements OnModuleInit {
     // Fix existing categories with old keys (migration logic)
     const oldKeys = {
       'attraction': 'spot',
-      'food': 'dining',
-      'hotel': 'accommodation'
+      'food': 'dining'
     };
 
     for (const [oldKey, newKey] of Object.entries(oldKeys)) {

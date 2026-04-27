@@ -117,7 +117,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick, onFavorites
           animate={{ y: '0%' }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className={`fixed bottom-0 left-0 right-0 mx-auto z-40 w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col pointer-events-auto touch-manipulation overflow-hidden will-change-transform transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[50vh]' : 'h-[75vh]'}`}
+          className={`fixed bottom-0 left-0 right-0 mx-auto z-40 w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col pointer-events-auto touch-manipulation overflow-hidden will-change-transform transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[40vh]' : 'h-[75vh]'}`}
         >
           {/* Handle (Click to Toggle) */}
           <div
@@ -130,7 +130,7 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick, onFavorites
               ) : (
                   <ChevronUp className="text-gray-600 dark:text-gray-300" size={20} />
               )}
-              <span className="text-xs text-gray-600 dark:text-gray-300 font-medium tracking-wide">{t('clickToToggle')}</span>
+              <span className="text-xs text-gray-600 dark:text-gray-300 font-medium tracking-wide">{viewState === 'full' ? t('clickToCollapse') : t('clickToExpand')}</span>
             </div>
           </div>
 
@@ -219,58 +219,58 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick, onFavorites
                     </div>
                 </div>
                 {favorites.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                         {favorites.map((fav, index) => (
-                            <div 
-                                key={fav.id} 
-                                className="bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border border-slate-300 dark:border-slate-500 flex gap-3 active:scale-[0.98] transition-all items-center"
+                            <div
+                                key={fav.id}
+                                className="bg-white dark:bg-gray-800 p-2 rounded-xl shadow-sm border border-slate-300 dark:border-slate-500 flex gap-2 active:scale-[0.98] transition-all items-center"
                                 onClick={() => {
                                     if (onPoiClick) onPoiClick(fav);
                                     onClose();
                                   }}
                             >
-                                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden shrink-0">
+                                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden shrink-0">
                                     {fav.imageUrl ? (
                                         <img src={fav.imageUrl} alt={fav.name} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                            <ImageIcon size={20} />
+                                            <ImageIcon size={16} />
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex-1 min-w-0 py-0.5">
-                                    <h4 className="font-bold text-gray-900 dark:text-white truncate">{fav.name}</h4>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{fav.address || t('cityDrawer.noAddress')}</p>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="font-bold text-sm text-gray-900 dark:text-white truncate">{fav.name}</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{fav.address || t('cityDrawer.noAddress')}</p>
                                 </div>
-                                <div className="flex flex-col items-center gap-1 ml-2 border-l border-gray-100 dark:border-gray-700 pl-3">
-                                    <button 
-                                        className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full ${index === 0 ? 'opacity-30 cursor-not-allowed' : 'text-gray-400'}`}
+                                <div className="flex flex-col items-center ml-1 border-l border-gray-100 dark:border-gray-700 pl-2">
+                                    <button
+                                        className={`p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full ${index === 0 ? 'opacity-30 cursor-not-allowed' : 'text-gray-400'}`}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             moveFavorite(index, 'up');
                                         }}
                                         disabled={index === 0}
                                     >
-                                        <ChevronUp size={24} />
+                                        <ChevronUp size={18} />
                                     </button>
-                                    <button 
-                                        className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full text-red-500"
+                                    <button
+                                        className="p-1 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full text-red-500"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             removeFavorite(fav.id);
                                         }}
                                     >
-                                        <Heart size={24} fill="currentColor" />
+                                        <Heart size={18} fill="currentColor" />
                                     </button>
-                                    <button 
-                                        className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full ${index === favorites.length - 1 ? 'opacity-30 cursor-not-allowed' : 'text-gray-400'}`}
+                                    <button
+                                        className={`p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full ${index === favorites.length - 1 ? 'opacity-30 cursor-not-allowed' : 'text-gray-400'}`}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             moveFavorite(index, 'down');
                                         }}
                                         disabled={index === favorites.length - 1}
                                     >
-                                        <ChevronDown size={24} />
+                                        <ChevronDown size={18} />
                                     </button>
                                 </div>
                             </div>

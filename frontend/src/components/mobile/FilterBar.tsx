@@ -22,11 +22,10 @@ export default function FilterBar({
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
 
   // Filter categories to include only specific ones as requested
-  // "Spot (景点), Dining (美食), Accommodation (住宿), Shopping (购物), Transport (交通)"
+  // "Spot (景点), Dining (美食), Shopping (购物), Transport (交通)"
   const displayCategories = [
     { key: 'spot', label: '景点', icon: 'MapPin' },
     { key: 'dining', label: '美食', icon: 'Utensils' },
-    { key: 'accommodation', label: '住宿', icon: 'Hotel' },
     { key: 'shopping', label: '购物', icon: 'ShoppingBag' },
     { key: 'transport', label: '交通', icon: 'Train' },
   ];

@@ -195,7 +195,7 @@ export default function MainLayout() {
           
           if (activeCategory === 'spot') {
               // Exclude other major categories to define 'spot'
-              const otherCategories = ['dining', 'accommodation', 'shopping', 'transport', 'rail', 'airport'];
+              const otherCategories = ['dining', 'shopping', 'transport', 'rail', 'airport'];
               const hasOtherTag = s.tags.some((tag: string) => otherCategories.includes(tag));
               return s.tags.includes('spot') || !hasOtherTag;
           }

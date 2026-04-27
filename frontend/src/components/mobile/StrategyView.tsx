@@ -225,7 +225,7 @@ export default function StrategyView({ isVisible, onClose, onLightboxChange, sea
             ) : (
                 <ChevronUp className="text-gray-500 dark:text-gray-400" size={24} />
             )}
-            <span className="text-xs text-gray-400 font-medium tracking-wide">{t('clickToToggle')}</span>
+            <span className="text-xs text-gray-400 font-medium tracking-wide">{viewState === 'full' ? t('clickToCollapse') : t('clickToExpand')}</span>
           </div>
 
           {/* Spacer for Handle */}

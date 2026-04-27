@@ -126,7 +126,7 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
   // Ensure categories filter logic is robust
    const categories = (spotCategories || [])
      .filter(cat => cat && cat.key && cat.name) 
-     .filter(cat => !['transport', 'airport', 'high_speed_rail', 'high-speed-rail', 'train'].includes(cat.key))
+     .filter(cat => !['transport', 'airport', 'high_speed_rail', 'high-speed-rail', 'train', 'accommodation'].includes(cat.key))
      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
      .map(cat => {
        const translationKey = `categories.${cat.key}`;
@@ -137,7 +137,6 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
          label: label,
          iconName: cat.icon,
          color: cat.key === 'spot' ? 'text-green-600 bg-green-50' :
-                cat.key === 'accommodation' ? 'text-blue-600 bg-blue-50' :
                 cat.key === 'dining' ? 'text-orange-600 bg-orange-50' :
                 cat.key === 'shopping' ? 'text-cyan-600 bg-cyan-50' : // 颜色改为亮青色 (Cyan)
                 cat.key === 'golf' ? 'text-emerald-600 bg-emerald-50' :
