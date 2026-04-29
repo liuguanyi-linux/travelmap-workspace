@@ -145,7 +145,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
     }
   }, [isVisible]);
 
-  const cardHeight = viewState === 'peek' ? '40vh' : '75vh';
+  const cardHeight = viewState === 'peek' ? '35vh' : '75vh';
 
   const [guideSubFilter, setGuideSubFilter] = useState<'guide' | 'translator'>('guide');
 
@@ -290,7 +290,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
           animate={{ y: '0%' }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className={`fixed bottom-0 left-0 right-0 mx-auto ${selectedGuide ? 'z-[10001]' : 'z-[60]'} w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col pointer-events-auto touch-manipulation overflow-hidden will-change-transform transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[40vh]' : 'h-[75vh]'}`}
+          className={`fixed bottom-0 left-0 right-0 mx-auto ${selectedGuide ? 'z-[10001]' : 'z-[60]'} w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col pointer-events-auto touch-manipulation overflow-hidden will-change-transform transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[35vh]' : 'h-[75vh]'}`}
         >
           {/* Handle (Click to Toggle) */}
           <div

@@ -349,16 +349,58 @@ export default function MainLayout() {
     setUnifiedSearchResults([...spotResults, ...guideResults, ...strategyResults]);
   }, [searchKeyword, spots, guides, strategies]);
 
-  // --- ATM Search Logic ---
-  // ATM search via AMap PlaceSearch is no longer available with Google Maps
-  // ATM markers will be cleared when toggled
+  // --- ATM Search Logic via Google Places ---
   useEffect(() => {
-      if (isAtmActive) {
-          toast.info('ATM搜索功能暂不可用');
-          setIsAtmActive(false);
+      if (!isAtmActive) {
+          setAtmMarkers([]);
+          return;
       }
-      setAtmMarkers([]);
-  }, [isAtmActive]);
+      if (!mapInstance) return;
+
+      const searchAtm = async () => {
+        try {
+          const { Place } = await google.maps.importLibrary('places') as google.maps.PlacesLibrary;
+          const center = mapInstance.getCenter();
+          if (!center) return;
+
+          const request = {
+            textQuery: 'ATM',
+            fields: ['displayName', 'location', 'formattedAddress'],
+            locationBias: {
+              center: { lat: center.lat(), lng: center.lng() },
+              radius: 5000,
+            },
+            maxResultCount: 20,
+          };
+
+          const { places } = await Place.searchByText(request);
+          if (places && places.length > 0) {
+            const markers = places.map((place: any, i: number) => ({
+              id: `atm-${i}`,
+              name: place.displayName || 'ATM',
+              type: 'atm',
+              location: {
+                lng: place.location?.lng(),
+                lat: place.location?.lat(),
+              },
+              isWgs84: true,
+            }));
+            setAtmMarkers(markers);
+            toast.success(`找到 ${markers.length} 个 ATM`);
+          } else {
+            toast.info('附近没有找到 ATM');
+            setAtmMarkers([]);
+          }
+        } catch (e) {
+          console.error('ATM search failed:', e);
+          toast.error('ATM搜索失败，请确认已启用 Places API');
+          setIsAtmActive(false);
+          setAtmMarkers([]);
+        }
+      };
+
+      searchAtm();
+  }, [isAtmActive, mapInstance]);
 
 
   // Initialize with all spots when data is loaded

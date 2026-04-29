@@ -123,12 +123,18 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         googleRef.current = google;
         if (!mapRef.current) return;
 
+        // Preserve current view when recreating (e.g. theme switch)
+        const prevMap = mapInstanceRef.current;
+        const prevCenter = prevMap?.getCenter();
+        const prevZoom = prevMap?.getZoom();
+
         const [wgsLng, wgsLat] = gcj02ToWgs84(CHINA_OVERVIEW.center[0], CHINA_OVERVIEW.center[1]);
 
         const map = new Map(mapRef.current, {
-          center: { lat: wgsLat, lng: wgsLng },
-          zoom: CHINA_OVERVIEW.zoom,
+          center: prevCenter || { lat: wgsLat, lng: wgsLng },
+          zoom: prevZoom || CHINA_OVERVIEW.zoom,
           mapId: '682cec3feef6afbdefc43eff',
+          colorScheme: theme === 'dark' ? 'DARK' : 'LIGHT',
           disableDefaultUI: true,
           zoomControl: false,
           mapTypeControl: false,
@@ -139,6 +145,17 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
 
         map.addListener('click', () => {
           if (onMapClick) onMapClick();
+        });
+
+        map.addListener('zoom_changed', () => {
+          const z = map.getZoom() || 0;
+          if (mapRef.current) {
+            if (z >= 13) {
+              mapRef.current.classList.add('show-labels');
+            } else {
+              mapRef.current.classList.remove('show-labels');
+            }
+          }
         });
 
         mapInstanceRef.current = map;
@@ -155,16 +172,7 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       markersRef.current.forEach(m => m.map = null);
       markersRef.current = [];
     };
-  }, [language]);
-
-  // Update Map Style when theme changes
-  useEffect(() => {
-    if (mapInstanceRef.current) {
-      (mapInstanceRef.current as any).setOptions({
-        styles: theme === 'dark' ? DARK_MAP_STYLE : [],
-      });
-    }
-  }, [theme]);
+  }, [language, theme]);
 
   // Update Markers
   useEffect(() => {
@@ -219,8 +227,10 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       const isSelected = selectedPoi && selectedPoi.id === poi.id;
       const config = getMarkerConfig(poi.type);
 
-      // Convert GCJ-02 to WGS-84
-      const [wgsLng, wgsLat] = gcj02ToWgs84(adjustedPositions[index].lng, adjustedPositions[index].lat);
+      // Convert GCJ-02 to WGS-84 (skip for markers already in WGS-84, e.g. from Google Places)
+      const [wgsLng, wgsLat] = poi.isWgs84
+        ? [adjustedPositions[index].lng, adjustedPositions[index].lat]
+        : gcj02ToWgs84(adjustedPositions[index].lng, adjustedPositions[index].lat);
 
       // Create marker content element
       const markerContent = document.createElement('div');
@@ -231,27 +241,14 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
       const IconComponent = config.icon;
 
       if (config.showPin) {
-        markerContent.style.width = '0px';
-        markerContent.style.height = '0px';
-        markerContent.style.overflow = 'visible';
-
         root.render(
-          <div className={`relative ${isSelected ? 'z-50 scale-[1.10]' : 'z-40'} transition-transform duration-300 scale-[0.90] origin-bottom`}>
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none transform translate-y-[4px]">
-              <div className="w-[25.6px] h-[25.6px] rounded-full shadow-[inset_-1.5px_-1.5px_4px_rgba(0,0,0,0.3),_0_0_0_1px_#ffffff,_0_1.5px_3px_rgba(0,0,0,0.4)] z-20 relative"
-                style={{ background: config.pinGradient || 'radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000 50%, #8b0000)' }}>
-                <div className="absolute top-[15%] left-[15%] w-[35%] h-[25%] bg-gradient-to-br from-white/90 to-transparent rounded-full blur-[1px]"></div>
-                <div className={`absolute bottom-[10%] right-[10%] w-[40%] h-[40%] bg-gradient-to-tl ${config.rimColor || 'from-red-400/30'} to-transparent rounded-full blur-[2px]`}></div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', transform: `scale(${isSelected ? 1.1 : 0.9})`, transformOrigin: 'bottom center', transition: 'transform 0.3s', zIndex: isSelected ? 50 : 40 }}>
+            <div className="marker-label whitespace-nowrap pointer-events-none" style={{ marginBottom: '4px', zIndex: 9999 }}>
+              <div className="px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 shadow-md text-[13px] font-bold text-slate-800 dark:text-white border-[1.5px] border-blue-500">
+                {poi.name}
               </div>
-              <div className="w-[6.4px] h-[1.6px] bg-gray-400 rounded-full z-10 -mt-[1px]"></div>
-              <div className="w-[4px] h-[25.6px] bg-[linear-gradient(90deg,_#6b7280,_#f3f4f6_40%,_#f3f4f6_60%,_#6b7280)] z-10 -mt-[1px] shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]"></div>
-              <div className="w-[4px] h-[3.2px] bg-gray-600 z-10" style={{clipPath: 'polygon(0 0, 100% 0, 50% 100%)'}}></div>
-              <div className="absolute bottom-[-1.5px] w-[16px] h-[8px] bg-black/50 blur-[1.2px] rounded-[100%] transform skew-x-[40deg] rotate-[10deg] translate-x-[4.8px] opacity-60 z-0"></div>
             </div>
-            <svg className="absolute bottom-[25.6px] left-[4.8px] w-[25.6px] h-[25.6px] pointer-events-none overflow-visible z-0">
-              <line x1="0" y1="25.6" x2="19.2" y2="8" stroke="#94a3b8" strokeWidth="1.6" strokeDasharray="2.4 1.6" />
-            </svg>
-            <div className={`absolute bottom-[41.6px] left-[16px] flex items-center justify-center w-[38.4px] h-[38.4px] shadow-[0_6.4px_16px_rgba(0,0,0,0.25),0_0_0_0.8px_rgba(0,0,0,0.1)] border-[2.4px] border-white box-border rounded-[9.6px] z-20
+            <div className={`flex items-center justify-center w-[38.4px] h-[38.4px] shadow-[0_6.4px_16px_rgba(0,0,0,0.25),0_0_0_0.8px_rgba(0,0,0,0.1)] border-[2.4px] border-white box-border rounded-[9.6px]
               ${isSelected
                 ? 'ring-[3.2px] ring-offset-[1.6px] ring-blue-500 shadow-[0_0_28px_rgba(59,130,246,0.5)] scale-110 brightness-110'
                 : 'hover:scale-110 hover:shadow-[0_0_16px_rgba(255,255,255,0.8),0_0_0_1.6px_rgba(0,0,0,0.2)] brightness-105 shadow-[0_6.4px_16px_rgba(0,0,0,0.25),0_0_0_1.6px_#ef4444]'
@@ -259,11 +256,8 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
               style={{ backgroundColor: config.color }}>
               <IconComponent size={20.8} color="#ffffff" strokeWidth={2.5} />
             </div>
-            <div className="marker-label absolute left-1/2 -translate-x-1/2 -top-[104px] whitespace-nowrap z-[9999] pointer-events-none" style={{ zIndex: 9999 }}>
-              <div className="px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 shadow-md text-[13px] font-bold text-slate-800 dark:text-white transition-opacity duration-300 border-[1.5px] border-blue-500">
-                {poi.name}
-              </div>
-            </div>
+            <div style={{ width: '4px', height: '25.6px', background: 'linear-gradient(90deg, #6b7280, #f3f4f6 40%, #f3f4f6 60%, #6b7280)', marginTop: '-1px', boxShadow: '0 1.5px 3px rgba(0,0,0,0.2)' }}></div>
+            <div style={{ width: '4px', height: '3.2px', backgroundColor: '#4b5563', clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }}></div>
           </div>
         );
       } else {
@@ -337,6 +331,12 @@ export default function MapContainer({ onMapReady, markers, selectedPoi, onMarke
         }
         .marker-pop-in {
           animation: markerPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .marker-label {
+          display: none;
+        }
+        .show-labels .marker-label {
+          display: block;
         }
       `}</style>
       <div ref={mapRef} className="w-full h-full" />
