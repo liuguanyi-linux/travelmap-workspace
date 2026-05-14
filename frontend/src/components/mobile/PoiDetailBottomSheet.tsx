@@ -90,6 +90,31 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
   const [newComment, setNewComment] = useState('');
   const [newRating, setNewRating] = useState(5); // Default 5 stars
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reviewImages, setReviewImages] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const reviewFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handlePickReviewImages = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const remaining = 6 - reviewImages.length;
+    const list = Array.from(files).slice(0, remaining);
+    if (list.length === 0) return;
+    setUploadingImage(true);
+    try {
+      const uploaded: string[] = [];
+      for (const f of list) {
+        const fd = new FormData();
+        fd.append('file', f);
+        const r = await fetch('/api/upload/review-image', { method: 'POST', body: fd });
+        if (r.ok) {
+          const data = await r.json();
+          if (data?.url) uploaded.push(data.url);
+        }
+      }
+      if (uploaded.length > 0) setReviewImages(prev => [...prev, ...uploaded].slice(0, 6));
+    } catch (e) { console.error(e); }
+    finally { setUploadingImage(false); }
+  };
   
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
@@ -134,7 +159,8 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
 
   const handlePublishComment = async () => {
       // Removed user check - allow guest reviews
-      if (!newComment.trim() || !poi) return;
+      if (!poi) return;
+      if (!newComment.trim() && reviewImages.length === 0) return;
       
       setIsSubmitting(true);
       try {
@@ -148,9 +174,10 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
               avatar: undefined
           };
 
-          await createReview(String(user?.id || ''), targetId, newRating, newComment, userInfo);
+          await createReview(String(user?.id || ''), targetId, newRating, newComment, userInfo, reviewImages);
           setNewComment('');
           setNewRating(5);
+          setReviewImages([]);
           fetchReviewsInternal(targetId);
       } catch (error) {
           console.error('Failed to publish comment:', error);
@@ -725,18 +752,49 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
                                       ))}
                                   </div>
                               </div>
-                              <textarea 
+                              <textarea
                                   className="w-full p-3 bg-gray-50 dark:bg-gray-700 border-none rounded-xl focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all resize-none text-xs placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-white"
                                   placeholder={t('detail.shareExperience')}
                                   rows={2}
                                   value={newComment}
                                   onChange={(e) => setNewComment(e.target.value)}
                               />
-                              <div className="flex justify-end mt-2">
-                                  <button 
+                              {reviewImages.length > 0 && (
+                                <div className="flex gap-2 flex-wrap mt-2">
+                                  {reviewImages.map((url, idx) => (
+                                    <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
+                                      <img src={getFullImageUrl(url)} alt="" className="w-full h-full object-cover" />
+                                      <button
+                                        type="button"
+                                        onClick={() => setReviewImages(prev => prev.filter((_, i) => i !== idx))}
+                                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 text-white rounded-full flex items-center justify-center text-[10px] leading-none"
+                                      >×</button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <input
+                                ref={reviewFileInputRef}
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                onChange={(e) => { handlePickReviewImages(e.target.files); e.currentTarget.value = ''; }}
+                              />
+                              <div className="flex justify-between items-center mt-2">
+                                  <button
+                                      type="button"
+                                      onClick={() => reviewFileInputRef.current?.click()}
+                                      disabled={uploadingImage || reviewImages.length >= 6}
+                                      className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1 disabled:opacity-50 active:scale-95 transition-all"
+                                  >
+                                      {uploadingImage ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+                                      사진 ({reviewImages.length}/6)
+                                  </button>
+                                  <button
                                       className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full px-4 py-1.5 text-xs font-bold flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200 dark:shadow-none active:scale-95 transition-all"
                                       onClick={handlePublishComment}
-                                      disabled={isSubmitting || !newComment.trim()}
+                                      disabled={isSubmitting || (!newComment.trim() && reviewImages.length === 0)}
                                   >
                                       {isSubmitting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                                       {t('detail.publishReview')}
@@ -778,6 +836,17 @@ export default function PoiDetailBottomSheet({ poi, isOpen, onClose, onLightboxC
                                           <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 whitespace-pre-wrap leading-relaxed">
                                               {review.content}
                                           </p>
+                                          {(() => {
+                                            const imgs = (() => { try { return (review as any).images ? JSON.parse((review as any).images) : []; } catch { return []; } })();
+                                            if (!Array.isArray(imgs) || imgs.length === 0) return null;
+                                            return (
+                                              <div className="flex gap-1.5 mt-2 flex-wrap">
+                                                {imgs.map((u: string, i: number) => (
+                                                  <img key={i} src={getFullImageUrl(u)} alt="" className="w-16 h-16 rounded-lg object-cover bg-gray-100 dark:bg-gray-700 cursor-pointer" onClick={() => window.open(getFullImageUrl(u), '_blank')} />
+                                                ))}
+                                              </div>
+                                            );
+                                          })()}
                                           <div className="text-xs text-gray-400 dark:text-gray-500 mt-2 font-medium">
                                               {new Date(review.createdAt).toLocaleDateString()}
                                           </div>

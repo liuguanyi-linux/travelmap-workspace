@@ -23,7 +23,6 @@ import MyLocationButton, { Toggle2DButton } from './mobile/GlobalViewButton';
 // import FilterBar from './mobile/FilterBar'; // Deprecated
 // import BottomSpotList from './mobile/BottomSpotList'; // Deprecated
 import { DEFAULT_CITY, CHINA_OVERVIEW } from '../config/cityConfig';
-import { gcj02ToWgs84 } from '../utils/coordTransform';
 import { toast } from 'sonner';
 
 export default function MainLayout() {
@@ -36,11 +35,12 @@ export default function MainLayout() {
   const [baseMapMarkers, setBaseMapMarkers] = useState<any[]>([]);
   // ATM markers (temporary overlay)
   const [atmMarkers, setAtmMarkers] = useState<any[]>([]);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   
   const [selectedPoi, setSelectedPoi] = useState<any>(null);
   
   // UI State
-  const [activeTab, setActiveTab] = useState(''); // 'strategy', 'guide', 'me', '' (for home/map view)
+  const [activeTab, setActiveTab] = useState(''); // 페이지 로드 시 닫혀있음, 사용자가 탭을 클릭해야 열림
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [isSearchListOpen, setIsSearchListOpen] = useState(false);
   const [activeCity, setActiveCity] = useState('');
@@ -290,20 +290,57 @@ export default function MainLayout() {
       setUnifiedSearchResults([]);
       return;
     }
-    const kw = searchKeyword.toLowerCase();
+    // 归一化:去掉所有空格 + 转小写,让"맥주 박물관"和"맥주박물관"都能匹配
+    const norm = (s: any) => String(s || '').replace(/\s+/g, '').toLowerCase();
+    const kw = norm(searchKeyword);
+    if (!kw) {
+      setUnifiedSearchResults([]);
+      return;
+    }
 
-    // 城市中文名 → 韩文名映射（从后台 cities 数据）
+    // 城市中文名 → 韩文名映射(从后台 cities 数据)
     const cityKoMap: Record<string, string> = {};
     cities.forEach((c: any) => { if (c.name && c.nameKo) cityKoMap[c.name] = c.nameKo; });
     const getCityKo = (name: string) => cityKoMap[name] || name;
 
+    // 城市别名分组:同一城市可能有多个写法(如 大连 / 대련 / 다롄)
+    // 通过 zh-name 中相同的城市作为同一组,nameKo 中用 / 或 , 分隔的别名都加入
+    const cityAliasGroups: string[][] = [];
+    cities.forEach((c: any) => {
+      const aliases: string[] = [];
+      if (c.name) aliases.push(c.name);
+      if (c.nameKo) {
+        c.nameKo.split(/[\/,，、|·]/).forEach((s: string) => {
+          const t = s.trim();
+          if (t) aliases.push(t);
+        });
+      }
+      if (aliases.length) cityAliasGroups.push(aliases);
+    });
+    // 给定关键词,返回所有应该匹配的城市别名(包括 zh + ko 所有别名)
+    const expandKeyword = (k: string): string[] => {
+      const expanded = new Set<string>([k]);
+      cityAliasGroups.forEach(group => {
+        if (group.some(a => norm(a).includes(k) || k.includes(norm(a)))) {
+          group.forEach(a => expanded.add(norm(a)));
+        }
+      });
+      return Array.from(expanded);
+    };
+    const expandedKws = expandKeyword(kw);
+    const matchAny = (text: string) => {
+      const n = norm(text);
+      return expandedKws.some(k => k && n.includes(k));
+    };
+
     const spotResults: SearchResultItem[] = spots
       .filter(s => s.isActive !== false)
       .filter(s =>
-        (s.name && s.name.toLowerCase().includes(kw)) ||
-        (s.intro && s.intro.toLowerCase().includes(kw)) ||
-        (s.address && s.address.toLowerCase().includes(kw)) ||
-        (s.tags && s.tags.some((t: string) => t.toLowerCase().includes(kw)))
+        matchAny(s.name) ||
+        matchAny(s.intro) ||
+        matchAny(s.address) ||
+        (s.tags && s.tags.some((t: string) => matchAny(t))) ||
+        matchAny(s.city)
       )
       .map(s => ({
         id: s.id,
@@ -316,10 +353,10 @@ export default function MainLayout() {
 
     const guideResults: SearchResultItem[] = guides
       .filter(g =>
-        (g.name && g.name.toLowerCase().includes(kw)) ||
-        (g.intro && g.intro.toLowerCase().includes(kw)) ||
-        (g.title && g.title.toLowerCase().includes(kw)) ||
-        (g.cities && g.cities.some((c: string) => c.toLowerCase().includes(kw)))
+        matchAny(g.name) ||
+        matchAny(g.intro) ||
+        matchAny(g.title) ||
+        (g.cities && g.cities.some((c: string) => matchAny(c)))
       )
       .map(g => ({
         id: g.id,
@@ -332,10 +369,10 @@ export default function MainLayout() {
 
     const strategyResults: SearchResultItem[] = strategies
       .filter(s =>
-        (s.title && s.title.toLowerCase().includes(kw)) ||
-        (s.category && s.category.toLowerCase().includes(kw)) ||
-        (s.tags && s.tags.some((t: string) => t.toLowerCase().includes(kw))) ||
-        (s.spots && s.spots.some((sp: string) => sp.toLowerCase().includes(kw)))
+        matchAny(s.title) ||
+        matchAny(s.category) ||
+        (s.tags && s.tags.some((t: string) => matchAny(t))) ||
+        (s.spots && s.spots.some((sp: string) => matchAny(sp)))
       )
       .map(s => ({
         id: s.id,
@@ -346,61 +383,86 @@ export default function MainLayout() {
         city: s.city ? getCityKo(s.city) : '',
       }));
 
-    setUnifiedSearchResults([...spotResults, ...guideResults, ...strategyResults]);
-  }, [searchKeyword, spots, guides, strategies]);
+    // 城市卡片去重:同一中文 name 的城市只显示一次
+    const seenCity = new Set<string>();
+    const cityResults: SearchResultItem[] = cities
+      .filter((c: any) => {
+        const aliases = [c.name, ...(c.nameKo || '').split(/[\/,，、|·]/).map((s: string) => s.trim())].filter(Boolean);
+        return aliases.some((a: string) => norm(a).includes(kw));
+      })
+      .filter((c: any) => {
+        if (seenCity.has(c.name)) return false;
+        seenCity.add(c.name);
+        return true;
+      })
+      .map((c: any) => ({
+        id: `city-${c.name}`,
+        type: 'city' as const,
+        name: c.nameKo || c.name,
+        description: c.nameKo && c.nameKo !== c.name ? c.name : '',
+        cityData: c,
+      }));
 
-  // --- ATM Search Logic via Google Places ---
+    setUnifiedSearchResults([...cityResults, ...spotResults, ...guideResults, ...strategyResults]);
+  }, [searchKeyword, spots, guides, strategies, cities]);
+
+  // --- ATM Search Logic ---
   useEffect(() => {
+      if (!mapInstance || !aMap) return;
+
       if (!isAtmActive) {
           setAtmMarkers([]);
           return;
       }
-      if (!mapInstance) return;
 
-      const searchAtm = async () => {
-        try {
-          const { Place } = await google.maps.importLibrary('places') as google.maps.PlacesLibrary;
-          const center = mapInstance.getCenter();
-          if (!center) return;
+      const SEARCH_RADIUS = 8000;
+      const centers: Array<{ key: string; lng: number; lat: number }> = [];
+      if (userLocation) centers.push({ key: 'user', lng: userLocation[0], lat: userLocation[1] });
+      const poiLng = selectedPoi?.location?.lng ?? selectedPoi?.lng;
+      const poiLat = selectedPoi?.location?.lat ?? selectedPoi?.lat;
+      if (typeof poiLng === 'number' && typeof poiLat === 'number') {
+          centers.push({ key: 'poi', lng: poiLng, lat: poiLat });
+      }
+      if (centers.length === 0) {
+          const c = mapInstance.getCenter();
+          centers.push({ key: 'map', lng: c.lng, lat: c.lat });
+      }
 
-          const request = {
-            textQuery: 'ATM',
-            fields: ['displayName', 'location', 'formattedAddress'],
-            locationBias: {
-              center: { lat: center.lat(), lng: center.lng() },
-              radius: 5000,
-            },
-            maxResultCount: 20,
-          };
+      aMap.plugin(["AMap.PlaceSearch"], function() {
+          const placeSearch = new aMap.PlaceSearch({
+              type: 'ATM|银行|自动提款机',
+              pageSize: 20,
+              pageIndex: 1,
+              extensions: 'base',
+              citylimit: false,
+              map: null
+          });
 
-          const { places } = await Place.searchByText(request);
-          if (places && places.length > 0) {
-            const markers = places.map((place: any, i: number) => ({
-              id: `atm-${i}`,
-              name: place.displayName || 'ATM',
-              type: 'atm',
-              location: {
-                lng: place.location?.lng(),
-                lat: place.location?.lat(),
-              },
-              isWgs84: true,
-            }));
-            setAtmMarkers(markers);
-            toast.success(`找到 ${markers.length} 个 ATM`);
-          } else {
-            toast.info('附近没有找到 ATM');
-            setAtmMarkers([]);
-          }
-        } catch (e) {
-          console.error('ATM search failed:', e);
-          toast.error('ATM搜索失败，请确认已启用 Places API');
-          setIsAtmActive(false);
-          setAtmMarkers([]);
-        }
-      };
-
-      searchAtm();
-  }, [isAtmActive, mapInstance]);
+          Promise.all(centers.map((c) => new Promise<any[]>((resolve) => {
+              placeSearch.searchNearBy('', [c.lng, c.lat], SEARCH_RADIUS, (status: any, result: any) => {
+                  if (status === 'complete' && result.info === 'OK') {
+                      resolve(result.poiList.pois || []);
+                  } else {
+                      resolve([]);
+                  }
+              });
+          }))).then((groups) => {
+              const merged: Record<string, any> = {};
+              groups.flat().forEach((p: any) => { merged[p.id] = p; });
+              const newAtmMarkers = Object.values(merged).map((p: any) => ({
+                  id: p.id,
+                  name: p.name,
+                  location: { lng: p.location.lng, lat: p.location.lat },
+                  address: p.address,
+                  type: 'atm;bank',
+                  tags: ['atm', 'bank'],
+                  photos: [],
+                  biz_ext: { rating: 4.5 }
+              }));
+              setAtmMarkers(newAtmMarkers);
+          });
+      });
+  }, [isAtmActive, mapInstance, aMap, userLocation, selectedPoi]);
 
 
   // Initialize with all spots when data is loaded
@@ -415,9 +477,9 @@ export default function MainLayout() {
     }
   }, [cities, activeCity]);
 
-  const handleMapReady = (map: any, google: any) => {
+  const handleMapReady = (map: any, AMap: any) => {
     setMapInstance(map);
-    setAMap(google);
+    setAMap(AMap);
   };
 
   const handleLocationAllow = () => {
@@ -435,8 +497,8 @@ export default function MainLayout() {
     setFocusedSpotId(spot.id);
     
     if (mapInstance && spot.location) {
-        const [wgsLng, wgsLat] = gcj02ToWgs84(spot.location.lng, spot.location.lat);
-        mapInstance.panTo({ lat: wgsLat, lng: wgsLng });
+        // Pan to spot
+        mapInstance.panTo([spot.location.lng, spot.location.lat]);
         setSelectedPoi(spot);
     }
   };
@@ -462,10 +524,7 @@ export default function MainLayout() {
     setActiveCity(city.name);
     // Map will update via useEffect
     if (mapInstance) {
-        const center = city.center || [120.38, 36.06];
-        const [wgsLng, wgsLat] = gcj02ToWgs84(center[0], center[1]);
-        mapInstance.setZoom(city.zoom || 12);
-        mapInstance.panTo({ lat: wgsLat, lng: wgsLng });
+        mapInstance.setZoomAndCenter(city.zoom || 12, city.center || [120.38, 36.06]);
     }
   };
 
@@ -484,19 +543,17 @@ export default function MainLayout() {
       return;
     }
     if (locationMarkerRef.current) {
-      locationMarkerRef.current.map = null;
+      locationMarkerRef.current.setMap(null);
     }
-    const [wgsLng, wgsLat] = gcj02ToWgs84(lng, lat);
-    const dot = document.createElement('div');
-    dot.style.cssText = 'width:20px;height:20px;border-radius:50%;background:#4285f4;border:3px solid white;box-shadow:0 0 8px rgba(66,133,244,0.6);';
-    locationMarkerRef.current = new aMap.maps.marker.AdvancedMarkerElement({
-      position: { lat: wgsLat, lng: wgsLng },
-      map: mapInstance,
-      content: dot,
+    locationMarkerRef.current = new aMap.Marker({
+      position: [lng, lat],
+      content: '<div style="width:20px;height:20px;border-radius:50%;background:#4285f4;border:3px solid white;box-shadow:0 0 8px rgba(66,133,244,0.6);"></div>',
+      offset: new aMap.Pixel(-10, -10),
       zIndex: 200,
     });
-    mapInstance.setZoom(13);
-    mapInstance.panTo({ lat: wgsLat, lng: wgsLng });
+    locationMarkerRef.current.setMap(mapInstance);
+    mapInstance.setZoomAndCenter(13, [lng, lat]);
+    setUserLocation([lng, lat]);
   };
 
   const isInChina = (lng: number, lat: number) => lng >= 73 && lng <= 136 && lat >= 3 && lat <= 54;
@@ -505,52 +562,84 @@ export default function MainLayout() {
     if (!mapInstance || !aMap) return;
     setIsLocating(true);
 
+    const doIpFallback = () => {
+      console.log('[Location] Falling back to IP location...');
+      aMap.plugin('AMap.Geolocation', () => {
+        const ipGeo = new aMap.Geolocation({
+          enableHighAccuracy: false,
+          timeout: 10000,
+          needAddress: false,
+          showButton: false,
+          showMarker: false,
+          showCircle: false,
+          panToLocation: false,
+          zoomToAccuracy: false,
+        });
+        ipGeo.getCityInfo((status: string, result: any) => {
+          console.log('[Location] IP getCityInfo status:', status, 'result:', JSON.stringify(result));
+          setIsLocating(false);
+          const pos = result.position || result.center;
+          if (status === 'complete' && pos) {
+            let lng: number, lat: number;
+            if (Array.isArray(pos)) {
+              [lng, lat] = pos;
+            } else if (typeof pos === 'string') {
+              const parts = pos.split(',');
+              lng = parseFloat(parts[0]);
+              lat = parseFloat(parts[1]);
+            } else {
+              lng = pos.lng;
+              lat = pos.lat;
+            }
+            console.log('[Location] IP parsed position:', lng, lat);
+            showLocationOnMap(lng, lat);
+            toast.info('已通过IP定位到您所在城市');
+          } else {
+            toast.error('定位失败，请稍后重试');
+          }
+        });
+      });
+    };
+
     console.log('[Location] Starting...');
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setIsLocating(false);
           const lng = pos.coords.longitude;
           const lat = pos.coords.latitude;
           console.log('[Location] Browser GPS:', lng, lat);
-          // Browser returns WGS-84, need to convert to GCJ-02 for showLocationOnMap
-          // which then converts back to WGS-84 for Google Maps display
-          // Simpler: directly show on map using WGS-84
-          if (locationMarkerRef.current) {
-            locationMarkerRef.current.map = null;
+          if (!isInChina(lng, lat)) {
+            console.log('[Location] Not in China, falling back to IP');
+            doIpFallback();
+            return;
           }
-          const dot = document.createElement('div');
-          dot.style.cssText = 'width:20px;height:20px;border-radius:50%;background:#4285f4;border:3px solid white;box-shadow:0 0 8px rgba(66,133,244,0.6);';
-          locationMarkerRef.current = new aMap.maps.marker.AdvancedMarkerElement({
-            position: { lat, lng },
-            map: mapInstance,
-            content: dot,
-            zIndex: 200,
+          aMap.convertFrom([lng, lat], 'gps', (_s: string, res: any) => {
+            setIsLocating(false);
+            if (res && res.locations && res.locations.length > 0) {
+              showLocationOnMap(res.locations[0].lng, res.locations[0].lat);
+            } else {
+              showLocationOnMap(lng, lat);
+            }
           });
-          mapInstance.setZoom(15);
-          mapInstance.panTo({ lat, lng });
-          toast.info('已定位到您的位置');
         },
         (err) => {
-          setIsLocating(false);
           console.log('[Location] Browser GPS failed:', err.message);
-          toast.error('定位失败，请检查浏览器定位权限');
+          doIpFallback();
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
-      setIsLocating(false);
-      toast.error('您的浏览器不支持定位功能');
+      doIpFallback();
     }
   };
 
   const handleToggle3D = () => {
     if (!mapInstance) return;
     if (is3D) {
-      mapInstance.setTilt(0);
+      mapInstance.setPitch(0);
       setIs3D(false);
     } else {
-      mapInstance.setTilt(60);
+      mapInstance.setPitch(60);
       setIs3D(true);
     }
   };
@@ -569,16 +658,19 @@ export default function MainLayout() {
         />
       </div>
 
-      {/* Search bar moved into CityDrawer */}
+      {/* Floating search bar at top */}
+      {!isBottomSheetOpen && activeTab === '' && (
+        <FloatingSearchBar onSearch={setSearchKeyword} />
+      )}
 
       {/* Widgets Layer - Highest Z-Index (except Portals/Overlays) */}
       {!isBottomSheetOpen && (
         <>
-          <div className={`fixed top-[90px] right-4 z-[10002] transition-all duration-300 ${activeTab !== '' ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible pointer-events-auto'}`}>
+          <div className={`fixed top-[90px] right-4 z-[10002] transition-all duration-300 ${(activeTab !== '' || searchKeyword.trim()) ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible pointer-events-auto'}`}>
              <AdsWidget isOpen={isAdOpen} onOpenChange={setIsAdOpen} />
           </div>
-          
-          <div className={`fixed top-[205px] right-4 z-[10002] transition-all duration-300 ${activeTab !== '' ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible pointer-events-auto'}`}>
+
+          <div className={`fixed top-[205px] right-4 z-[10002] transition-all duration-300 ${(activeTab !== '' || searchKeyword.trim()) ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible pointer-events-auto'}`}>
              <AtmWidget onSelect={() => setIsAtmActive(!isAtmActive)} isActive={isAtmActive} />
           </div>
         </>
@@ -591,13 +683,13 @@ export default function MainLayout() {
         <MyLocationButton onClick={handleMyLocation} isLocating={isLocating} />
         <Toggle2DButton is3D={is3D} onClick={handleToggle3D} />
         <button
-          onClick={() => mapInstance && mapInstance.setZoom((mapInstance.getZoom() || 10) + 1)}
+          onClick={() => mapInstance?.zoomIn()}
           className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 flex items-center justify-center w-[50px] h-[50px] text-gray-600 hover:text-blue-600 active:scale-95 transition-all"
         >
           <span className="text-2xl font-bold leading-none">+</span>
         </button>
         <button
-          onClick={() => mapInstance && mapInstance.setZoom((mapInstance.getZoom() || 10) - 1)}
+          onClick={() => mapInstance?.zoomOut()}
           className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 flex items-center justify-center w-[50px] h-[50px] text-gray-600 hover:text-blue-600 active:scale-95 transition-all"
         >
           <span className="text-2xl font-bold leading-none">−</span>
@@ -610,7 +702,11 @@ export default function MainLayout() {
         keyword={searchKeyword}
         onClose={() => setSearchKeyword('')}
         onItemClick={(item) => {
-          if (item.type === 'guide') {
+          if (item.type === 'city' && item.cityData) {
+            handleCitySelect(item.cityData);
+            setSearchKeyword('');
+            return;
+          } else if (item.type === 'guide') {
             setActiveTab('guide');
           } else if (item.type === 'strategy') {
             setActiveTab('strategy');

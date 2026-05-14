@@ -151,16 +151,17 @@ export class ReviewsService {
     });
   }
 
-  async createForAmap(data: { 
-    userId: number, 
-    amapId: string, 
-    poiName: string, 
-    poiType: string, 
+  async createForAmap(data: {
+    userId: number,
+    amapId: string,
+    poiName: string,
+    poiType: string,
     poiAddress?: string,
-    rating: number, 
+    rating: number,
     content: string,
     isAdmin?: boolean,
-    customNickname?: string
+    customNickname?: string,
+    images?: string
   }) {
     // 1. Find or create POI
     let poi = await this.prisma.poi.findUnique({
@@ -188,6 +189,7 @@ export class ReviewsService {
       poiId: poi.id,
       rating: data.rating,
       content: data.content,
+      images: data.images,
       type: 'REAL'
     };
 
@@ -205,6 +207,20 @@ export class ReviewsService {
     return this.prisma.review.create({
       data: reviewData,
       include: { user: true }
+    });
+  }
+
+  async findAll() {
+    return this.prisma.review.findMany({
+      include: {
+        user: true,
+        poi: { select: { id: true, name: true } },
+        spot: { select: { id: true, name: true } },
+        guide: { select: { id: true, name: true } },
+        strategy: { select: { id: true, title: true } },
+        enterprise: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' }
     });
   }
 

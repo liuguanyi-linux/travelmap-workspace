@@ -151,19 +151,20 @@ export const getUserReviews = async (userId: number) => {
   return [];
 };
 
-export const createReview = async (userId: number | string, poiId: number | string, rating: number, content: string, userInfo?: { nickname: string, avatar?: string }) => {
+export const createReview = async (userId: number | string, poiId: number | string, rating: number, content: string, userInfo?: { nickname: string, avatar?: string }, images?: string[]) => {
   const isNumericId = !isNaN(Number(poiId));
-  
+  const imagesJson = images && images.length > 0 ? JSON.stringify(images) : undefined;
+
   if (isNumericId) {
       // It's a Spot or internal POI
-      const body = {
+      const body: any = {
           userId: Number(userId) || 1,
-          spotId: Number(poiId), 
+          spotId: Number(poiId),
           rating,
           content,
-          // Always send nickname if available
-          customNickname: userInfo?.nickname || String(userId) 
+          customNickname: userInfo?.nickname || String(userId)
       };
+      if (imagesJson) body.images = imagesJson;
       console.log("发送给后端的原始数据 (Spot):", body);
       const res = await fetch('/api/reviews', {
           method: 'POST',
@@ -173,17 +174,17 @@ export const createReview = async (userId: number | string, poiId: number | stri
       return await res.json();
   } else {
       // It's an AMAP POI
-      const body = {
-          userId: Number(userId) || 1, 
+      const body: any = {
+          userId: Number(userId) || 1,
           amapId: String(poiId),
-          poiName: userInfo?.nickname ? 'Unknown' : 'Unknown', 
+          poiName: userInfo?.nickname ? 'Unknown' : 'Unknown',
           poiType: 'Unknown',
           rating,
           content,
-          // Send customNickname for real users too
           customNickname: userInfo?.nickname || String(userId),
-          isAdmin: false // Only true if explicitly admin mock
+          isAdmin: false
       };
+      if (imagesJson) body.images = imagesJson;
       console.log("发送给后端的原始数据 (AMAP):", body);
        const res = await fetch('/api/reviews/amap', {
           method: 'POST',

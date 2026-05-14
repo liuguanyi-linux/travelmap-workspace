@@ -6,4 +6,5 @@ export class CreateCityDto {
   lat: number;
   zoom?: number;
   rank?: number;
+  coverImage?: string;
 }

@@ -150,6 +150,7 @@ export const TRANSLATIONS: any = {
       ad: '广告',
       viewNow: '立即查看',
       noPlaces: '暂无相关地点',
+      noResults: '暂无相关结果',
       loadingError: '数据加载失败',
       retry: '重试',
       loading: '加载中...',
@@ -346,6 +347,7 @@ export const TRANSLATIONS: any = {
       ad: 'Ad',
       viewNow: 'View Now',
       noPlaces: 'No places found',
+      noResults: 'No results found',
       loadingError: 'Data loading failed',
       retry: 'Retry',
       loading: 'Loading...',
@@ -390,7 +392,7 @@ export const TRANSLATIONS: any = {
     }
   },
   'ko-KR': {
-    searchPlaceholder: 'anjenMap 에서 검색...',
+    searchPlaceholder: '여기에서 검색',
     common: {
       searching: '검색 중...',
       loading: '로딩 중...',
@@ -546,6 +548,7 @@ export const TRANSLATIONS: any = {
       ad: '광고',
       viewNow: '지금 확인',
       noPlaces: '관련 장소 없음',
+      noResults: '관련 결과 없음',
       loadingError: '데이터 로드 실패',
       retry: '재시도',
       loading: '로딩 중...',

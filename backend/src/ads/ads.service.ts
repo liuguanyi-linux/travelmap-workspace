@@ -12,7 +12,10 @@ export class AdsService {
         { expiryDate: { gt: new Date() } }
       ]
     };
-    const ads = await this.prisma.ad.findMany({ where });
+    const ads = await this.prisma.ad.findMany({
+      where,
+      orderBy: [{ sortOrder: 'asc' }, { id: 'desc' }],
+    });
     return ads.map(ad => ({
       ...ad,
       photos: ad.photos ? JSON.parse(ad.photos) : []

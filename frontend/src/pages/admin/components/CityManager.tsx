@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../../../contexts/DataContext';
-import { Trash2, Plus, MapPin, Navigation, Search, Loader2, Map as MapIcon, Crosshair, Edit2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, Plus, MapPin, Navigation, Search, Loader2, Map as MapIcon, Crosshair, Edit2, ArrowUp, ArrowDown, Upload, Image as ImageIcon, X } from 'lucide-react';
+import { getFullImageUrl } from '../../../utils/image';
 import { City } from '../../../types/data';
 import { cityService } from '../../../services/api';
 import AMapLoader from '@amap/amap-jsapi-loader';
@@ -39,8 +40,36 @@ export default function CityManager() {
     lng: 120.38,
     lat: 36.06,
     zoom: 12,
-    rank: 99
+    rank: 99,
+    coverImage: ''
   });
+
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const handlePickCoverImage = async (file: File | null) => {
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/upload/city-cover', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined as any,
+        body: fd,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.url) setFormData(prev => ({ ...prev, coverImage: data.url }));
+      } else {
+        alert('上传失败，请重试');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('上传失败');
+    } finally {
+      setUploadingCover(false);
+    }
+  };
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<any>(null);
@@ -238,7 +267,8 @@ export default function CityManager() {
         nameKo: '',
         lng: 120.38,
         lat: 36.06,
-        zoom: 12
+        zoom: 12,
+        coverImage: ''
       });
     }
   };
@@ -257,7 +287,8 @@ export default function CityManager() {
             lng: city.lng,
             lat: city.lat,
             zoom: city.zoom,
-            rank: (city as any).rank ?? 99
+            rank: (city as any).rank ?? 99,
+            coverImage: (city as any).coverImage || ''
         });
         setEditingId(Number(city.id));
         setIsAdding(true);
@@ -276,10 +307,10 @@ export default function CityManager() {
             if (isAdding) {
                 setIsAdding(false);
                 setEditingId(null);
-                setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12, rank: 99 });
+                setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12, rank: 99, coverImage: '' });
             } else {
                 setEditingId(null);
-                setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12, rank: 99 });
+                setFormData({ name: '', nameEn: '', nameKo: '', lng: 120.38, lat: 36.06, zoom: 12, rank: 99, coverImage: '' });
                 // Small timeout to ensure clean state
                 setTimeout(() => setIsAdding(true), 50);
             }
@@ -422,6 +453,43 @@ export default function CityManager() {
                 </p>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">城市封面图</label>
+                  <div className="flex items-center gap-3">
+                    <div className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0 relative">
+                      {formData.coverImage ? (
+                        <>
+                          <img src={getFullImageUrl(formData.coverImage)} alt="cover" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, coverImage: '' }))}
+                            className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-black/80"
+                            title="移除"
+                          >
+                            <X size={12} />
+                          </button>
+                        </>
+                      ) : (
+                        <ImageIcon size={28} className="text-gray-300" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <label className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer ${uploadingCover ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}>
+                        {uploadingCover ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                        <span className="text-sm font-medium">{uploadingCover ? '上传中…' : '上传封面'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={uploadingCover}
+                          onChange={e => { handlePickCoverImage(e.target.files?.[0] || null); e.target.value = ''; }}
+                        />
+                      </label>
+                      <p className="text-xs text-gray-500 mt-2">用于地图缩略时显示该城市的方形封面图</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="pt-4">
             <button
             type="submit"
@@ -472,9 +540,13 @@ export default function CityManager() {
                 <ArrowDown size={16} />
               </button>
             </div>
-            <div className="bg-blue-50 p-2 rounded-lg text-blue-600 shrink-0">
-              <MapPin size={20} />
-            </div>
+            {(city as any).coverImage ? (
+              <img src={getFullImageUrl((city as any).coverImage)} alt={city.name} className="w-12 h-12 rounded-lg object-cover shrink-0 border border-gray-200" />
+            ) : (
+              <div className="bg-blue-50 p-2 rounded-lg text-blue-600 shrink-0">
+                <MapPin size={20} />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-bold text-lg text-gray-800">{city.name}</h4>

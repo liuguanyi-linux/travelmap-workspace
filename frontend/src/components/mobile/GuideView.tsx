@@ -5,6 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useFavoritesContext } from '../../contexts/FavoritesContext';
+import { useAppSettings } from '../../contexts/AppSettingsContext';
 import { getReviews, createReview, deleteReview } from '../../api';
 import { toast } from 'react-hot-toast';
 
@@ -50,6 +51,11 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
   
   // Data
   const { guides, cities, ads } = useData();
+
+  const { get: getSetting } = useAppSettings();
+  const headerTop = getSetting('drawer_header_top', '#cbd5e1');
+  const headerBottom = getSetting('drawer_header_bottom', '#f1f5f9');
+  const drawerHeaderBg = `linear-gradient(to bottom, ${headerTop}, ${headerBottom})`;
 
   // Deep link: auto-select guide or ad by initialId
   useEffect(() => {
@@ -148,6 +154,16 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
   const cardHeight = viewState === 'peek' ? '35vh' : '75vh';
 
   const [guideSubFilter, setGuideSubFilter] = useState<'guide' | 'translator'>('guide');
+  const [cityFilter, setCityFilter] = useState<string>('');
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+
+  const getCityDisplayName = (c: any) => {
+    if (!c) return '';
+    if (language === 'en-US' && c.nameEn) return c.nameEn;
+    if (language === 'ko-KR' && c.nameKo) return c.nameKo;
+    return c.name;
+  };
+  const currentCityObj = (cities || []).find((c: any) => c.name === cityFilter);
 
   const categories = [
     { id: 'guide', label: '여행가이드', icon: User, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' },
@@ -169,8 +185,8 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
   // Filter Logic
   const filteredGuides = (Array.isArray(guides) ? guides : [])
     .filter(g => {
-        // City Filter (Respect isGlobal)
-        if (activeCity && !g.isGlobal && g.cities && !g.cities.includes(activeCity)) {
+        // City Filter: 仅 cityFilter 生效。空 = 显示所有城市的导游。
+        if (cityFilter && !g.isGlobal && g.cities && !g.cities.includes(cityFilter)) {
             return false;
         }
 
@@ -290,11 +306,19 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
           animate={{ y: '0%' }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className={`fixed bottom-0 left-0 right-0 mx-auto ${selectedGuide ? 'z-[10001]' : 'z-[60]'} w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col pointer-events-auto touch-manipulation overflow-hidden will-change-transform transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[35vh]' : 'h-[75vh]'}`}
+          className={`fixed bottom-0 left-0 right-0 mx-auto ${selectedGuide ? 'z-[10001]' : 'z-[60]'} w-[96%] max-w-[500px] dark:bg-gray-900/95 rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col pointer-events-auto touch-manipulation overflow-hidden will-change-transform transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[35vh]' : 'h-[75vh]'}`}
+          style={{ backgroundColor: headerBottom }}
         >
+          {!selectedGuide && (
+            <div
+              aria-hidden
+              className="absolute top-0 left-0 right-0 h-[88px] pointer-events-none rounded-t-[2.5rem]"
+              style={{ background: drawerHeaderBg }}
+            />
+          )}
           {/* Handle (Click to Toggle) */}
           <div
-            className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-30 shrink-0 absolute top-0 left-0 right-0 h-12 touch-none items-center gap-2"
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-10 shrink-0 touch-none items-center gap-2"
             onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
             <div className="flex items-center gap-2 px-3 py-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60">
@@ -306,9 +330,6 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
               <span className="text-xs text-gray-600 dark:text-gray-300 font-medium tracking-wide">{viewState === 'full' ? t('clickToCollapse') : t('clickToExpand')}</span>
             </div>
           </div>
-
-          {/* Spacer for Handle */}
-          <div className="h-8 shrink-0" />
 
           {/* Close Button */}
           <button
@@ -687,59 +708,110 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
             </div>
           ) : (
             <>
-              {/* Header */}
-              <div className="px-6 pb-0 shrink-0 pt-2">
-                <h1 className="text-lg font-bold text-gray-900 dark:text-white mb-0.5">{t('guide.title')}</h1>
-                {/* {activeCity && <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('guide.currentCity')}{getLocalizedCityName(activeCity)}</p>} */}
-              </div>
-
-              {/* Categories (Horizontal Scroll) */}
-              <div className="space-y-2 pt-2 pb-1">
-                 <div className="flex overflow-x-auto gap-2 px-6 pb-2 snap-x snap-mandatory scrollbar-hide">
-                    {categories.map((cat) => {
-                        const isSelected = selectedCategory === cat.id;
-                        return (
-                            <button
-                                key={cat.id}
-                                onClick={() => {
-                                    if (selectedCategory !== cat.id) {
-                                        setSelectedCategory(cat.id as CategoryType);
-                                        setInternalKeyword('');
-                                    }
-                                }}
-                                className={`flex-none w-auto flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 h-auto snap-center ${
-                                    isSelected 
-                                        ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-500 shadow-md scale-105' 
-                                        : 'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-slate-300 dark:border-slate-500 shadow-sm active:scale-95'
-                                }`}
-                            >
-                                <span className={`font-bold text-sm z-10 text-center leading-tight whitespace-nowrap px-3 py-1 ${
-                                    isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-white'
-                                }`}>
-                                    {cat.label}
-                                </span>
-                            </button>
-                        );
-                    })}
-                 </div>
-              </div>
-
-              {/* Sub-filter: guide vs translator (only for 여행가이드 tab) */}
-              {selectedCategory === 'guide' && (
-                <div className="flex gap-2 px-6 pb-2">
-                  {(['guide', 'translator'] as const).map(f => (
+              {/* City Dropdown + Search (matches CityDrawer) */}
+              <div className="px-4 pb-1 shrink-0 z-[110] relative">
+                <div className="flex items-center gap-2 min-h-[28px]">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCityDropdownOpen(v => !v); }}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-gray-800 border border-slate-300 dark:border-slate-600 rounded-full shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shrink-0"
+                >
+                  <MapPin size={14} className="text-blue-600" />
+                  <span className="text-sm font-bold text-gray-800 dark:text-white max-w-[140px] truncate">
+                    {cityFilter ? getCityDisplayName(currentCityObj) : '전체 도시'}
+                  </span>
+                  <ChevronDown size={14} className={`text-gray-500 transition-transform ${cityDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <div className="flex-1 relative">
+                  <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
+                    <Search className="h-3.5 w-3.5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={internalKeyword}
+                    placeholder={t('searchPlaceholder') || '여기에서 검색'}
+                    onChange={(e) => setInternalKeyword(e.target.value)}
+                    className="w-full h-8 pl-8 pr-3 bg-white dark:bg-gray-800 rounded-full border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 text-gray-900 dark:text-white placeholder-gray-400 text-xs"
+                  />
+                </div>
+                </div>
+                {cityDropdownOpen && (
+                  <div className="absolute top-full left-4 mt-1 w-56 max-h-[45vh] overflow-y-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 z-[200] overscroll-contain">
                     <button
-                      key={f}
-                      onClick={() => setGuideSubFilter(f)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                        guideSubFilter === f
-                          ? f === 'translator' ? 'bg-violet-500 text-white border-violet-500' : 'bg-blue-500 text-white border-blue-500'
-                          : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-slate-200 dark:border-slate-600'
+                      onClick={() => { setCityFilter(''); setCityDropdownOpen(false); }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors border-b border-slate-100 dark:border-slate-700 ${!cityFilter ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 font-bold' : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                    >
+                      <Building2 size={14} className={!cityFilter ? 'text-blue-600' : 'text-gray-400'} />
+                      <span className="truncate">전체 도시</span>
+                    </button>
+                    {(cities || []).map((c: any) => {
+                      const isActive = c.name === cityFilter;
+                      return (
+                        <button
+                          key={c.id || c.name}
+                          onClick={() => { setCityFilter(c.name); setCityDropdownOpen(false); }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${isActive ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 font-bold' : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                        >
+                          <MapPin size={14} className={isActive ? 'text-blue-600' : 'text-gray-400'} />
+                          <span className="truncate">{getCityDisplayName(c)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Categories (compact, matches CityDrawer style) */}
+              <div className="flex overflow-x-auto gap-2 px-4 pb-2 snap-x snap-mandatory scrollbar-hide">
+                {categories.map((cat) => {
+                  const isSelected = selectedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        if (selectedCategory !== cat.id) {
+                          setSelectedCategory(cat.id as CategoryType);
+                          setInternalKeyword('');
+                        }
+                      }}
+                      className={`flex-none flex items-center justify-center px-2.5 py-1 rounded-md transition-all duration-200 snap-center bg-white dark:bg-gray-800 shadow-[0_2px_8px_rgba(0,0,0,0.1)] ${
+                        isSelected
+                          ? 'border-2 border-blue-500'
+                          : 'border border-slate-200 dark:border-slate-600 active:scale-95'
                       }`}
                     >
-                      {f === 'guide' ? '여행가이드' : '비즈니스 통역'}
+                      <span className={`font-bold text-xs text-center leading-tight whitespace-nowrap ${
+                        isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-white'
+                      }`}>
+                        {cat.label}
+                      </span>
                     </button>
-                  ))}
+                  );
+                })}
+              </div>
+
+              {/* Sub-filter row (same style as categories) */}
+              {selectedCategory === 'guide' && (
+                <div className="flex overflow-x-auto gap-2 px-4 pb-2 snap-x snap-mandatory scrollbar-hide">
+                  {(['guide', 'translator'] as const).map(f => {
+                    const isSelected = guideSubFilter === f;
+                    return (
+                      <button
+                        key={f}
+                        onClick={() => setGuideSubFilter(f)}
+                        className={`flex-none flex items-center justify-center px-2.5 py-1 rounded-md transition-all duration-200 snap-center bg-white dark:bg-gray-800 shadow-[0_2px_8px_rgba(0,0,0,0.1)] ${
+                          isSelected
+                            ? 'border-2 border-blue-500'
+                            : 'border border-slate-200 dark:border-slate-600 active:scale-95'
+                        }`}
+                      >
+                        <span className={`font-bold text-xs text-center leading-tight whitespace-nowrap ${
+                          isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-white'
+                        }`}>
+                          {f === 'guide' ? '여행가이드' : '비즈니스 통역'}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
@@ -822,7 +894,7 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                       <div
                         key={guide.id}
                         onClick={() => setSelectedGuide(guide)}
-                        className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-300 dark:border-slate-500 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 mb-2 relative"
+                        className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 shadow-[0_2px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all cursor-pointer active:scale-[0.99] duration-200 relative"
                       >
                           <button
                             onClick={async (e) => {
@@ -837,25 +909,27 @@ export default function GuideView({ isVisible, onClose, activeCity, initialCateg
                                     id: String(guide.id),
                                     name: guide.name,
                                     type: 'poi',
-                                    imageUrl: guide.avatar || ''
+                                    imageUrl: getFullImageUrl(guide.avatar) || ''
                                   });
                                   toast.success('즐겨찾기에 추가되었습니다.');
                                 }
                               } catch (err) {}
                             }}
-                            className="absolute top-2 right-2 p-1.5 bg-white/80 dark:bg-black/20 backdrop-blur-sm rounded-full hover:bg-red-50 transition-colors z-10"
+                            className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors z-10"
                           >
-                            <Heart size={16} className={guideFav ? "text-red-500 fill-red-500" : "text-gray-400"} />
+                            <Heart size={18} className={guideFav ? "text-red-500 fill-red-500" : "text-gray-300 dark:text-gray-500"} strokeWidth={2} />
                           </button>
-                          <div className="flex gap-3">
-                              <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm bg-gray-100">
-                                  <img src={guide.avatar} alt={guide.name} className="w-full h-full object-cover" />
+                          <div className="flex gap-3 items-center pr-7">
+                              <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-gray-700">
+                                  {guide.avatar ? (
+                                      <img src={getFullImageUrl(guide.avatar)} alt={guide.name} className="w-full h-full object-cover" loading="lazy" />
+                                  ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-gray-400"><User size={24} /></div>
+                                  )}
                               </div>
-                              <div className="flex-1 flex flex-col justify-between py-0.5">
+                              <div className="flex-1 min-w-0 flex flex-col justify-center">
                                   <div>
-                                      <div className="flex justify-between items-start">
-                                          <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{guide.name}</h3>
-                                      </div>
+                                      <h3 className="text-[15px] font-bold text-gray-900 dark:text-white truncate leading-snug mb-1">{guide.name}</h3>
                                       <div className="flex flex-wrap gap-1 mt-1">
                                           {(() => {
                                             const cats = getCategories(guide);

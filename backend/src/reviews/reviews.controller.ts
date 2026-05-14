@@ -34,7 +34,8 @@ export class ReviewsController {
     rating: number, 
     content: string,
     isAdmin?: boolean,
-    customNickname?: string
+    customNickname?: string,
+    images?: string
   }) {
     return this.reviewsService.createForAmap(data);
   }
@@ -43,6 +44,12 @@ export class ReviewsController {
   @UseGuards(AdminGuard)
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.reviewsService.delete(id);
+  }
+
+  @Get()
+  @UseGuards(AdminGuard)
+  async findAll() {
+    return this.reviewsService.findAll();
   }
 
   @Get('amap/:amapId')

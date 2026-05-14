@@ -89,6 +89,7 @@ export interface AdSlot {
   link?: string;
   layout?: 'standard' | 'full';
   expiryDate?: string;
+  sortOrder?: number;
 }
 
 export interface ContactInfo {
@@ -109,6 +110,7 @@ export interface City {
   lat: number;
   zoom: number;
   rank?: number;
+  coverImage?: string;
 }
 
 export interface StrategyCategory {

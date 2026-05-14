@@ -5,6 +5,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { DataProvider } from './contexts/DataContext';
+import { AppSettingsProvider } from './contexts/AppSettingsContext';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -20,6 +21,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <DataProvider>
+          <AppSettingsProvider>
           <LanguageProvider>
             <ThemeProvider>
               <FavoritesProvider>
@@ -39,6 +41,7 @@ function App() {
               </FavoritesProvider>
             </ThemeProvider>
           </LanguageProvider>
+          </AppSettingsProvider>
         </DataProvider>
       </AuthProvider>
     </BrowserRouter>

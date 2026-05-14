@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, X, Heart, User, BookOpen } from 'lucide-react';
+import { MapPin, X, Heart, User, BookOpen, Building2 } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getFullImageUrl } from '../../utils/image';
@@ -9,11 +9,12 @@ import { toast } from 'sonner';
 
 export interface SearchResultItem {
   id: string | number;
-  type: 'spot' | 'guide' | 'strategy';
+  type: 'spot' | 'guide' | 'strategy' | 'city';
   name: string;
   description?: string;
   imageUrl?: string;
   city?: string;
+  cityData?: any;
 }
 
 interface SearchResultsDrawerProps {
@@ -125,6 +126,28 @@ export default function SearchResultsDrawer({ isVisible, results, keyword, onIte
               const fav = isFavorite(favId, 'poi');
               const imgUrl = item.imageUrl ? getFullImageUrl(item.imageUrl) : null;
 
+              if (item.type === 'city') {
+                return (
+                  <div
+                    key={`city-${item.id}`}
+                    onClick={() => onItemClick(item)}
+                    className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl p-3 shadow-sm border-2 border-blue-300 dark:border-blue-600 flex items-center gap-3 active:scale-[0.99] transition-transform cursor-pointer relative"
+                  >
+                    <div className="absolute -left-1 -top-1 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm z-20">★</div>
+                    <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center text-white shrink-0">
+                      <Building2 size={24} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-bold text-blue-600 dark:text-blue-300 tracking-widest mb-0.5">도시 / 城市</div>
+                      <h3 className="font-bold text-gray-900 dark:text-white text-lg leading-tight">{item.name}</h3>
+                      {item.description && (
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">{item.description}</p>
+                      )}
+                    </div>
+                    <div className="text-blue-500 text-xl">→</div>
+                  </div>
+                );
+              }
               return (
                 <div
                   key={`${item.type}-${item.id}`}

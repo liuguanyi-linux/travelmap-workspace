@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Phone, Mail, MessageCircle, Globe, MapPin, Building2, ChevronDown, ChevronUp, Languages, User, Car, Heart, MessageSquare, Send, Share2, Star, ChevronLeft, ChevronRight, Loader2, ArrowLeft } from 'lucide-react';
+import { X, Phone, Mail, MessageCircle, Globe, MapPin, Building2, ChevronDown, ChevronUp, Languages, User, Car, Heart, MessageSquare, Send, Share2, Star, ChevronLeft, ChevronRight, Loader2, ArrowLeft, Search } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation, PanInfo, useDragControls } from 'framer-motion';
 import { getFullImageUrl } from '../../utils/image';
 import { useData } from '../../contexts/DataContext';
 import { useFavoritesContext } from '../../contexts/FavoritesContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAppSettings } from '../../contexts/AppSettingsContext';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
@@ -36,10 +37,25 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
   const [selected, setSelected] = useState<any>(null);
   const [tab, setTab] = useState<'enterprise' | 'translator'>('enterprise');
 
-  const { guides } = useData();
+  const { guides, cities } = useData();
+  const [cityFilter, setCityFilter] = useState<string>('');
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const { language } = useLanguage();
+  const getCityDisplayName = (c: any) => {
+    if (!c) return '';
+    if (language === 'en-US' && c.nameEn) return c.nameEn;
+    if (language === 'ko-KR' && c.nameKo) return c.nameKo;
+    return c.name;
+  };
+  const currentCityObj = (cities || []).find((c: any) => c.name === cityFilter);
   const { user } = useAuth();
   const { isFavorite, toggleFavorite, removeFavorite } = useFavoritesContext();
   const { t } = useLanguage();
+  const { get: getSetting } = useAppSettings();
+  const headerTop = getSetting('drawer_header_top', '#cbd5e1');
+  const headerBottom = getSetting('drawer_header_bottom', '#f1f5f9');
+  const drawerHeaderBg = `linear-gradient(to bottom, ${headerTop}, ${headerBottom})`;
 
   // Review state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -153,10 +169,24 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
   };
   const translators = (Array.isArray(guides) ? guides : []).filter(g => {
     if (!getCategories(g).includes('translator')) return false;
-    if (activeCity && !g.isGlobal) {
-      const cities = Array.isArray(g.cities) ? g.cities
+    if (cityFilter && !g.isGlobal) {
+      const gcs = Array.isArray(g.cities) ? g.cities
         : (typeof g.cities === 'string' && g.cities ? (() => { try { return JSON.parse(g.cities); } catch { return [g.cities]; } })() : []);
-      if (cities.length > 0 && !cities.includes(activeCity)) return false;
+      if (gcs.length > 0 && !gcs.includes(cityFilter)) return false;
+    }
+    if (searchKeyword) {
+      const k = searchKeyword.toLowerCase();
+      const hit = (g.name || '').toLowerCase().includes(k) || (g.intro || '').toLowerCase().includes(k);
+      if (!hit) return false;
+    }
+    return true;
+  });
+  const filteredEnterprises = enterprises.filter(e => {
+    if (cityFilter && e.city && e.city !== cityFilter) return false;
+    if (searchKeyword) {
+      const k = searchKeyword.toLowerCase();
+      const hit = (e.name || '').toLowerCase().includes(k) || (e.description || '').toLowerCase().includes(k);
+      if (!hit) return false;
     }
     return true;
   });
@@ -202,8 +232,16 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
           animate={{ y: '0%' }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className={`fixed bottom-0 left-0 right-0 mx-auto ${selected ? 'z-[10001]' : 'z-[100]'} w-[96%] max-w-[500px] bg-slate-50/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[35vh]' : 'h-[75vh]'}`}
+          className={`fixed bottom-0 left-0 right-0 mx-auto ${selected ? 'z-[10001]' : 'z-[100]'} w-[96%] max-w-[500px] dark:bg-gray-900/95 rounded-t-[2.5rem] shadow-[0_-5px_25px_rgba(0,0,0,0.15)] border-t border-x border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden transition-[height] duration-500 ease-in-out ${viewState === 'peek' ? 'h-[35vh]' : 'h-[75vh]'}`}
+          style={{ backgroundColor: headerBottom }}
         >
+          {!selected && (
+            <div
+              aria-hidden
+              className="absolute top-0 left-0 right-0 h-[88px] pointer-events-none rounded-t-[2.5rem]"
+              style={{ background: drawerHeaderBg }}
+            />
+          )}
           {/* Photo Viewer - portaled to body to escape motion.div transform container */}
           {photoIndex !== null && currentPhotos.length > 0 && createPortal(
               <div
@@ -277,7 +315,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
 
           {/* Handle */}
           <div
-            className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-30 shrink-0 absolute top-0 left-0 right-0 h-12 touch-none items-center gap-2"
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer z-10 shrink-0 touch-none items-center gap-2"
             onClick={() => setViewState(prev => prev === 'peek' ? 'full' : 'peek')}
           >
             <div className="flex items-center gap-2 px-3 py-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60">
@@ -290,37 +328,93 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
             </div>
           </div>
 
-          {/* Header */}
+          {/* Close Button */}
           {!selected && (
-            <div className="px-5 pt-12 pb-2 shrink-0 flex items-center justify-between touch-none" onPointerDown={e => dragControls.start(e)}>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-bold text-gray-900 dark:text-white">
-                  {tab === 'translator' ? '비즈니스 통역' : '중국기업'}
-                </h1>
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-full text-gray-600 dark:text-gray-300 z-[120] shadow-sm border border-gray-200/60 dark:border-gray-700/60 hover:bg-white transition-colors"
+            >
+              <X size={18} />
+            </button>
+          )}
+
+          {/* City Dropdown + Search (matches CityDrawer) */}
+          {!selected && (
+            <div className="px-4 pb-1 shrink-0 z-[110] relative">
+              <div className="flex items-center gap-2 min-h-[28px]">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCityDropdownOpen(v => !v); }}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-gray-800 border border-slate-300 dark:border-slate-600 rounded-full shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shrink-0"
+                >
+                  <MapPin size={14} className="text-blue-600" />
+                  <span className="text-sm font-bold text-gray-800 dark:text-white max-w-[140px] truncate">
+                    {cityFilter ? getCityDisplayName(currentCityObj) : '전체 도시'}
+                  </span>
+                  <ChevronDown size={14} className={`text-gray-500 transition-transform ${cityDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <div className="flex-1 relative">
+                  <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
+                    <Search className="h-3.5 w-3.5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={searchKeyword}
+                    placeholder={t('searchPlaceholder') || '여기에서 검색'}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    className="w-full h-8 pl-8 pr-3 bg-white dark:bg-gray-800 rounded-full border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 text-gray-900 dark:text-white placeholder-gray-400 text-xs"
+                  />
+                </div>
               </div>
-              <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
-                <X size={16} />
-              </button>
+              {cityDropdownOpen && (
+                <div className="absolute top-full left-4 mt-1 w-56 max-h-[45vh] overflow-y-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 z-[200] overscroll-contain">
+                  <button
+                    onClick={() => { setCityFilter(''); setCityDropdownOpen(false); }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors border-b border-slate-100 dark:border-slate-700 ${!cityFilter ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 font-bold' : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                  >
+                    <Building2 size={14} className={!cityFilter ? 'text-blue-600' : 'text-gray-400'} />
+                    <span className="truncate">전체 도시</span>
+                  </button>
+                  {(cities || []).map((c: any) => {
+                    const isActive = c.name === cityFilter;
+                    return (
+                      <button
+                        key={c.id || c.name}
+                        onClick={() => { setCityFilter(c.name); setCityDropdownOpen(false); }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${isActive ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 font-bold' : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                      >
+                        <MapPin size={14} className={isActive ? 'text-blue-600' : 'text-gray-400'} />
+                        <span className="truncate">{getCityDisplayName(c)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Tab switcher (only on list view) */}
+          {/* Tab switcher (compact, matches CityDrawer style) */}
           {!selected && (
-            <div className="flex gap-2 px-5 pb-2 shrink-0">
-              {(['enterprise', 'translator'] as const).map(t => (
-                <button
-                  key={t}
-                  onPointerDown={e => e.stopPropagation()}
-                  onClick={() => setTab(t)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                    tab === t
-                      ? t === 'translator' ? 'bg-violet-500 text-white border-violet-500' : 'bg-blue-500 text-white border-blue-500'
-                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-slate-200 dark:border-slate-600'
-                  }`}
-                >
-                  {t === 'enterprise' ? '기업' : '비즈니스 통역'}
-                </button>
-              ))}
+            <div className="flex overflow-x-auto gap-2 px-4 pb-2 snap-x snap-mandatory scrollbar-hide shrink-0">
+              {(['enterprise', 'translator'] as const).map(tt => {
+                const isSelected = tab === tt;
+                return (
+                  <button
+                    key={tt}
+                    onClick={() => setTab(tt)}
+                    className={`flex-none flex items-center justify-center px-2.5 py-1 rounded-md transition-all duration-200 snap-center bg-white dark:bg-gray-800 shadow-[0_2px_8px_rgba(0,0,0,0.1)] ${
+                      isSelected
+                        ? 'border-2 border-blue-500'
+                        : 'border border-slate-200 dark:border-slate-600 active:scale-95'
+                    }`}
+                  >
+                    <span className={`font-bold text-xs text-center leading-tight whitespace-nowrap ${
+                      isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-white'
+                    }`}>
+                      {tt === 'enterprise' ? '기업' : '비즈니스 통역'}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -538,16 +632,16 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
             /* List */
             <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-2">
               {tab === 'enterprise' && <>
-                {enterprises.length === 0 && (
+                {filteredEnterprises.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-40 text-gray-400">
                     <p className="text-sm">등록된 기업이 없습니다</p>
                   </div>
                 )}
-                {enterprises.map(item => {
+                {filteredEnterprises.map(item => {
                   const entFav = isFavorite(String(item.id), 'poi');
                   return (
                   <div key={item.id} onClick={() => setSelected(item)}
-                    className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-300 dark:border-slate-500 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 relative"
+                    className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 shadow-[0_2px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all cursor-pointer active:scale-[0.99] duration-200 relative"
                   >
                     <button
                       onClick={async (e) => {
@@ -568,21 +662,21 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                           }
                         } catch {}
                       }}
-                      className="absolute top-2 right-2 p-1.5 bg-white/80 dark:bg-black/20 backdrop-blur-sm rounded-full hover:bg-red-50 transition-colors z-10"
+                      className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors z-10"
                     >
-                      <Heart size={16} className={entFav ? "text-red-500 fill-red-500" : "text-gray-400"} />
+                      <Heart size={18} className={entFav ? "text-red-500 fill-red-500" : "text-gray-300 dark:text-gray-500"} strokeWidth={2} />
                     </button>
-                    <div className="flex gap-3">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm bg-gray-100 dark:bg-gray-700">
+                    <div className="flex gap-3 items-center pr-7">
+                      <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-gray-700">
                         {item.image ? (
                           <img src={getFullImageUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center"><Building2 size={24} className="text-gray-400" /></div>
                         )}
                       </div>
-                      <div className="flex-1 flex flex-col justify-between py-0.5">
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
                         <div>
-                          <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{item.name}</h3>
+                          <h3 className="text-[15px] font-bold text-gray-900 dark:text-white truncate leading-snug mb-1">{item.name}</h3>
                           {item.city && (
                             <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800 mt-1 inline-block">{item.city}</span>
                           )}
@@ -605,7 +699,7 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                   const trFav = isFavorite(String(item.id), 'poi');
                   return (
                   <div key={item.id} onClick={() => onOpenGuide?.(String(item.id))}
-                    className="bg-white dark:bg-gray-800 rounded-[1rem] p-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-300 dark:border-slate-500 hover:shadow-lg transition-all cursor-pointer active:scale-95 duration-200 relative"
+                    className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 shadow-[0_2px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all cursor-pointer active:scale-[0.99] duration-200 relative"
                   >
                     <button
                       onClick={async (e) => {
@@ -626,21 +720,21 @@ export default function EnterpriseView({ isVisible, onClose, activeCity, initial
                           }
                         } catch {}
                       }}
-                      className="absolute top-2 right-2 p-1.5 bg-white/80 dark:bg-black/20 backdrop-blur-sm rounded-full hover:bg-red-50 transition-colors z-10"
+                      className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors z-10"
                     >
-                      <Heart size={16} className={trFav ? "text-red-500 fill-red-500" : "text-gray-400"} />
+                      <Heart size={18} className={trFav ? "text-red-500 fill-red-500" : "text-gray-300 dark:text-gray-500"} strokeWidth={2} />
                     </button>
-                    <div className="flex gap-3">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm bg-gray-100 dark:bg-gray-700">
+                    <div className="flex gap-3 items-center pr-7">
+                      <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-gray-700">
                         {item.avatar ? (
                           <img src={getFullImageUrl(item.avatar)} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center"><User size={24} className="text-gray-400" /></div>
                         )}
                       </div>
-                      <div className="flex-1 flex flex-col justify-between py-0.5">
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
                         <div>
-                          <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{item.name}</h3>
+                          <h3 className="text-[15px] font-bold text-gray-900 dark:text-white truncate leading-snug mb-1">{item.name}</h3>
                           <span className="text-[10px] text-violet-600 dark:text-violet-400 font-bold bg-violet-50 dark:bg-violet-900/30 px-1.5 py-0.5 rounded-full border border-violet-200 dark:border-violet-800 mt-1 inline-block">비즈니스 통역</span>
                         </div>
                         {item.intro && <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">{item.intro.replace(/<[^>]*>?/gm, '')}</p>}

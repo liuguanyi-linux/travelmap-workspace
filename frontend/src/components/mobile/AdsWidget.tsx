@@ -127,7 +127,7 @@ export default function AdsWidget({ isOpen, onOpenChange }: { isOpen?: boolean; 
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-gray-900 w-[45%] max-w-[160px] mx-auto rounded-2xl p-2.5 shadow-2xl relative z-10 pointer-events-auto"
+                className="bg-white dark:bg-gray-900 w-[92%] max-w-[460px] mx-auto rounded-2xl p-3 shadow-2xl relative z-10 pointer-events-auto"
               >
                 <div className="flex justify-between items-center mb-2 px-0.5">
                   <h3 className="text-xs font-bold text-gray-900 dark:text-white">추천 광고</h3>
@@ -155,7 +155,7 @@ export default function AdsWidget({ isOpen, onOpenChange }: { isOpen?: boolean; 
                             setShowModal(false);
                           }
                         }}
-                        className="flex-none w-full rounded-xl p-3 snap-center cursor-pointer transition-transform active:scale-95 border border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-800 flex flex-col items-center text-center"
+                        className="flex-none w-[130px] rounded-xl p-2.5 snap-start cursor-pointer transition-transform active:scale-95 border border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-800 flex flex-col items-center text-center"
                       >
                         <div className="w-14 h-14 rounded-xl overflow-hidden shadow-sm border border-gray-200 mb-2 shrink-0">
                            <img src={ad.image} alt={ad.title} className="w-full h-full object-cover" />

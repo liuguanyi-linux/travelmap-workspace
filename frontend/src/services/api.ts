@@ -4,7 +4,8 @@ import { Guide, Strategy, StrategyCategory, Spot, AdSlot, ContactInfo, City, Spo
 // Determine API URL based on environment
 // For local development, it's usually http://localhost:3000
 // For production (or when running on the server), use '/api' to leverage Nginx proxy
-const API_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:3000');
+// dev/prod 모두 /api 으로 통일 (dev 은 vite proxy → :3001, prod 은 nginx)
+const API_URL = '/api';
 
 const api = axios.create({
   baseURL: API_URL,

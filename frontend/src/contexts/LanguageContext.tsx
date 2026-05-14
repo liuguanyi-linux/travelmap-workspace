@@ -15,12 +15,13 @@ const STORAGE_KEY = 'travelmap_lang';
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<string>(() => {
-    return 'ko-KR'; // Enforce Korean as default
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'zh-CN' || stored === 'en-US' || stored === 'ko-KR') return stored;
+    return 'ko-KR';
   });
 
   const setLanguage = (lang: string) => {
-    // Force ko-KR even if tried to set otherwise, unless admin override needed later
-    const targetLang = 'ko-KR'; 
+    const targetLang = (lang === 'zh-CN' || lang === 'en-US' || lang === 'ko-KR') ? lang : 'ko-KR';
     localStorage.setItem(STORAGE_KEY, targetLang);
     setLanguageState(targetLang);
   };

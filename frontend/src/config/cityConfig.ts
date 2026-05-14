@@ -33,7 +33,7 @@ export const CITIES: CityConfig[] = [
 ];
 
 // Default city to show on initial load if location is unavailable
-export const DEFAULT_CITY = CITIES.find(c => c.name === '青岛') || CITIES[0];
+export const DEFAULT_CITY = CITIES.find(c => c.name === '上海') || CITIES[0];
 
 // Initial view: overview of entire China
 export const CHINA_OVERVIEW = {

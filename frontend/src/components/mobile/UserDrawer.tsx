@@ -195,7 +195,6 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick, onFavorites
                         color="text-orange-500 bg-orange-50" 
                      />
                      {/* Notification Removed */}
-                     {/* Language Switcher Removed */}
                      <MenuItem icon={Moon} label={theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode')} onClick={toggleTheme} color="text-purple-500 bg-purple-50" />
                      {user && (
                          <MenuItem icon={LogOut} label={t('login.logout')} onClick={handleLogoutClick} color="text-gray-500 bg-gray-50" />
@@ -307,7 +306,6 @@ export default function UserDrawer({ isVisible, onClose, onPoiClick, onFavorites
                             className="bg-gray-50 dark:bg-gray-700 border-none rounded-lg text-sm px-2 py-1 focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="zh-CN">简体中文</option>
-                            <option value="en-US">English</option>
                             <option value="ko-KR">한국어</option>
                         </select>
                     </div>

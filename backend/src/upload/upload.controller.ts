@@ -72,4 +72,89 @@ export class UploadController {
       size: finalSize
     };
   }
+
+  @Post('city-cover')
+  @UseGuards(AdminGuard)
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: (req, file, cb) => {
+        const uploadDir = './uploads/cities';
+        const absolutePath = path.resolve(process.cwd(), uploadDir);
+        if (!fs.existsSync(absolutePath)) fs.mkdirSync(absolutePath, { recursive: true });
+        cb(null, uploadDir);
+      },
+      filename: (req, file, cb) => {
+        const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+        return cb(null, `${randomName}${extname(file.originalname)}`);
+      }
+    }),
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.match(/image\/(jpg|jpeg|png|gif|webp|heic|heif)$/)) {
+        return cb(new BadRequestException('Only image files are allowed'), false);
+      }
+      cb(null, true);
+    },
+    limits: { fileSize: 20 * 1024 * 1024 }
+  }))
+  async uploadCityCover(@UploadedFile() file: any) {
+    if (!file) throw new BadRequestException('File is required');
+    let finalFilename = file.filename;
+    try {
+      const originalPath = file.path;
+      const filenameWithoutExt = path.parse(file.filename).name;
+      const webpFilename = `${filenameWithoutExt}.webp`;
+      const webpPath = path.join(file.destination, webpFilename);
+      await sharp(originalPath)
+        .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(webpPath);
+      try { fs.unlinkSync(originalPath); } catch {}
+      finalFilename = webpFilename;
+    } catch (error) {
+      console.error('[CityCoverUpload] Image processing failed:', error);
+    }
+    return { url: `/uploads/cities/${finalFilename}` };
+  }
+
+  @Post('review-image')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: (req, file, cb) => {
+        const uploadDir = './uploads/reviews';
+        const absolutePath = path.resolve(process.cwd(), uploadDir);
+        if (!fs.existsSync(absolutePath)) fs.mkdirSync(absolutePath, { recursive: true });
+        cb(null, uploadDir);
+      },
+      filename: (req, file, cb) => {
+        const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+        return cb(null, `${randomName}${extname(file.originalname)}`);
+      }
+    }),
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.match(/image\/(jpg|jpeg|png|gif|webp|heic|heif)$/)) {
+        return cb(new BadRequestException('Only image files are allowed'), false);
+      }
+      cb(null, true);
+    },
+    limits: { fileSize: 10 * 1024 * 1024 }
+  }))
+  async uploadReviewImage(@UploadedFile() file: any) {
+    if (!file) throw new BadRequestException('File is required');
+    let finalFilename = file.filename;
+    try {
+      const originalPath = file.path;
+      const filenameWithoutExt = path.parse(file.filename).name;
+      const webpFilename = `${filenameWithoutExt}.webp`;
+      const webpPath = path.join(file.destination, webpFilename);
+      await sharp(originalPath)
+        .resize(1280, 1280, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toFile(webpPath);
+      try { fs.unlinkSync(originalPath); } catch {}
+      finalFilename = webpFilename;
+    } catch (error) {
+      console.error('[ReviewUpload] Image processing failed:', error);
+    }
+    return { url: `/uploads/reviews/${finalFilename}` };
+  }
 }

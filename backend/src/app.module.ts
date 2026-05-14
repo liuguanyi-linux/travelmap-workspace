@@ -17,9 +17,10 @@ import { SpotCategoriesModule } from './spot-categories/spot-categories.module';
 import { UploadModule } from './upload/upload.module';
 import { AuthModule } from './auth/auth.module';
 import { EnterprisesModule } from './enterprises/enterprises.module';
+import { AppSettingsModule } from './app-settings/app-settings.module';
 
 @Module({
-  imports: [PoisModule, FavoritesModule, BookingsModule, ReviewsModule, UsersModule, GuidesModule, StrategiesModule, SpotsModule, AdsModule, ContactInfoModule, CitiesModule, StrategyCategoriesModule, SpotCategoriesModule, UploadModule, AuthModule, EnterprisesModule],
+  imports: [PoisModule, FavoritesModule, BookingsModule, ReviewsModule, UsersModule, GuidesModule, StrategiesModule, SpotsModule, AdsModule, ContactInfoModule, CitiesModule, StrategyCategoriesModule, SpotCategoriesModule, UploadModule, AuthModule, EnterprisesModule, AppSettingsModule],
   controllers: [AppController],
   providers: [AppService],
 })

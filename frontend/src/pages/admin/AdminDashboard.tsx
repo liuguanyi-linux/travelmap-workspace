@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../contexts/DataContext';
+import { useAppSettings } from '../../contexts/AppSettingsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Guide, Strategy, Spot, AdSlot, ContactInfo } from '../../types/data';
-import { Trash2, Plus, Edit2, LogOut, X, Save, Settings, Phone, Menu, Users, Map, Compass, BookOpen, Megaphone, MapPin, Loader2, Minus } from 'lucide-react';
+import { Trash2, Plus, Edit2, LogOut, X, Save, Settings, Phone, Menu, Users, Map, Compass, BookOpen, Megaphone, MapPin, Loader2, Minus, Star, RefreshCw, Filter, Search } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import UserList from './components/UserList';
@@ -325,7 +326,7 @@ export default function AdminDashboard() {
         if (editingItem) {
           updateGuide({ ...editingItem, ...formData });
         } else {
-          addGuide({ ...formData, id: Date.now(), cities: ['青岛'], rank: 99 });
+          addGuide({ ...formData, id: Date.now(), rank: formData.rank ?? 99 });
         }
       } else if (activeTab === 'enterprises') {
         if (editingItem) {
@@ -339,7 +340,7 @@ export default function AdminDashboard() {
         } else {
           addAd({ ...formData, id: Date.now() });
         }
-      } else if (spotCategories.some(cat => cat.key === activeTab) || activeTab === 'transport' || activeTab === 'golf') {
+      } else if (spotCategories.some(cat => cat.key === activeTab) || activeTab === 'rail' || activeTab === 'airport' || activeTab === 'golf') {
         console.log('Matching spot category:', activeTab);
         if (editingItem) {
           await updateSpot({ ...editingItem, ...formData });
@@ -418,10 +419,15 @@ export default function AdminDashboard() {
               </TabButton>
             )})}
           
-          {/* Merged Transport Category */}
-          <TabButton active={activeTab === 'transport'} onClick={() => setActiveTab('transport')}>
+          {/* Transport Categories */}
+          <TabButton active={activeTab === 'rail'} onClick={() => setActiveTab('rail')}>
             <div className="flex items-center gap-3">
-              <span>- 高铁/机场</span>
+              <span>- 高铁</span>
+            </div>
+          </TabButton>
+          <TabButton active={activeTab === 'airport'} onClick={() => setActiveTab('airport')}>
+            <div className="flex items-center gap-3">
+              <span>- 机场</span>
             </div>
           </TabButton>
 
@@ -466,6 +472,18 @@ export default function AdminDashboard() {
               <span>联系方式</span>
             </div>
           </TabButton>
+          <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')}>
+            <div className="flex items-center gap-3">
+              <Settings size={18} />
+              <span>外观设置</span>
+            </div>
+          </TabButton>
+          <TabButton active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')}>
+            <div className="flex items-center gap-3">
+              <Star size={18} />
+              <span>评论管理</span>
+            </div>
+          </TabButton>
         </nav>
         
         <div className="py-4 border-t space-y-4">
@@ -502,17 +520,20 @@ export default function AdminDashboard() {
             {activeTab === 'enterprises' && '企业列表'}
             {activeTab === 'cities' && '城市管理'}
             {activeTab === 'menu_categories' && '菜单分类管理'}
-            {spotCategories.filter(cat => cat.key !== 'transport').map(cat => activeTab === cat.key && `${cat.name}列表`)}
-            {activeTab === 'transport' && '高铁/机场列表'}
+            {spotCategories.filter(cat => !['transport', 'airport', 'rail', 'high_speed_rail'].includes(cat.key)).map(cat => activeTab === cat.key && `${cat.name}列表`)}
+            {activeTab === 'rail' && '高铁列表'}
+            {activeTab === 'airport' && '机场列表'}
             {activeTab === 'ads' && '广告位列表'}
             {activeTab === 'users' && '用户列表'}
             {activeTab === 'contact' && '联系方式设置'}
+            {activeTab === 'appearance' && '外观设置'}
+            {activeTab === 'reviews' && '评论管理'}
           </h2>
           </div>
-          {activeTab !== 'system' && activeTab !== 'contact' && activeTab !== 'users' && activeTab !== 'cities' && activeTab !== 'menu_categories' && activeTab !== 'transport' && (
+          {activeTab !== 'system' && activeTab !== 'contact' && activeTab !== 'users' && activeTab !== 'cities' && activeTab !== 'menu_categories' && activeTab !== 'appearance' && activeTab !== 'reviews' && (
           <div className="flex gap-2">
             {activeTab === 'strategies' && (
-              <button 
+              <button
                 onClick={() => setIsCategoryManagerOpen(true)}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition-colors"
               >
@@ -520,12 +541,12 @@ export default function AdminDashboard() {
                 <span className="hidden sm:inline">分类管理</span>
               </button>
             )}
-            <button 
-              onClick={() => handleAdd()}
+            <button
+              onClick={() => handleAdd(activeTab === 'rail' ? 'rail' : (activeTab === 'airport' ? 'airport' : undefined))}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
-              <span className="hidden sm:inline">新建项目</span>
+              <span className="hidden sm:inline">{activeTab === 'rail' ? '新建高铁站' : activeTab === 'airport' ? '新建机场' : '新建项目'}</span>
             </button>
           </div>
           )}
@@ -536,7 +557,7 @@ export default function AdminDashboard() {
           {activeTab === 'enterprises' && <EnterprisesList data={enterprises} onDelete={deleteEnterprise} onEdit={handleEdit} />}
           {activeTab === 'cities' && <CityManager />}
           {activeTab === 'menu_categories' && <SpotCategoryManager />}
-          {spotCategories.filter(cat => cat.key !== 'transport').map(cat => (
+          {spotCategories.filter(cat => !['transport', 'airport', 'rail', 'high_speed_rail'].includes(cat.key)).map(cat => (
             activeTab === cat.key && (
               <SpotsList
                 key={cat.key}
@@ -555,55 +576,27 @@ export default function AdminDashboard() {
               />
             )
           ))}
-          {activeTab === 'transport' && (
-            <div className="space-y-8">
-              <div>
-                <div className="flex justify-between items-center mb-4 px-4">
-                  <h3 className="text-lg font-bold flex items-center gap-2">
-                    <LucideIcons.Train size={20} />
-                    高铁站列表
-                  </h3>
-                  <button 
-                    onClick={() => handleAdd('rail')}
-                    className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 hover:bg-blue-700 transition-colors"
-                  >
-                    <Plus size={16} />
-                    新建高铁站
-                  </button>
-                </div>
-                <SpotsList 
-                  data={spots.filter(s => s.tags.includes('rail'))} 
-                  onDelete={deleteSpot} 
-                  onEdit={handleEdit} 
-                  onToggleStatus={updateSpotStatus}
-                />
-              </div>
-              <div className="border-t pt-8">
-                <div className="flex justify-between items-center mb-4 px-4">
-                  <h3 className="text-lg font-bold flex items-center gap-2">
-                    <LucideIcons.Plane size={20} />
-                    机场列表
-                  </h3>
-                  <button 
-                    onClick={() => handleAdd('airport')}
-                    className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 hover:bg-blue-700 transition-colors"
-                  >
-                    <Plus size={16} />
-                    新建机场
-                  </button>
-                </div>
-                <SpotsList 
-                  data={spots.filter(s => s.tags.includes('airport'))} 
-                  onDelete={deleteSpot} 
-                  onEdit={handleEdit} 
-                  onToggleStatus={updateSpotStatus}
-                />
-              </div>
-            </div>
+          {activeTab === 'rail' && (
+            <SpotsList
+              data={spots.filter(s => s.tags.includes('rail'))}
+              onDelete={deleteSpot}
+              onEdit={handleEdit}
+              onToggleStatus={updateSpotStatus}
+            />
+          )}
+          {activeTab === 'airport' && (
+            <SpotsList
+              data={spots.filter(s => s.tags.includes('airport'))}
+              onDelete={deleteSpot}
+              onEdit={handleEdit}
+              onToggleStatus={updateSpotStatus}
+            />
           )}
             {activeTab === 'ads' && <AdsList data={ads} onDelete={deleteAd} onEdit={handleEdit} />}
             {activeTab === 'users' && <UserList />}
             {activeTab === 'contact' && <ContactSettings info={contactInfo} onSave={updateContactInfo} />}
+            {activeTab === 'appearance' && <AppearanceSettings />}
+            {activeTab === 'reviews' && <AllReviewsManager />}
         </div>
       </div>
 
@@ -614,7 +607,7 @@ export default function AdminDashboard() {
             <div className="p-4 sm:p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
               <h3 className="text-xl font-bold">
                 {editingItem ? '编辑' : '新建'}
-                {activeTab === 'guides' ? '导游' : activeTab === 'strategies' ? '攻略' : activeTab === 'cities' ? '城市' : activeTab === 'ads' ? '广告位' : spotCategories.find(c => c.key === activeTab)?.name || '项目'}
+                {activeTab === 'guides' ? '导游' : activeTab === 'strategies' ? '攻略' : activeTab === 'cities' ? '城市' : activeTab === 'ads' ? '广告位' : activeTab === 'rail' ? '高铁站' : activeTab === 'airport' ? '机场' : spotCategories.find(c => c.key === activeTab)?.name || '项目'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
                 <X size={20} />
@@ -623,8 +616,8 @@ export default function AdminDashboard() {
             <div className="p-4 sm:p-6">
               {activeTab === 'guides' && <GuideForm initialData={editingItem} onSave={handleSave} isSaving={isSaving} />}
               {activeTab === 'enterprises' && <EnterpriseForm initialData={editingItem} onSave={handleSave} />}
-              {activeTab !== 'transport' && spotCategories.some(c => c.key === activeTab) && <SpotForm key={activeTab} initialData={editingItem} defaultTag={activeTab} onSave={handleSave} isSaving={isSaving} />}
-              {activeTab === 'transport' && <SpotForm key={`transport-${addTag || 'none'}-${editingItem?.id || 'new'}`} initialData={editingItem} defaultTag={addTag || 'transport'} onSave={handleSave} isSaving={isSaving} />}
+              {spotCategories.some(c => c.key === activeTab) && <SpotForm key={activeTab} initialData={editingItem} defaultTag={activeTab} onSave={handleSave} isSaving={isSaving} />}
+              {(activeTab === 'rail' || activeTab === 'airport') && <SpotForm key={`${activeTab}-${editingItem?.id || 'new'}`} initialData={editingItem} defaultTag={activeTab} onSave={handleSave} isSaving={isSaving} />}
               {activeTab === 'ads' && <AdForm initialData={editingItem} onSave={handleSave} />}
             </div>
           </div>
@@ -964,7 +957,7 @@ function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onS
     title: '导游',
     avatar: 'https://picsum.photos/200',
     intro: '',
-    cities: [] as string[],
+    cities: ['青岛'] as string[],
     rank: 99,
     isTop: false,
     isGlobal: false,
@@ -974,7 +967,8 @@ function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onS
     phone: '',
     wechat: '',
     kakao: '',
-    email: ''
+    email: '',
+    expiryDate: (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString(); })()
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1203,6 +1197,146 @@ function GuideForm({ initialData, onSave, isSaving }: { initialData?: Guide, onS
         ) : '保存'}
       </button>
     </form>
+  );
+}
+
+function AppearanceSettings() {
+  const { settings, update } = useAppSettings();
+  const DEFAULT_TOP = '#cbd5e1';
+  const DEFAULT_BOTTOM = '#f1f5f9';
+  const [top, setTop] = useState<string>(settings['drawer_header_top'] || DEFAULT_TOP);
+  const [bottom, setBottom] = useState<string>(settings['drawer_header_bottom'] || DEFAULT_BOTTOM);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState(0);
+
+  useEffect(() => {
+    setTop(settings['drawer_header_top'] || DEFAULT_TOP);
+    setBottom(settings['drawer_header_bottom'] || DEFAULT_BOTTOM);
+  }, [settings]);
+
+  const presets: { label: string; top: string; bottom: string }[] = [
+    { label: '默认灰', top: '#cbd5e1', bottom: '#f1f5f9' },
+    { label: '天空蓝', top: '#bfdbfe', bottom: '#eff6ff' },
+    { label: '薄荷绿', top: '#bbf7d0', bottom: '#f0fdf4' },
+    { label: '日落橙', top: '#fed7aa', bottom: '#fff7ed' },
+    { label: '玫瑰粉', top: '#fbcfe8', bottom: '#fdf2f8' },
+    { label: '夜空紫', top: '#c7d2fe', bottom: '#eef2ff' },
+    { label: '纯白', top: '#ffffff', bottom: '#ffffff' },
+    { label: '米黄', top: '#fde68a', bottom: '#fef9c3' },
+  ];
+
+  const gradient = `linear-gradient(to bottom, ${top}, ${bottom})`;
+
+  const applySolid = (c: string) => { setTop(c); setBottom(c); };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await update({ drawer_header_top: top, drawer_header_bottom: bottom });
+      setSavedAt(Date.now());
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 max-w-3xl space-y-6">
+      <div>
+        <h3 className="text-lg font-bold mb-1">底部抽屉背景</h3>
+        <p className="text-sm text-gray-500">设置城市/景点抽屉顶部到底部的渐变颜色。底部颜色也作为整个抽屉的背景色，确保过渡无缝。如需纯色，将上下两色设为相同即可。</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">预览</label>
+        <div className="rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="h-[88px]" style={{ background: gradient }} />
+          <div className="h-32 flex items-center px-4 text-xs text-gray-400" style={{ backgroundColor: bottom }}>下方内容区（使用底部颜色作为整个抽屉背景）</div>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">预设</label>
+        <div className="flex flex-wrap gap-2">
+          {presets.map(p => {
+            const isActive = top === p.top && bottom === p.bottom;
+            return (
+              <button
+                key={p.label}
+                onClick={() => { setTop(p.top); setBottom(p.bottom); }}
+                className={`px-3 py-2 rounded-lg border text-sm transition-all ${isActive ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'}`}
+              >
+                <div className="w-16 h-6 rounded mb-1" style={{ background: `linear-gradient(to bottom, ${p.top}, ${p.bottom})` }} />
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">顶部颜色</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={top}
+              onChange={e => setTop(e.target.value)}
+              className="h-10 w-16 border border-gray-200 rounded-lg cursor-pointer"
+            />
+            <input
+              type="text"
+              value={top}
+              onChange={e => setTop(e.target.value)}
+              className="flex-1 font-mono text-xs px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              placeholder="#cbd5e1"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">底部颜色（同抽屉背景）</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={bottom}
+              onChange={e => setBottom(e.target.value)}
+              className="h-10 w-16 border border-gray-200 rounded-lg cursor-pointer"
+            />
+            <input
+              type="text"
+              value={bottom}
+              onChange={e => setBottom(e.target.value)}
+              className="flex-1 font-mono text-xs px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              placeholder="#f1f5f9"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={saving}
+          className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+        >
+          {saving ? '保存中...' : '保存'}
+        </button>
+        <button
+          onClick={() => { setTop(DEFAULT_TOP); setBottom(DEFAULT_BOTTOM); }}
+          className="text-sm text-gray-500 hover:text-gray-700"
+        >
+          恢复默认
+        </button>
+        <button
+          onClick={() => applySolid(top)}
+          className="text-sm text-gray-500 hover:text-gray-700"
+        >
+          上下同色
+        </button>
+        {savedAt > 0 && Date.now() - savedAt < 4000 && (
+          <span className="text-sm text-green-600">✓ 已保存</span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -2007,7 +2141,8 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
 
 function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: number) => void, onEdit: (item: AdSlot) => void }) {
   const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('active');
-  const [sort, setSort] = useState<'newest' | 'expiry'>('newest');
+  const [sort, setSort] = useState<'custom' | 'newest' | 'expiry'>('custom');
+  const { updateAd } = useData() as any;
 
   const filteredData = data.filter(item => {
     const isExpired = item.expiryDate && new Date(item.expiryDate) < new Date();
@@ -2020,8 +2155,24 @@ function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: nu
         const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
         return dateA - dateB;
     }
+    if (sort === 'newest') return Number(b.id) - Number(a.id);
+    const oa = a.sortOrder ?? 0, ob = b.sortOrder ?? 0;
+    if (oa !== ob) return oa - ob;
     return Number(b.id) - Number(a.id);
   });
+
+  const swapOrder = (idx: number, dir: -1 | 1) => {
+    const target = idx + dir;
+    if (target < 0 || target >= filteredData.length) return;
+    const a = filteredData[idx];
+    const b = filteredData[target];
+    const ao = a.sortOrder ?? 0;
+    const bo = b.sortOrder ?? 0;
+    const newAo = bo === ao ? ao + dir : bo;
+    const newBo = bo === ao ? ao : ao;
+    updateAd?.({ ...a, sortOrder: newAo });
+    updateAd?.({ ...b, sortOrder: newBo });
+  };
 
   return (
     <div className="space-y-4">
@@ -2034,6 +2185,7 @@ function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: nu
         <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">排序:</span>
             <select value={sort} onChange={e => setSort(e.target.value as any)} className="text-sm border-none bg-gray-50 rounded-lg px-3 py-1.5 focus:ring-0 cursor-pointer">
+                <option value="custom">自定义顺序</option>
                 <option value="newest">最新发布</option>
                 <option value="expiry">即将过期</option>
             </select>
@@ -2044,7 +2196,7 @@ function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: nu
         <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
             暂无相关内容
         </div>
-      ) : filteredData.map(item => (
+      ) : filteredData.map((item, idx) => (
         <div key={item.id} className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 relative overflow-hidden ${item.expiryDate && new Date(item.expiryDate) < new Date() ? 'opacity-75 grayscale-[0.5]' : ''}`}>
           {item.expiryDate && new Date(item.expiryDate) < new Date() && (
               <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-3 py-1 rounded-bl-lg font-bold z-10">
@@ -2068,7 +2220,28 @@ function AdsList({ data, onDelete, onEdit }: { data: AdSlot[], onDelete: (id: nu
             </a>
             <div className="text-xs text-gray-400 mt-1">点击量：{(item as any).viewCount || 0}</div>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start">
+          <div className="flex gap-2 w-full sm:w-auto justify-end sm:justify-start items-center">
+            {sort === 'custom' && (
+              <div className="flex flex-col">
+                <button
+                  onClick={() => swapOrder(idx, -1)}
+                  disabled={idx === 0}
+                  className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="上移"
+                >
+                  <LucideIcons.ChevronUp size={16} />
+                </button>
+                <button
+                  onClick={() => swapOrder(idx, 1)}
+                  disabled={idx === filteredData.length - 1}
+                  className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="下移"
+                >
+                  <LucideIcons.ChevronDown size={16} />
+                </button>
+              </div>
+            )}
+            <span className="text-xs text-gray-400 px-1">序:{item.sortOrder ?? 0}</span>
             <button
               onClick={() => {
                 const url = `${window.location.origin}/?open=ad&id=${item.id}`;
@@ -2143,10 +2316,21 @@ function AdForm({ initialData, onSave }: { initialData?: AdSlot, onSave: (data: 
         />
       </div>
 
-      <ExpirationSelector 
-        value={(formData as any).expiryDate} 
-        onChange={(val) => setFormData({...formData, expiryDate: val} as any)} 
+      <ExpirationSelector
+        value={(formData as any).expiryDate}
+        onChange={(val) => setFormData({...formData, expiryDate: val} as any)}
       />
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">显示顺序 (数字越小越靠前)</label>
+        <input
+          type="number"
+          value={formData.sortOrder ?? 0}
+          onChange={e => setFormData({ ...formData, sortOrder: parseInt(e.target.value, 10) || 0 })}
+          className="w-full px-3 py-2 border rounded-lg"
+          placeholder="0"
+        />
+      </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">描述 (简短介绍)</label>
@@ -2380,5 +2564,158 @@ function EnterpriseForm({ initialData, onSave }: { initialData?: any, onSave: (d
       </div>
       <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">保存</button>
     </form>
+  );
+}
+
+function AllReviewsManager() {
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<'all' | 'spot' | 'guide' | 'strategy' | 'enterprise' | 'orphan'>('all');
+  const [keyword, setKeyword] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const r = await fetch('/api/reviews', { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      if (r.ok) setReviews(await r.json());
+    } catch (e) { console.error(e); }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('确定删除这条评论？')) return;
+    try {
+      const token = localStorage.getItem('admin_token');
+      const r = await fetch(`/api/reviews/${id}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      if (r.ok) setReviews(reviews.filter(rv => rv.id !== id));
+    } catch (e) { console.error(e); }
+  };
+
+  const getTargetType = (r: any): 'spot' | 'guide' | 'strategy' | 'enterprise' | 'orphan' => {
+    if (r.spotId || r.poiId) return 'spot';
+    if (r.guideId) return 'guide';
+    if (r.strategyId) return 'strategy';
+    if (r.enterpriseId) return 'enterprise';
+    return 'orphan';
+  };
+  const getTargetLabel = (r: any) => {
+    if (r.spot?.name) return `景点 · ${r.spot.name}`;
+    if (r.poi?.name) return `景点 · ${r.poi.name}`;
+    if (r.guide?.name) return `导游 · ${r.guide.name}`;
+    if (r.strategy?.title) return `攻略 · ${r.strategy.title}`;
+    if (r.enterprise?.name) return `企业 · ${r.enterprise.name}`;
+    return '无关联';
+  };
+
+  const counts = {
+    all: reviews.length,
+    spot: reviews.filter(r => getTargetType(r) === 'spot').length,
+    guide: reviews.filter(r => getTargetType(r) === 'guide').length,
+    strategy: reviews.filter(r => getTargetType(r) === 'strategy').length,
+    enterprise: reviews.filter(r => getTargetType(r) === 'enterprise').length,
+    orphan: reviews.filter(r => getTargetType(r) === 'orphan').length,
+  };
+
+  const filtered = reviews.filter(r => {
+    if (typeFilter !== 'all' && getTargetType(r) !== typeFilter) return false;
+    if (keyword) {
+      const k = keyword.toLowerCase();
+      const author = (r.customNickname || r.user?.email || r.user?.nickname || '').toLowerCase();
+      const content = (r.content || '').toLowerCase();
+      const target = getTargetLabel(r).toLowerCase();
+      if (!author.includes(k) && !content.includes(k) && !target.includes(k)) return false;
+    }
+    return true;
+  });
+
+  const parseImages = (s?: string): string[] => {
+    if (!s) return [];
+    try { const a = JSON.parse(s); return Array.isArray(a) ? a : []; } catch { return []; }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-6">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900">评论管理</h3>
+          <p className="text-sm text-gray-500 mt-1">查看和删除全站所有评论（管理员权限）</p>
+        </div>
+        <button onClick={load} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> 刷新
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap mb-3">
+        <Filter size={16} className="text-gray-400" />
+        <span className="text-sm text-gray-500 mr-1">类型：</span>
+        {([
+          ['all', '全部'],
+          ['spot', '景点'],
+          ['guide', '导游'],
+          ['strategy', '攻略'],
+          ['enterprise', '企业'],
+          ['orphan', '无关联'],
+        ] as const).map(([k, label]) => (
+          <button
+            key={k}
+            onClick={() => setTypeFilter(k as any)}
+            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+              typeFilter === k ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-slate-300 hover:bg-gray-50'
+            }`}
+          >
+            {label} ({(counts as any)[k]})
+          </button>
+        ))}
+      </div>
+
+      <div className="relative mb-4 max-w-md ml-auto">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          placeholder="搜索内容/作者/景点..."
+          className="w-full pl-9 pr-3 py-2 rounded-full bg-gray-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+        />
+      </div>
+
+      <div className="space-y-3">
+        {loading && <div className="text-center py-8 text-gray-400">加载中...</div>}
+        {!loading && filtered.length === 0 && <div className="text-center py-8 text-gray-400">暂无评论</div>}
+        {filtered.map(r => {
+          const imgs = parseImages(r.images);
+          const author = r.customNickname || r.user?.nickname || r.user?.email || '익명 사용자';
+          const email = r.user?.email ? `(${r.user.email})` : '';
+          return (
+            <div key={r.id} className="border border-slate-200 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="font-bold text-gray-900 text-sm">{author}</span>
+                <span className="flex items-center gap-0.5 text-sm">
+                  <Star size={14} className="text-yellow-400 fill-yellow-400" />
+                  <span className="font-bold text-gray-700">{r.rating}</span>
+                </span>
+                {email && <span className="text-xs text-gray-500">{email}</span>}
+                <span className="text-xs text-gray-400">· {new Date(r.createdAt).toLocaleString()}</span>
+                {r.type && <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">{r.type}</span>}
+                <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">{getTargetLabel(r)}</span>
+                <button onClick={() => handleDelete(r.id)} className="ml-auto text-red-500 hover:bg-red-50 p-1.5 rounded-lg">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+              <div className="text-sm text-gray-700 whitespace-pre-wrap">{r.content}</div>
+              {imgs.length > 0 && (
+                <div className="mt-2 grid grid-cols-6 gap-1.5 max-w-md">
+                  {imgs.map((u, i) => (
+                    <img key={i} src={u} alt="" className="w-full aspect-square object-cover rounded-lg cursor-pointer" onClick={() => window.open(u, '_blank')} />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
