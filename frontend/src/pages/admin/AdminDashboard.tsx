@@ -2049,6 +2049,33 @@ function SpotForm({ initialData, defaultTag = 'spot', onSave, isSaving }: { init
             </label>
         </div>
       </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-amber-50 rounded-xl border border-amber-100">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">评分 (0~5,留空=隐藏)</label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            max="5"
+            value={(formData as any).rating ?? ''}
+            onChange={e => setFormData({...formData, rating: e.target.value === '' ? null : parseFloat(e.target.value)} as any)}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="例如: 4.5"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">评论数 (留空=隐藏)</label>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={(formData as any).reviewCount ?? ''}
+            onChange={e => setFormData({...formData, reviewCount: e.target.value === '' ? null : parseInt(e.target.value)} as any)}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="例如: 154"
+          />
+        </div>
+      </div>
       <div>
         <ImageUploader
           label="图片 (支持上传本地图片或输入URL)"

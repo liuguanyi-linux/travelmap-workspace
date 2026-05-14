@@ -182,6 +182,8 @@ model Spot {
   email  String?
 
   viewCount  Int       @default(0)
+  rating       Float?
+  reviewCount  Int?
   expiryDate DateTime? // Expiration date for auto-removal
   reviews    Review[] // Relation to Review table
   createdAt  DateTime  @default(now())

@@ -42,6 +42,8 @@ export class SpotsService {
         kakao: true,
         email: true,
         viewCount: true,
+        rating: true,
+        reviewCount: true,
         expiryDate: true,
         createdAt: true,
         updatedAt: true
@@ -86,6 +88,8 @@ export class SpotsService {
         wechat: data.wechat || null,
         kakao: data.kakao || null,
         email: data.email || null,
+        rating: data.rating !== undefined && data.rating !== null && data.rating !== '' ? Number(data.rating) : null,
+        reviewCount: data.reviewCount !== undefined && data.reviewCount !== null && data.reviewCount !== '' ? Number(data.reviewCount) : null,
         expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
       }
     });
@@ -99,7 +103,13 @@ export class SpotsService {
 
     if (tags !== undefined) updateData.tags = serialize(tags);
     if (photos !== undefined) updateData.photos = serialize(photos);
-    
+    if (updateData.rating !== undefined) {
+      updateData.rating = updateData.rating === null || updateData.rating === '' ? null : Number(updateData.rating);
+    }
+    if (updateData.reviewCount !== undefined) {
+      updateData.reviewCount = updateData.reviewCount === null || updateData.reviewCount === '' ? null : Number(updateData.reviewCount);
+    }
+
     if (location !== undefined) {
       updateData.lng = location.lng;
       updateData.lat = location.lat;

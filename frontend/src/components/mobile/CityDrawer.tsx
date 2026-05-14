@@ -501,11 +501,11 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                       ? getFullImageUrl(typeof photoRaw === 'string' ? photoRaw : photoRaw?.url)
                                       : '';
 
-                                    const realRating = Number((spot as any).rating) || 0;
-                                    const realCount = Number((spot as any).reviewCount ?? (spot as any).reviewsCount ?? (spot as any)._count?.reviews) || 0;
-                                    const idSeed = Number(spot.id) || 0;
-                                    const ratingValue = realRating > 0 ? realRating : (4.5 + ((idSeed * 7) % 6) / 10);
-                                    const ratingCount = realCount > 0 ? realCount : (50 + (idSeed * 13) % 350);
+                                    const ratingRaw = (spot as any).rating;
+                                    const countRaw = (spot as any).reviewCount ?? (spot as any).reviewsCount ?? (spot as any)._count?.reviews;
+                                    const hasRating = ratingRaw !== null && ratingRaw !== undefined && !isNaN(Number(ratingRaw));
+                                    const ratingValue = hasRating ? Number(ratingRaw) : 0;
+                                    const ratingCount = countRaw !== null && countRaw !== undefined && !isNaN(Number(countRaw)) ? Number(countRaw) : 0;
                                     return (
                                     <div
                                         key={spot.id}
@@ -567,11 +567,15 @@ export default function CityDrawer({ isVisible, onSelectCategory, onSelectCity, 
                                                 <div className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: spot.intro }} />
                                             )}
                                             <div className="flex items-center justify-between gap-1 mt-0.5">
-                                                <div className="flex items-center gap-1">
-                                                    <Icons.Star size={12} className="text-yellow-400 fill-yellow-400" />
-                                                    <span className="text-[12px] font-bold text-gray-800 dark:text-gray-200">{ratingValue.toFixed(1)}</span>
-                                                    <span className="text-[11px] text-gray-400">({ratingCount})</span>
-                                                </div>
+                                                {hasRating ? (
+                                                    <div className="flex items-center gap-1">
+                                                        <Icons.Star size={12} className="text-yellow-400 fill-yellow-400" />
+                                                        <span className="text-[12px] font-bold text-gray-800 dark:text-gray-200">{ratingValue.toFixed(1)}</span>
+                                                        {ratingCount > 0 && (
+                                                            <span className="text-[11px] text-gray-400">({ratingCount})</span>
+                                                        )}
+                                                    </div>
+                                                ) : <span />}
                                                 {spot.city && (
                                                     <span className="text-[10px] font-semibold text-red-500 truncate">{getCityDisplayNameByName(spot.city)}</span>
                                                 )}
